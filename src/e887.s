@@ -23,19 +23,19 @@
 		iny	
 		lda	($F0),Y		; Get channel high byte byte
 		cmp	#$FF
-		beq	$E88D		; Channel &FFxx, speech command
+		beq	_BE88D		; Channel &FFxx, speech command
 		cmp	#$20		; Is channel>=&20 ?
 		ldx	#$08		; Prepare X=8 for unrecognised OSWORD call
-		bcs	$E7CA		; Pass to sideways ROMs for channel &2000+
+		bcs	_BE7CA		; Pass to sideways ROMs for channel &2000+
 		dey			; Point back to channel low byte
-		jsr	$E8C9		; Get Channel 0-3, and Cy if >=&10 for Flush
+		jsr	_LE8C9		; Get Channel 0-3, and Cy if >=&10 for Flush
 		ora	#$04		; Convert to buffer number 4-7
 		tax	
-		bcc	$E848		; If not Flush, skip past
-		jsr	$E1AE		; Flush buffer
+		bcc	_BE848		; If not Flush, skip past
+		jsr	_LE1AE		; Flush buffer
 		ldy	#$01		; Point back to channel high byte
 
-		jsr	$E8C9		; Get Sync 0-3, and Cy if >=&10 for Hold
+_BE848:		jsr	_LE8C9		; Get Sync 0-3, and Cy if >=&10 for Hold
 		sta	$FA		; Save Sync in &FA
 		php			; Stack flags
 		ldy	#$06
@@ -59,9 +59,9 @@
 		;  b2,   Hold
 		;  b1-0, Sync
 
-		jsr	$E1F8		; Insert into buffer
-		bcc	$E887		; Buffer not full, jump to insert the rest
-		pla			; Drop stacked pitch
+		jsr	_LE1F8		; Insert into buffer
+		bcc	_BE887		; Buffer not full, jump to insert the rest
+_BE869:		pla			; Drop stacked pitch
 		pla			; Drop stacked duration
 		plp			; Restore flags
 					;  And exit
@@ -77,14 +77,14 @@
 
 ;************* set up sound data for Bell ********************************
 
-		php			; push P
+_LE86F:		php			; push P
 		sei			; bar interrupts
 		lda	$0263		; get bell channel number in A
 		and	#$07		; (bits 0-3 only set)
 		ora	#$04		; set bit 2
 		tax			; X=A = bell channel number +4=buffer number
 		lda	$0264		; get bell amplitude/envelope number
-		jsr	$E4B0		; store it in buffer pointed to by X
+		jsr	_LE4B0		; store it in buffer pointed to by X
 		lda	$0266		; get bell duration
 		pha			; save it
 		lda	$0265		; get bell frequency
@@ -92,9 +92,9 @@
 
 ; Insert sound pitch and duration into sound buffer
 ;
-		sec			; Set carry
+_BE887:		sec			; Set carry
 		ror	$0800,X		; Set bit 7 of channel flags to indicate it's active
-		bmi	$E8A4		; Jump forward to insert pitch and duration
+		bmi	_BE8A4		; Jump forward to insert pitch and duration
 
 ;-------------------------------------------------------------------------
 ;|                                                                       |
@@ -108,7 +108,7 @@
 ;     4  Ignored
 ;     6  Ignored
 
-		php			; Save flags
+_BE88D:		php			; Save flags
 		iny			; Y=2
 		lda	($F0),Y		; Get word number low byte
 		pha			; and stack it
@@ -118,16 +118,16 @@
 		ldy	#$00		; Y=0
 		lda	($F0),Y		; Get speech command
 		ldx	#$08		; X=8 for Speech buffer
-		jsr	$E1F8		; Insert speech command into speech buffer
-		bcs	$E869		; Buffer full, drop stack and abandon
-		ror	$02D7		; Clear bit 7 of speech buffer busy flag
+		jsr	_LE1F8		; Insert speech command into speech buffer
+		bcs	_BE869		; Buffer full, drop stack and abandon
+		ror	$02d7		; Clear bit 7 of speech buffer busy flag
 
 ; Insert two bytes into buffer
 ;
-		pla			; Get word number high byte or pitch back
-		jsr	$E4B0		; Insert into speech buffer
+_BE8A4:		pla			; Get word number high byte or pitch back
+		jsr	_LE4B0		; Insert into speech buffer
 		pla			; Get word number low byte or duration back
-		jsr	$E4B0		; Insert into speech buffer
+		jsr	_LE4B0		; Insert into speech buffer
 		plp			; Restore flags
 		rts			; and return
 
@@ -166,17 +166,17 @@
 
 		ldy	#$10		; Y=&10
 
-		cpy	#$0E		; is Y>=14??
-		bcs	$E8C1		; yes then E8C1
+_BE8BB:		cpy	#$0E		; is Y>=14??
+		bcs	_BE8C1		; yes then E8C1
 		lda	($F0),Y		; else get byte from parameter block
-		sta	$08C0,X		; and store it in appropriate area
+_BE8C1:		sta	$08c0,X		; and store it in appropriate area
 		dex			; decrement X
 		dey			; Decrement Y
-		bne	$E8BB		; if not 0 then do it again
+		bne	_BE8BB		; if not 0 then do it again
 		rts			; else exit
 					; note that envelope number is NOT transferred
 ;
-		lda	($F0),Y		; get byte
+_LE8C9:		lda	($F0),Y		; get byte
 		cmp	#$10		; is it greater than 15, if so set carry
 		and	#$03		; and 3 to clear bits 2-7
 		iny			; increment Y
@@ -193,7 +193,7 @@
 ;F0/1 points to block to store data
 
 		ldx	#$0F		; X=&F displacement from clock to timer
-		bne	$E8D8		; jump to E8D8
+		bne	_BE8D8		; jump to E8D8
 
 
 ;*************************************************************************
@@ -207,13 +207,13 @@
 
 		ldx	$0283		; X=current system clock store pointer
 
-		ldy	#$04		; Y=4
-		lda	$028D,X		; read byte
+_BE8D8:		ldy	#$04		; Y=4
+_BE8DA:		lda	$028d,X		; read byte
 		sta	($F0),Y		; store it in parameter block
 		inx			; X=x+1
 		dey			; Y=Y-1
-		bpl	$E8DA		; if Y>0 then do it again
-		rts			; else exit
+		bpl	_BE8DA		; if Y>0 then do it again
+_BE8E3:		rts			; else exit
 
 
 ;*************************************************************************
@@ -226,7 +226,7 @@
 ;F0/1 points to block to store data
 
 		lda	#$0F		; offset between clock and timer
-		bne	$E8EE		; jump to E8EE ALWAYS!!
+		bne	_BE8EE		; jump to E8EE ALWAYS!!
 
 
 ;*************************************************************************
@@ -242,16 +242,16 @@
 		eor	#$0F		; and invert to get inactive timer
 		clc			; clear carry
 
-		pha			; store A
+_BE8EE:		pha			; store A
 		tax			; X=A
 		ldy	#$04		; Y=4
-		lda	($F0),Y		; and transfer all 5 bytes
-		sta	$028D,X		; to the clock or timer
+_BE8F2:		lda	($F0),Y		; and transfer all 5 bytes
+		sta	$028d,X		; to the clock or timer
 		inx			; 
 		dey			; 
-		bpl	$E8F2		; if Y>0 then E8F2
+		bpl	_BE8F2		; if Y>0 then E8F2
 		pla			; get back stack
-		bcs	$E8E3		; if set (write to timer) E8E3 exit
+		bcs	_BE8E3		; if set (write to timer) E8E3 exit
 		sta	$0283		; write back current clock store
 		rts			; and exit
 
@@ -271,11 +271,11 @@
 
 		ldy	#$04		; Y=4
 
-		lda	($F0),Y		; transfer bytes 4,3,2 to 2B3-2B5
-		sta	$02B1,Y		; 
+_BE904:		lda	($F0),Y		; transfer bytes 4,3,2 to 2B3-2B5
+		sta	$02b1,Y		; 
 		dey			; decrement Y
 		cpy	#$02		; until Y=1
-		bcs	$E904		; 
+		bcs	_BE904		; 
 
 		lda	($F0),Y		; get address of input buffer
 		sta	$E9		; store it in &E9 as temporary buffer
@@ -284,60 +284,60 @@
 		lda	($F0),Y		; get lo byte of address
 		sta	$E8		; and store in &E8
 		cli			; allow interrupts
-		bcc	$E924		; Jump to E924
+		bcc	_BE924		; Jump to E924
 
-		lda	#$07		; A=7
-		dey			; decrement Y
-		iny			; increment Y
-		jsr	OSWRCH		; and call OSWRCH
+_BE91D:		lda	#$07		; A=7
+_BE91F:		dey			; decrement Y
+_BE920:		iny			; increment Y
+_BE921:		jsr	OSWRCH		; and call OSWRCH
 
-		jsr	OSRDCH		; else read character  from input stream
-		bcs	$E972		; if carry set then illegal character or other error
+_BE924:		jsr	OSRDCH		; else read character  from input stream
+		bcs	_BE972		; if carry set then illegal character or other error
 					; exit via E972
 		tax			; X=A
-		lda	$027C		; A=&27C get character destination status
+		lda	$027c		; A=&27C get character destination status
 		ror			; put VDU driver bit in carry
 		ror			; if this is 1 VDU driver is disabled
 		txa			; X=A
-		bcs	$E937		; if Carry set E937
-		ldx	$026A		; get number of items in VDU queque
-		bne	$E921		; if not 0 output character and loop round again
+		bcs	_BE937		; if Carry set E937
+		ldx	$026a		; get number of items in VDU queque
+		bne	_BE921		; if not 0 output character and loop round again
 
-		cmp	#$7F		; if character is not delete
-		bne	$E942		; goto E942
+_BE937:		cmp	#$7F		; if character is not delete
+		bne	_BE942		; goto E942
 		cpy	#$00		; else is Y=0
-		beq	$E924		; and goto E924
+		beq	_BE924		; and goto E924
 		dey			; decrement Y
-		bcs	$E921		; and if carry set E921 to output it
-		cmp	#$15		; is it delete line &21
-		bne	$E953		; if not E953
+		bcs	_BE921		; and if carry set E921 to output it
+_BE942:		cmp	#$15		; is it delete line &21
+		bne	_BE953		; if not E953
 		tya			; else Y=A, if its 0 we are still reading first
 					; character
-		beq	$E924		; so E924
+		beq	_BE924		; so E924
 		lda	#$7F		; else output DELETES
 
-		jsr	OSWRCH		; until Y=0
+_BE94B:		jsr	OSWRCH		; until Y=0
 		dey			; 
-		bne	$E94B		; 
+		bne	_BE94B		; 
 
-		beq	$E924		; then read character again
+		beq	_BE924		; then read character again
 
-		sta	($E8),Y		; store character in designated buffer
+_BE953:		sta	($E8),Y		; store character in designated buffer
 		cmp	#$0D		; is it CR?
-		beq	$E96C		; if so E96C
-		cpy	$02B3		; else check the line length
-		bcs	$E91D		; if = or greater loop to ring bell
-		cmp	$02B4		; check minimum character
-		bcc	$E91F		; if less than minimum backspace
-		cmp	$02B5		; check maximum character
-		beq	$E920		; if equal E920
-		bcc	$E920		; or less E920
-		bcs	$E91F		; then JUMP E91F
+		beq	_BE96C		; if so E96C
+		cpy	$02b3		; else check the line length
+		bcs	_BE91D		; if = or greater loop to ring bell
+		cmp	$02b4		; check minimum character
+		bcc	_BE91F		; if less than minimum backspace
+		cmp	$02b5		; check maximum character
+		beq	_BE920		; if equal E920
+		bcc	_BE920		; or less E920
+		bcs	_BE91F		; then JUMP E91F
 
-		jsr	OSNEWL		; output CR/LF
-		jsr	$E57E		; call Econet vector
+_BE96C:		jsr	OSNEWL		; output CR/LF
+		jsr	_LE57E		; call Econet vector
 
-		lda	$FF		; A=ESCAPE FLAG
+_BE972:		lda	$FF		; A=ESCAPE FLAG
 		rol			; put bit 7 into carry
 		rts			; and exit routine
 
@@ -350,14 +350,14 @@
 ;*                                                                       *
 ;*************************************************************************
 
-		cli			; allow interrupts briefly
+_BE976:		cli			; allow interrupts briefly
 		sei			; bar interrupts
 		bit	$FF		; check if ESCAPE is pending
-		bmi	$E9AC		; if it is E9AC
-		bit	$02D2		; else check bit 7 buffer 3 (printer)
-		bpl	$E976		; if not empty bit 7=0 E976
+		bmi	_BE9AC		; if it is E9AC
+		bit	$02d2		; else check bit 7 buffer 3 (printer)
+		bpl	_BE976		; if not empty bit 7=0 E976
 
-		jsr	$E1A4		; check for user defined routine
+		jsr	_LE1A4		; check for user defined routine
 		ldy	#$00		; Y=0
 		sty	$F1		; F1=0
 
@@ -378,7 +378,7 @@
 ; A contains osbyte number
 
 		ora	#$F0		; A=osbyte +&F0
-		bne	$E99A		; JUMP to E99A
+		bne	_BE99A		; JUMP to E99A
 
 
 ;*************************************************************************
@@ -389,7 +389,7 @@
 ;*                                                                       *
 ;*************************************************************************
 
-		bne	$E995		; if &F0<>0 goto E995
+		bne	_BE995		; if &F0<>0 goto E995
 		ldx	#$32		; if X=0 in original call then X=32
 		stx	$0254		; to set keyboard autorepeat delay ram copy
 		ldx	#$08		; X=8
@@ -403,7 +403,7 @@
 ;*                                                                       *
 ;*************************************************************************
 
-		adc	#$CF		; A=A+&D0 (carry set)
+_BE995:		adc	#$CF		; A=A+&D0 (carry set)
 
 
 ;*************************************************************************
@@ -424,7 +424,7 @@
 		clc			; c,ear carry
 		adc	#$E9		; A=A+&E9
 
-		stx	$F0		; store X
+_BE99A:		stx	$F0		; store X
 
 
 ;*************************************************************************
@@ -443,11 +443,11 @@
 		sta	$0190,Y		; store it
 		lda	$0191,Y		; get value of next byte into A
 		tay			; Y=A
-		rts			; and exit
+_BE9AC:		rts			; and exit
 
 ;******* SERIAL BAUD RATE LOOK UP TABLE ************************************
 
-		.byte	$64		; % 01100100      75
+_LE9AD:		.byte	$64		; % 01100100      75
 		.byte	$7F		; % 01111111     150
 		.byte	$5B		; % 01011011     300
 		.byte	$6D		; % 01101101    1200
@@ -466,10 +466,10 @@
 ;*************************************************************************
 
 		lda	$0240		; read vertical sync counter
-		cli			; allow interrupts briefly
+_BE9B9:		cli			; allow interrupts briefly
 		sei			; bar interrupts
 		cmp	$0240		; has it changed?
-		beq	$E9B9		; no then E9B9
+		beq	_BE9B9		; no then E9B9
 ; falls through and reads VDU variable X
 
 ;*************************************************************************
@@ -507,14 +507,14 @@
 ;*                                                                       *
 ;*************************************************************************
 
-		lda	#$10		; set consistency flag
+_LE9C8:		lda	#$10		; set consistency flag
 		sta	$0284		; 
 
 		ldx	#$00		; X=0
 
-		sta	$0B00,X		; and wipe clean
+_BE9CF:		sta	$0b00,X		; and wipe clean
 		inx			; soft key buffer
-		bne	$E9CF		; until X=0 again
+		bne	_BE9CF		; until X=0 again
 
 		stx	$0284		; zero consistency flag
 		rts			; and exit
@@ -528,34 +528,34 @@
 		; osbyte entry with carry set
 		; called from &CB0E, &CAE3, &DB8B
 
-		php			; PUSH P
+_LE9D9:		php			; PUSH P
 		sei			; DISABLE INTERUPTS
 		lda	#$40		; switch on CAPS and SHIFT lock lights
-		jsr	$E9EA		; via subroutine
-		bmi	$E9E7		; if ESCAPE exists (M set) E9E7
+		jsr	_LE9EA		; via subroutine
+		bmi	_BE9E7		; if ESCAPE exists (M set) E9E7
 		clc			; else clear V and C
 		clv			; before calling main keyboard routine to
-		jsr	$F068		; switch on lights as required
-		plp			; get back flags
+		jsr	_LF068		; switch on lights as required
+_BE9E7:		plp			; get back flags
 		rol			; and rotate carry into bit 0
 		rts			; Return to calling routine
 					; 
 ;***************** Turn on keyboard lights and Test Escape flag ************
 		; called from &E1FE, &E9DD
 		; 
-		bcc	$E9F5		; if carry clear
+_LE9EA:		bcc	_BE9F5		; if carry clear
 		ldy	#$07		; switch on shift lock light
-		sty	$FE40		; 
+		sty	$fe40		; 
 		dey			; Y=6
-		sty	$FE40		; switch on Caps lock light
-		bit	$FF		; set minus flag if bit 7 of &00FF is set indicating
+		sty	$fe40		; switch on Caps lock light
+_BE9F5:		bit	$FF		; set minus flag if bit 7 of &00FF is set indicating
 		rts			; that ESCAPE condition exists, then return
 					; 
 ;****************** Write A to SYSTEM VIA register B *************************
 		; called from &CB6D, &CB73
-		php			; push flags
+_LE9F8:		php			; push flags
 		sei			; disable interupts
-		sta	$FE40		; write register B from Accumulator
+		sta	$fe40		; write register B from Accumulator
 		plp			; get back flags
 		rts			; and exit
 
@@ -571,10 +571,10 @@
 ;*******Set Video ULA control register **entry from VDU routines **************
 		; called from &CBA6, &DD37
 
-		php			; save flags
+_LEA00:		php			; save flags
 		sei			; disable interupts
 		sta	$0248		; save RAM copy of new parameter
-		sta	$FE20		; write to control register
+		sta	$fe20		; write to control register
 		lda	$0253		; read  space count
 		sta	$0251		; set flash counter to this value
 		plp			; get back status
@@ -588,11 +588,11 @@
 ;*************************************************************************
 ;entry X contains value to write
 		txa			; A=X
-		eor	#$07		; convert to palette format
+_LEA11:		eor	#$07		; convert to palette format
 		php			; 
 		sei			; prevent interrupts
 		sta	$0249		; store as current palette setting
-		sta	$FE21		; store actual colour in register
+		sta	$fe21		; store actual colour in register
 		plp			; get back flags
 		rts			; and exit
 
@@ -607,16 +607,16 @@
 ;*       A contains first non blank character                            *
 ;*************************************************************************
 
-		clc			; clear carry
+_LEA1D:		clc			; clear carry
 
-		ror	$E4		; Rotate moves carry to &E4
-		jsr	$E03A		; get character from text
+_LEA1E:		ror	$E4		; Rotate moves carry to &E4
+		jsr	_LE03A		; get character from text
 		iny			; increment Y to point at next character
 		cmp	#$22		; check to see if its '"'
-		beq	$EA2A		; if so EA2A (carry set)
+		beq	_BEA2A		; if so EA2A (carry set)
 		dey			; decrement Y
 		clc			; clear carry
-		ror	$E4		; move bit 7 to bit 6 and put carry in bit 7
+_BEA2A:		ror	$E4		; move bit 7 to bit 6 and put carry in bit 7
 		cmp	#$0D		; check to see if its CR to set Z
 		rts			; and return
 
@@ -627,88 +627,88 @@
 ;*                                                                       *
 ;*************************************************************************
 		; 
-		lda	#$00		; A=0
-		sta	$E5		; store A
+_LEA2F:		lda	#$00		; A=0
+_BEA31:		sta	$E5		; store A
 		lda	($F2),Y		; read first character
 		cmp	#$0D		; is it CR
-		bne	$EA3F		; if not goto EA3F
+		bne	_BEA3F		; if not goto EA3F
 		bit	$E4		; if bit 7=1 no 2nd '"' found
-		bmi	$EA8F		; goto EA8F
-		bpl	$EA5A		; if not EA5A
+		bmi	_BEA8F		; goto EA8F
+		bpl	_BEA5A		; if not EA5A
 
-		cmp	#$20		; is less than a space?
-		bcc	$EA8F		; goto EA8F
-		bne	$EA4B		; if its not a space EA4B
+_BEA3F:		cmp	#$20		; is less than a space?
+		bcc	_BEA8F		; goto EA8F
+		bne	_BEA4B		; if its not a space EA4B
 		bit	$E4		; is bit 7 of &E4 =1
-		bmi	$EA89		; if so goto EA89
-		bvc	$EA5A		; if bit 6 = 0 EA5A
-		cmp	#$22		; is it '"'
-		bne	$EA5F		; if not EA5F
+		bmi	_BEA89		; if so goto EA89
+		bvc	_BEA5A		; if bit 6 = 0 EA5A
+_BEA4B:		cmp	#$22		; is it '"'
+		bne	_BEA5F		; if not EA5F
 		bit	$E4		; if so and Bit 7 of &E4 =0 (no previous ")
-		bpl	$EA89		; then EA89
+		bpl	_BEA89		; then EA89
 		iny			; else point at next character
 		lda	($F2),Y		; get it
 		cmp	#$22		; is it '"'
-		beq	$EA89		; if so then EA89
+		beq	_BEA89		; if so then EA89
 
-		jsr	$E03A		; read a byte from text
+_BEA5A:		jsr	_LE03A		; read a byte from text
 		sec			; and return with
 		rts			; carry set
 					; 
-		cmp	#$7C		; is it '|'
-		bne	$EA89		; if not EA89
+_BEA5F:		cmp	#$7C		; is it '|'
+		bne	_BEA89		; if not EA89
 		iny			; if so increase Y to point to next character
 		lda	($F2),Y		; get it
 		cmp	#$7C		; and compare it with '|' again
-		beq	$EA89		; if its '|' then EA89
+		beq	_BEA89		; if its '|' then EA89
 		cmp	#$22		; else is it '"'
-		beq	$EA89		; if so then EA89
+		beq	_BEA89		; if so then EA89
 		cmp	#$21		; is it !
-		bne	$EA77		; if not then EA77
+		bne	_BEA77		; if not then EA77
 		iny			; increment Y again
 		lda	#$80		; set bit 7
-		bne	$EA31		; loop back to EA31 to set bit 7 in next CHR
-		cmp	#$20		; is it a space
-		bcc	$EA8F		; if less than EA8F Bad String Error
+		bne	_BEA31		; loop back to EA31 to set bit 7 in next CHR
+_BEA77:		cmp	#$20		; is it a space
+		bcc	_BEA8F		; if less than EA8F Bad String Error
 		cmp	#$3F		; is it '?'
-		beq	$EA87		; if so EA87
-		jsr	$EABF		; else modify code as if CTRL had been pressed
-		bit	$D9B7		; if bit 6 set
-		bvs	$EA8A		; then EA8A
-		lda	#$7F		; else set bits 0 to 6 in A
+		beq	_BEA87		; if so EA87
+		jsr	_LEABF		; else modify code as if CTRL had been pressed
+		bit	_BD9B7		; if bit 6 set
+		bvs	_BEA8A		; then EA8A
+_BEA87:		lda	#$7F		; else set bits 0 to 6 in A
 
-		clv			; clear V
-		iny			; increment Y
+_BEA89:		clv			; clear V
+_BEA8A:		iny			; increment Y
 		ora	$E5		; 
 		clc			; clear carry
 		rts			; Return
 					; 
-		brk			; 
+_BEA8F:		brk			; 
 		.byte	$FD		; error number
 		.byte	"Bad string"		; message
 		brk			; 
 
 ;************ Modify code as if SHIFT pressed *****************************
 
-		cmp	#$30		; if A='0' skip routine
-		beq	$EABE		; 
+_LEA9C:		cmp	#$30		; if A='0' skip routine
+		beq	_BEABE		; 
 		cmp	#$40		; if A='@' skip routine
-		beq	$EABE		; 
-		bcc	$EAB8		; if A<'@' then EAB8
+		beq	_BEABE		; 
+		bcc	_BEAB8		; if A<'@' then EAB8
 		cmp	#$7F		; else is it DELETE
 
-		beq	$EABE		; if so skip routine
-		bcs	$EABC		; if greater than &7F then toggle bit 4
-		eor	#$30		; reverse bits 4 and 5
+		beq	_BEABE		; if so skip routine
+		bcs	_BEABC		; if greater than &7F then toggle bit 4
+_BEAAC:		eor	#$30		; reverse bits 4 and 5
 		cmp	#$6F		; is it &6F (previously ' _' (&5F))
-		beq	$EAB6		; goto EAB6
+		beq	_BEAB6		; goto EAB6
 		cmp	#$50		; is it &50 (previously '`' (&60))
-		bne	$EAB8		; if not EAB8
-		eor	#$1F		; else continue to convert ` _
-		cmp	#$21		; compare &21 '!'
-		bcc	$EABE		; if less than return
-		eor	#$10		; else finish conversion by toggling bit 4
-		rts			; exit
+		bne	_BEAB8		; if not EAB8
+_BEAB6:		eor	#$1F		; else continue to convert ` _
+_BEAB8:		cmp	#$21		; compare &21 '!'
+		bcc	_BEABE		; if less than return
+_BEABC:		eor	#$10		; else finish conversion by toggling bit 4
+_BEABE:		rts			; exit
 					; 
 					; ASCII codes &00 &20 no change
 					; 21-3F have bit 4 reverses (31-3F)
@@ -720,17 +720,17 @@
 
 ;************** Implement CTRL codes *************************************
 
-		cmp	#$7F		; is it DEL
-		beq	$EAD1		; if so ignore routine
-		bcs	$EAAC		; if greater than &7F go to EAAC
+_LEABF:		cmp	#$7F		; is it DEL
+		beq	_BEAD1		; if so ignore routine
+		bcs	_BEAAC		; if greater than &7F go to EAAC
 		cmp	#$60		; if A<>'`'
-		bne	$EACB		; goto EACB
+		bne	_BEACB		; goto EACB
 		lda	#$5F		; if A=&60, A=&5F
 
-		cmp	#$40		; if A<&40
-		bcc	$EAD1		; goto EAD1  and return unchanged
+_BEACB:		cmp	#$40		; if A<&40
+		bcc	_BEAD1		; goto EAD1  and return unchanged
 		and	#$1F		; else zero bits 5 to 7
-		rts			; return
+_BEAD1:		rts			; return
 					; 
 		.byte	"/!BOOT",$0D
 

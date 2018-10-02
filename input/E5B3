@@ -475,7 +475,7 @@ E79C	CLV         ;V=0
 E79D	JSR &E57E   ; to JMP via ECONET vector
 E7A0	BVS &E7BC   ;if return with V set E7BC
 
-E7A2	LDA &E5B4,Y ;get address from table
+E7A2	LDA &E5B3 + 1,Y ;get address from table
 E7A5	STA &FB     ;store it as hi byte
 E7A7	LDA &E5B3,Y ;repeat for lo byte
 E7AA	STA &FA     ;

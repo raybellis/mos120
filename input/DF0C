@@ -96,7 +96,7 @@ DFE5	DEY
 DFE6	INY
 DFE7	INX
 DFE8	INX
-DFE9	LDA &DF0E,X
+DFE9	LDA &DF0C + 2,X
 DFEC	BEQ &E021
 DFEE	BPL &DFE8
 DFF0	BMI &DFCD
@@ -107,7 +107,7 @@ DFF3	INX
 DFF4	DEX
 DFF5	DEX
 DFF6	PHA
-DFF7	LDA &DF11,X
+DFF7	LDA &DF0C + 5,X
 DFFA	PHA
 DFFB	JSR &E03A
 DFFE	CLC
@@ -115,12 +115,12 @@ DFFF	PHP
 E000	JSR &E004
 E003	RTI		; Jump to routine
 
-E004	LDA &DF12,X	; Get table parameter
+E004	LDA &DF0C + 6,X	; Get table parameter
 E007	BMI &E017	; If >=&80, number follow
 ;                      ; else string follows
 
 E009	TYA		; Pass Y line offset to A for later
-E00A	LDY &DF12,X	; Get looked-up parameter from table
+E00A	LDY &DF0C + 6,X	; Get looked-up parameter from table
 
 ; Convert &F2/3,A to XY, put Y in A
 E00D	CLC

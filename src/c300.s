@@ -2,7 +2,7 @@
 
 .org		$c300
 
-		jmp	$CB1D		; Initialise screen with mode in A.
+_LC300:		jmp	$cb1d		; Initialise screen with mode in A.
 
 		.byte	$0d,"BBC Computer ",0
 
@@ -15,7 +15,7 @@
 
 ;****** 16 COLOUR MODE BYTE MASK LOOK UP TABLE******
 
-		.byte	$00		; 00000000
+_LC31F:		.byte	$00		; 00000000
 		.byte	$11		; 00010001
 		.byte	$22		; 00100010
 		.byte	$33		; 00110011
@@ -35,7 +35,7 @@
 
 ;****** 4 COLOUR MODE BYTE MASK LOOK UP TABLE******
 
-		.byte	$00		; 00000000
+_LC32F:		.byte	$00		; 00000000
 		.byte	$55		; 01010101
 		.byte	$aa		; 10101010
 		.byte	$ff		; 11111111
@@ -43,7 +43,7 @@
 
 ;****** VDU ENTRY POINT LO       LOOK UP TABLE******
 
-		.byte	$11		; 00010001
+_LC333:		.byte	$11		; 00010001
 		.byte	$3b		; 00111011
 		.byte	$96		; 10010110
 		.byte	$a1		; 10100001
@@ -83,7 +83,7 @@
 ; 1xxxxxxx - no parameters, address high byte
 ; 0aaapppp - parameter count 16-p, address high byte &C3+a
 
-		.byte	$c5		; 11000101  VDU 0   - &C511, no parameters
+_LC354:		.byte	$c5		; 11000101  VDU 0   - &C511, no parameters
 		.byte	$2f		; 00101111  VDU 1   - &C53B, 1 parameter
 		.byte	$c5		; 11000101  VDU 2   - &C596, no parameters
 		.byte	$c5		; 11000101  VDU 3   - &C5A1, no parameters
@@ -185,7 +185,7 @@
 
 ;****** TEXT WINDOW -BOTTOM ROW LOOK UP TABLE ******
 
-		.byte	$1f		; MODE 0 - 32 ROWS
+_LC3E7:		.byte	$1f		; MODE 0 - 32 ROWS
 		.byte	$1f		; MODE 1 - 32 ROWS
 		.byte	$1f		; MODE 2 - 32 ROWS
 		.byte	$18		; MODE 3 - 25 ROWS
@@ -197,7 +197,7 @@
 
 ;****** TEXT WINDOW -RIGHT HAND COLUMN LOOK UP TABLE ******
 
-		.byte	$4f		; MODE 0 - 80 COLUMNS
+_LC3EF:		.byte	$4f		; MODE 0 - 80 COLUMNS
 		.byte	$27		; MODE 1 - 40 COLUMNS
 		.byte	$13		; MODE 2 - 20 COLUMNS
 		.byte	$4f		; MODE 3 - 80 COLUMNS
@@ -216,7 +216,7 @@
 
 ;************** VIDEO ULA CONTROL REGISTER SETTINGS ***********************
 
-		.byte	$9c		; 10011100
+_LC3F7:		.byte	$9c		; 10011100
 		.byte	$d8		; 11011000
 		.byte	$f4		; 11110100
 		.byte	$9c		; 10011100
@@ -228,14 +228,14 @@
 
 ;******** NUMBER OF BYTES PER CHARACTER FOR EACH DISPLAY MODE ************
 
-		.byte	$08		; 00001000
+_LC3FF:		.byte	$08		; 00001000
 		.byte	$10		; 00010000
 		.byte	$20		; 00100000
 		.byte	$08		; 00001000
 		.byte	$08		; 00001000
 		.byte	$10		; 00010000
 		.byte	$08		; 00001000
-		.byte	$01		; 00000001
+_LC406:		.byte	$01		; 00000001
 
 
 ;******************* MASK TABLE FOR  2 COLOUR MODES **********************
@@ -254,7 +254,7 @@
 
 ;********** MASK TABLE FOR  4 COLOUR MODES FONT FLAG MASK TABLE **********
 
-		.byte	$80		; 10000000
+_LC40D:		.byte	$80		; 10000000
 		.byte	$40		; 01000000
 		.byte	$20		; 00100000
 		.byte	$10		; 00010000
@@ -265,26 +265,26 @@
 
 ;********* NUMBER OF TEXT COLOURS -1 FOR EACH MODE ************************
 
-		.byte	$01		; MODE 0 - 2 COLOURS
+_LC414:		.byte	$01		; MODE 0 - 2 COLOURS
 		.byte	$03		; MODE 1 - 4 COLOURS
 		.byte	$0f		; MODE 2 - 16 COLOURS
 		.byte	$01		; MODE 3 - 2 COLOURS
 		.byte	$01		; MODE 4 - 2 COLOURS
 		.byte	$03		; MODE 5 - 4 COLOURS
 		.byte	$01		; MODE 6 - 2 COLOURS
-		.byte	$00		; MODE 7 - 1 'COLOUR'
+_LC41B:		.byte	$00		; MODE 7 - 1 'COLOUR'
 
 
 ;************** GCOL PLOT OPTIONS PROCESSING LOOK UP TABLE ***************
 
-		.byte	$ff		; 11111111
+_LC41C:		.byte	$ff		; 11111111
+_LC41D:		.byte	$00		; 00000000
 		.byte	$00		; 00000000
-		.byte	$00		; 00000000
+		.byte	$ff		; 11111111
+_LC420:		.byte	$ff		; 11111111
 		.byte	$ff		; 11111111
 		.byte	$ff		; 11111111
-		.byte	$ff		; 11111111
-		.byte	$ff		; 11111111
-		.byte	$00		; 00000000
+_LC423:		.byte	$00		; 00000000
 
 
 ;********** 2 COLOUR MODES PARAMETER LOOK UP TABLE WITHIN TABLE **********
@@ -323,16 +323,16 @@
 
 ;********** DISPLAY MODE PIXELS/BYTE-1 TABLE *********************
 
-		.byte	$07		; MODE 0 - 8 PIXELS/BYTE
+_LC43A:		.byte	$07		; MODE 0 - 8 PIXELS/BYTE
 		.byte	$03		; MODE 1 - 4 PIXELS/BYTE
 		.byte	$01		; MODE 2 - 2 PIXELS/BYTE
-		.byte	$00		; MODE 3 - 1 PIXEL/BYTE (NON-GRAPHICS)
+_LC43D:		.byte	$00		; MODE 3 - 1 PIXEL/BYTE (NON-GRAPHICS)
 		.byte	$07		; MODE 4 - 8 PIXELS/BYTE
 		.byte	$03		; MODE 5 - 4 PIXELS/BYTE
 
 ;********* SCREEN DISPLAY MEMORY TYPE TABLE OVERLAPS ************
 
-		.byte	$00		; MODE 6 - 1 PIXEL/BYTE  //  MODE 0 - TYPE 0
+_LC440:		.byte	$00		; MODE 6 - 1 PIXEL/BYTE  //  MODE 0 - TYPE 0
 
 ;***** SOUND PITCH OFFSET BY CHANNEL TABLE WITHIN TABLE **********
 
@@ -348,21 +348,21 @@
 
 ;***************** VDU SECTION CONTROL NUMBERS ***************************
 
-		.byte	$04		; 00000100                //  MODE 7 - TYPE 4
+_LC447:		.byte	$04		; 00000100                //  MODE 7 - TYPE 4
 		.byte	$00		; 00000000
 		.byte	$06		; 00000110
 		.byte	$02		; 00000010
 
 ;*********** CRTC SETUP PARAMETERS TABLE 1 WITHIN TABLE ******************
 
-		.byte	$0d		; 00001101
+_LC44B:		.byte	$0d		; 00001101
 		.byte	$05		; 00000101
 		.byte	$0d		; 00001101
 		.byte	$05		; 00000101
 
 ;*********** CRTC SETUP PARAMETERS TABLE 2 WITHIN TABLE *****************
 
-		.byte	$04		; 00000100
+_LC44F:		.byte	$04		; 00000100
 		.byte	$04		; 00000100
 		.byte	$0c		; 00001100
 		.byte	$0c		; 00001100
@@ -370,7 +370,7 @@
 
 ;**** REST OF VDU SECTION CONTROL NUMBERS ****
 
-		.byte	$02		; 00000010
+_LC454:		.byte	$02		; 00000010
 		.byte	$32		; 00110010
 		.byte	$7a		; 01111010
 		.byte	$92		; 10010010
@@ -379,7 +379,7 @@
 
 ;************** MSB OF MEMORY OCCUPIED BY SCREEN BUFFER  *****************
 
-		.byte	$50		; Type 0: &5000 - 20K
+_LC459:		.byte	$50		; Type 0: &5000 - 20K
 		.byte	$40		; Type 1: &4000 - 16K
 		.byte	$28		; Type 2: &2800 - 10K
 		.byte	$20		; Type 3: &2000 - 8K
@@ -388,7 +388,7 @@
 
 ;************ MSB OF FIRST LOCATION OCCUPIED BY SCREEN BUFFER ************
 
-		.byte	$30		; Type 0: &3000
+_LC45E:		.byte	$30		; Type 0: &3000
 		.byte	$40		; Type 1: &4000
 		.byte	$58		; Type 2: &5800
 		.byte	$60		; Type 3: &6000
@@ -397,21 +397,21 @@
 
 ;***************** NUMBER OF BYTES PER ROW *******************************
 
-		.byte	$28		; 00101000
+_LC463:		.byte	$28		; 00101000
 		.byte	$40		; 01000000
 		.byte	$80		; 10000000
 
 
 ;******** ROW MULTIPLIACTION TABLE POINTER TO LOOK UP TABLE **************
 
-		.byte	$b5		; 10110101
+_LC466:		.byte	$b5		; 10110101
 		.byte	$75		; 01110101
 		.byte	$75		; 01110101
 
 
 ;********** CRTC CURSOR END REGISTER SETTING LOOK UP TABLE ***************
 
-		.byte	$0b		; 00001011
+_LC469:		.byte	$0b		; 00001011
 		.byte	$17		; 00010111
 		.byte	$23		; 00100011
 		.byte	$2f		; 00101111
@@ -420,7 +420,7 @@
 
 ;************* 6845 REGISTERS 0-11 FOR SCREEN TYPE 0 - MODES 0-2 *********
 
-		.byte	$7f		; 0 Horizontal Total     =128
+_LC46E:		.byte	$7f		; 0 Horizontal Total     =128
 		.byte	$50		; 1 Horizontal Displayed =80
 		.byte	$62		; 2 Horizontal Sync      =&62
 		.byte	$28		; 3 HSync Width+VSync    =&28  VSync=2, HSync Width=8
@@ -500,15 +500,15 @@
 
 ;************* VDU ROUTINE VECTOR ADDRESSES   ******************************
 
-		.byte	$86		; 10000110
-		.byte	$d3		; 11010011
+_LC4AA:		.byte	$86		; 10000110
+_LC4AB:		.byte	$d3		; 11010011
 		.byte	$7e		; 01111110
 		.byte	$d3		; 11010011
 
 
 ;************ VDU ROUTINE BRANCH VECTOR ADDRESS LO ***********************
 
-		.byte	$6a		; 01101010
+_LC4AE:		.byte	$6a		; 01101010
 		.byte	$74		; 01110100
 		.byte	$42		; 01000010
 		.byte	$4b		; 01001011
@@ -516,7 +516,7 @@
 
 ;************ VDU ROUTINE BRANCH VECTOR ADDRESS HI ***********************
 
-		.byte	$d3		; 11010011
+_LC4B2:		.byte	$d3		; 11010011
 		.byte	$d3		; 11010011
 		.byte	$d3		; 11010011
 		.byte	$d3		; 11010011
@@ -524,15 +524,15 @@
 
 ;*********** TELETEXT CHARACTER CONVERSION TABLE  ************************
 
-		.byte	$23		; '#' -> '_'
-		.byte	$5f		; '_' -> '`'
+_LC4B6:		.byte	$23		; '#' -> '_'
+_LC4B7:		.byte	$5f		; '_' -> '`'
 		.byte	$60		; '`' -> '#'
 		.byte	$23		; '#'
 
 
 ;*********** SOFT CHARACTER RAM ALLOCATION   *****************************
 
-		.byte	$04		; &20-&3F - OSHWM+&0400
+_LC4BA:		.byte	$04		; &20-&3F - OSHWM+&0400
 		.byte	$05		; &40-&5F - OSHWM+&0500
 		.byte	$06		; &60-&7F - OSHWM+&0600
 		.byte	$00		; &80-&9F - OSHWM+&0000

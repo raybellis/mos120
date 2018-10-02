@@ -51,7 +51,7 @@ F157	STX &C6     ;set current baud rate X=5 300 baud X=6 1200 baud
 **********   to F27D, F18E, F4C9, F529, FFA6, F3CA, F1B1 ******************
 
 F159	LDX #&0E    ;RESET VECTORS FOR FILE RELATED OPERATIONS
-F15B	LDA &D951,X ;
+F15B	LDA &D940 + &11,X ;
 F15E	STA &0211,X ;
 F161	DEX         ;
 F162	BNE &F15B   ;
@@ -153,7 +153,7 @@ F1B3	BCS &F1A2   ;goto F1A2 (RTS)
 F1B5	STX &BC     ;else save X
 F1B7	ASL         ;A=A*2
 F1B8	TAX         ;X=A to get offset
-F1B9	LDA &F1A4,X ;get hi byte of address
+F1B9	LDA &F1A3 + 1,X ;get hi byte of address
 F1BC	PHA         ;push it
 F1BD	LDA &F1A3,X ;get lo byte of address
 F1C0	PHA         ;push it
@@ -374,7 +374,7 @@ F2C8	SEC         ;set carry flag
 F2C9	LDX #&FD    ;X=&FD
 
 F2CB	LDA &FFB7,X ;set 03C8/A block length and block flag
-F2CE	SBC &FFB3,X ;to B4/6-B0/2 the number of pages (blocks) to be
+F2CE	SBC &FFB2+1,X ;to B4/6-B0/2 the number of pages (blocks) to be
     	            ;saved
 F2D1	STA &02CB,X ;
 F2D4	INX         ;X=X+1

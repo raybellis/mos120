@@ -5,7 +5,7 @@
 
 .org		$e5b3
 
-		.byte	$21,$E8		; OSBYTE   0  (&E821)
+_LE5B3:		.byte	$21,$E8		; OSBYTE   0  (&E821)
 		.byte	$88,$E9		; OSBYTE   1  (&E988)
 		.byte	$D3,$E6		; OSBYTE   2  (&E6D3)
 		.byte	$97,$E9		; OSBYTE   3  (&E997)
@@ -125,19 +125,19 @@
 
 		ldx	#$00		; X=0
 		bit	$FF		; if bit 7 not set there is no ESCAPE condition
-		bpl	$E673		; so E673
+		bpl	_BE673		; so E673
 		lda	$0276		; else get ESCAPE Action, if this is 0
 					; Clear ESCAPE
 					; close EXEC files
 					; purge all buffers
 					; reset VDU paging counter
-		bne	$E671		; else do none of the above
+		bne	_BE671		; else do none of the above
 		cli			; allow interrupts
 		sta	$0269		; number of lines printed since last halt in paged
 					; mode = 0
-		jsr	$F68D		; close any open EXEC files
-		jsr	$F0AA		; clear all buffers
-		ldx	#$FF		; X=&FF to indicate ESCAPE acknowledged
+		jsr	_LF68D		; close any open EXEC files
+		jsr	_LF0AA		; clear all buffers
+_BE671:		ldx	#$FF		; X=&FF to indicate ESCAPE acknowledged
 
 
 ;*************************************************************************
@@ -146,7 +146,7 @@
 ;*                                                                       *
 ;*************************************************************************
 
-		clc			; clear carry
+_BE673:		clc			; clear carry
 
 
 ;*************************************************************************
@@ -155,12 +155,12 @@
 ;*                                                                       *
 ;*************************************************************************
 
-		ror	$FF		; clear  bit 7 of ESCAPE flag
-		bit	$027A		; read bit 7 of Tube flag
-		bmi	$E67C		; if set TUBE exists so E67C
+_LE674:		ror	$FF		; clear  bit 7 of ESCAPE flag
+		bit	$027a		; read bit 7 of Tube flag
+		bmi	_BE67C		; if set TUBE exists so E67C
 		rts			; else RETURN
 					; 
-		jmp	$0403		; Jump to Tube entry point
+_BE67C:		jmp	$0403		; Jump to Tube entry point
 
 
 ;*************************************************************************
@@ -175,7 +175,7 @@
 		cpx	#$01		; if X=1 then user wants motor on so CARRY set else
 					; carry is cleared
 		ror			; put carry back in control RAM copy
-		bvc	$E6A7		; if bit 6 is clear then cassette is selected
+		bvc	_LE6A7		; if bit 6 is clear then cassette is selected
 					; so write to control register and RAM copy
 
 		lda	#$38		; A=ASCII 8
@@ -194,20 +194,20 @@
 		sta	$FA		; store result
 		ldy	$0282		; get serial ULA control register setting
 		cpx	#$09		; is it 9 or more?
-		bcs	$E6AD		; if so exit
-		and	$E9AD,X		; and with byte from look up table
+		bcs	_BE6AD		; if so exit
+		and	_LE9AD,X		; and with byte from look up table
 		sta	$FB		; store it
 		tya			; put Y in A
 		ora	$FA		; and or with Accumulator
 		eor	$FA		; zero the three bits set true
 		ora	$FB		; set up data read from look up table + bit 6
 		ora	#$40		; 
-		eor	$025D		; write cassette/RS423 flag
+		eor	$025d		; write cassette/RS423 flag
 
-		sta	$0282		; store serial ULA flag
-		sta	$FE10		; and write to control register
-		tya			; put Y in A to save old contents
-		tax			; write new setting to X
+_LE6A7:		sta	$0282		; store serial ULA flag
+		sta	$fe10		; and write to control register
+_BE6AD:		tya			; put Y in A to save old contents
+_BE6AE:		tax			; write new setting to X
 		rts			; and return
 
 ; ### OS SERIES VII
@@ -239,7 +239,7 @@
 		pla			; get back original value
 		tay			; put it in Y
 		lda	$0251		; get value of flash counter
-		bne	$E6D1		; if not zero E6D1
+		bne	_BE6D1		; if not zero E6D1
 
 		stx	$0251		; else restore old value
 		lda	$0248		; get current video ULA control register setting
@@ -248,9 +248,9 @@
 		plp			; get back flags
 		rol			; rotate back carry into bit 0
 		sta	$0248		; store it in RAM copy
-		sta	$FE20		; and ULA control register
+		sta	$fe20		; and ULA control register
 
-		bvc	$E6AD		; then exit via OSBYTE 7/8
+_BE6D1:		bvc	_BE6AD		; then exit via OSBYTE 7/8
 
 
 ;*************************************************************************
@@ -271,13 +271,13 @@
 		cmp	$0250		; compare this with ACIA control setting
 		php			; push processor
 		sta	$0250		; put A into ACIA control setting
-		sta	$FE08		; and write to control register
-		jsr	$E173		; set up RS423 buffer
+		sta	$fe08		; and write to control register
+		jsr	_LE173		; set up RS423 buffer
 		plp			; get back P
-		beq	$E6F1		; if new setting different from old E6F1 else
-		bit	$FE09		; set bit 6 and 7
+		beq	_BE6F1		; if new setting different from old E6F1 else
+		bit	$fe09		; set bit 6 and 7
 
-		ldx	$0241		; get current input buffer number
+_BE6F1:		ldx	$0241		; get current input buffer number
 		pla			; get back A
 		sta	$0241		; store it
 		rts			; and return
@@ -302,10 +302,10 @@
 ;X contains event number 0-9
 
 		cpx	#$0A		; if X>9
-		bcs	$E6AE		; goto E6AE for exit
-		ldy	$02BF,X		; else get event enable flag
-		sta	$02BF,X		; store new value in flag
-		bvc	$E6AD		; and exit via E6AD
+		bcs	_BE6AE		; goto E6AE for exit
+		ldy	$02bf,X		; else get event enable flag
+		sta	$02bf,X		; store new value in flag
+		bvc	_BE6AD		; and exit via E6AD
 
 
 ;*************************************************************************
@@ -315,11 +315,11 @@
 ;*************************************************************************
 ;X contains channel number or 0 if disable conversion
 
-		beq	$E70B		; if X=0 then E70B
-		jsr	$DE8C		; start conversion
+		beq	_BE70B		; if X=0 then E70B
+		jsr	_LDE8C		; start conversion
 
-		lda	$024D		; get  current maximum ADC channel number
-		stx	$024D		; store new value
+_BE70B:		lda	$024d		; get  current maximum ADC channel number
+		stx	$024d		; store new value
 		tax			; put old value in X
 		rts			; and exit
 
@@ -333,28 +333,28 @@
 ; or Y=&FF and X=-ve INKEY value
 
 		tya			; A=Y
-		bmi	$E721		; if Y=&FF the E721
+		bmi	_BE721		; if Y=&FF the E721
 		cli			; else allow interrupts
-		jsr	$DEBB		; and go to timed routine
-		bcs	$E71F		; if carry set then E71F
+		jsr	_LDEBB		; and go to timed routine
+		bcs	_BE71F		; if carry set then E71F
 		tax			; then X=A
 		lda	#$00		; A=0
 
-		tay			; Y=A
+_BE71F:		tay			; Y=A
 		rts			; and return
 					; 
 					; scan keyboard
-		txa			; A=X
+_BE721:		txa			; A=X
 		eor	#$7F		; convert to keyboard input
 		tax			; X=A
-		jsr	$F068		; then scan keyboard
+		jsr	_LF068		; then scan keyboard
 		rol			; put bit 7 into carry
-		ldx	#$FF		; X=&FF
+_BE729:		ldx	#$FF		; X=&FF
 		ldy	#$FF		; Y=&FF
-		bcs	$E731		; if bit 7 of A was set goto E731 (RTS)
+		bcs	_BE731		; if bit 7 of A was set goto E731 (RTS)
 		inx			; else X=0
 		iny			; and Y=0
-		rts			; and exit
+_BE731:		rts			; and exit
 
 ;********** check occupancy of input or free space of output buffer *******
 		; X=buffer number
@@ -369,25 +369,25 @@
 		; 7=sound3       870-87F         2D6     2DF             2E8
 		; 8=speech       8C0-8FF         2D7     2E0             2E9
 
-		txa			; buffer number in A
+_BE732:		txa			; buffer number in A
 		eor	#$FF		; invert it
 		tax			; X=A
 		cpx	#$02		; is X>1
-		clv			; clear V flag
-		bvc	$E73E		; and goto E73E count buffer
+_LE738:		clv			; clear V flag
+		bvc	_BE73E		; and goto E73E count buffer
 
-		bit	$D9B7		; set V
-		jmp	($022E)		; CNPV defaults to E1D1
+_LE73B:		bit	_BD9B7		; set V
+_BE73E:		jmp	($022e)		; CNPV defaults to E1D1
 
 ;************* check RS423 input buffer ************************************
 
-		sec	
+_LE741:		sec	
 		ldx	#$01		; X=1 to point to buffer
-		jsr	$E738		; and count it
+		jsr	_LE738		; and count it
 		cpy	#$01		; if the hi byte of the answer is 1 or more
-		bcs	$E74E		; then Return
-		cpx	$025B		; else compare with minimum buffer space
-		rts			; and exit
+		bcs	_BE74E		; then Return
+		cpx	$025b		; else compare with minimum buffer space
+_BE74E:		rts			; and exit
 
 
 ;*************************************************************************
@@ -409,24 +409,24 @@
 ;   	   X=&F8 (sound 3)        X=number of empty spaces in buffer
 ;   	   X=&F7 (Speech )        X=number of empty spaces in buffer
 
-		bmi	$E732		; if X is -ve then E732 count spaces
-		beq	$E75F		; if X=0 then E75F
+		bmi	_BE732		; if X is -ve then E732 count spaces
+		beq	_BE75F		; if X=0 then E75F
 		cpx	#$05		; else check for Valid channel
-		bcs	$E729		; if not E729 set X & Y to 0 and exit
-		ldy	$02B9,X		; get conversion values for channel of interest Hi &
-		lda	$02B5,X		; lo byte
+		bcs	_BE729		; if not E729 set X & Y to 0 and exit
+		ldy	$02b9,X		; get conversion values for channel of interest Hi &
+		lda	$02b5,X		; lo byte
 		tax			; X=lo byte
 		rts			; and exit
 
-		lda	$FE40		; read system VIA port B
+_BE75F:		lda	$fe40		; read system VIA port B
 		ror			; move high nybble to low
 		ror			; 
 		ror			; 
 		ror			; 
 		eor	#$FF		; and invert it
 		and	#$03		; isolate the FIRE buttons
-		ldy	$02BE		; get analogue system flag byte
-		stx	$02BE		; store X here
+		ldy	$02be		; get analogue system flag byte
+		stx	$02be		; store X here
 		tax			; A=X bits 0 and 1 indicate fire buttons
 		rts			; and return
 
@@ -441,7 +441,7 @@
 ;**************************************************************************
 ;**************************************************************************
 
-		pha			; save A
+_LE772:		pha			; save A
 		php			; save Processor flags
 		sei			; disable interrupts
 		sta	$EF		; store A,X,Y in zero page
@@ -449,50 +449,50 @@
 		sty	$F1		; 
 		ldx	#$07		; X=7 to signal osbyte is being attempted
 		cmp	#$75		; if A=0-116
-		bcc	$E7C2		; then E7C2
+		bcc	_BE7C2		; then E7C2
 		cmp	#$A1		; if A<161
-		bcc	$E78E		; then E78E
+		bcc	_BE78E		; then E78E
 		cmp	#$A6		; if A=161-165
-		bcc	$E7C8		; then EC78
+		bcc	_BE7C8		; then EC78
 		clc			; clear carry
 
-		lda	#$A1		; A=&A1
+_BE78A:		lda	#$A1		; A=&A1
 		adc	#$00		; 
 
 ;********* process osbyte calls 117 - 160 *****************************
 
-		sec			; set carry
+_BE78E:		sec			; set carry
 		sbc	#$5F		; convert to &16 to &41 (22-65)
 
-		asl			; double it (44-130)
+_BE791:		asl			; double it (44-130)
 		sec			; set carry
 
-		sty	$F1		; store Y
+_BE793:		sty	$F1		; store Y
 		tay			; Y=A
-		bit	$025E		; read econet intercept flag
-		bpl	$E7A2		; if no econet intercept required E7A2
+		bit	$025e		; read econet intercept flag
+		bpl	_BE7A2		; if no econet intercept required E7A2
 
 		txa			; else A=X
 		clv			; V=0
-		jsr	$E57E		; to JMP via ECONET vector
-		bvs	$E7BC		; if return with V set E7BC
+		jsr	_LE57E		; to JMP via ECONET vector
+		bvs	_BE7BC		; if return with V set E7BC
 
-		lda	$E5B4,Y		; get address from table
+_BE7A2:		lda	_LE5B3 + 1,Y		; get address from table
 		sta	$FB		; store it as hi byte
-		lda	$E5B3,Y		; repeat for lo byte
+		lda	_LE5B3,Y		; repeat for lo byte
 		sta	$FA		; 
 		lda	$EF		; restore A
 		ldy	$F1		; Y
-		bcs	$E7B6		; if carry is set E7B6
+		bcs	_BE7B6		; if carry is set E7B6
 
 		ldy	#$00		; else
 		lda	($F0),Y		; get value from address pointed to by &F0/1 (Y,X)
 
-		sec			; set carry
+_BE7B6:		sec			; set carry
 		ldx	$F0		; restore X
-		jsr	$F058		; call &FA/B
+		jsr	_LF058		; call &FA/B
 
-		ror			; C=bit 0
+_BE7BC:		ror			; C=bit 0
 		plp			; get back flags
 		rol			; bit 0=Carry
 		pla			; get back A
@@ -501,34 +501,34 @@
 
 ;*************** Process OSBYTE CALLS BELOW &75 **************************
 
-		ldy	#$00		; Y=0
+_BE7C2:		ldy	#$00		; Y=0
 		cmp	#$16		; if A<&16
-		bcc	$E791		; goto E791
+		bcc	_BE791		; goto E791
 
-		php			; push flags
+_BE7C8:		php			; push flags
 		php			; push flags
 
+_BE7CA:		pla			; pull flags
 		pla			; pull flags
-		pla			; pull flags
-		jsr	$F168		; offer paged ROMS service 7/8 unrecognised osbyte/word
-		bne	$E7D6		; if roms don't recognise it then E7D6
+		jsr	_LF168		; offer paged ROMS service 7/8 unrecognised osbyte/word
+		bne	_BE7D6		; if roms don't recognise it then E7D6
 		ldx	$F0		; else restore X
-		jmp	$E7BC		; and exit
+		jmp	_BE7BC		; and exit
 
-		plp			; else pull flags
+_BE7D6:		plp			; else pull flags
 		pla			; and A
-		bit	$D9B7		; set V and C
+		bit	_BD9B7		; set V and C
 		rts			; and return
 
-		lda	$EB		; read cassette critical flag bit 7 = busy
-		bmi	$E812		; if busy then EB12
+_LE7DC:		lda	$EB		; read cassette critical flag bit 7 = busy
+		bmi	_BE812		; if busy then EB12
 
 		lda	#$08		; else A=8 to check current Catalogue status
 		and	$E2		; by anding with CFS status flag
-		bne	$E7EA		; if not set (not in use) then E7EA RTS
+		bne	_BE7EA		; if not set (not in use) then E7EA RTS
 		lda	#$88		; A=%10001000
 		and	$BB		; AND with FS options (short msg bits)
-		rts			; RETURN
+_BE7EA:		rts			; RETURN
 
 
 ;**************************************************************************
@@ -541,7 +541,7 @@
 ;**************************************************************************
 ;**************************************************************************
 
-		pha			; Push A
+_LE7EB:		pha			; Push A
 		php			; Push flags
 		sei			; disable interrupts
 		sta	$EF		; store A,X,Y
@@ -549,14 +549,14 @@
 		sty	$F1		; 
 		ldx	#$08		; X=8
 		cmp	#$E0		; if A=>224
-		bcs	$E78A		; then E78A with carry set
+		bcs	_BE78A		; then E78A with carry set
 
 		cmp	#$0E		; else if A=>14
-		bcs	$E7C8		; else E7C8 with carry set pass to ROMS & exit
+		bcs	_BE7C8		; else E7C8 with carry set pass to ROMS & exit
 
 		adc	#$44		; add to form pointer to table
 		asl			; double it
-		bcc	$E793		; goto E793 ALWAYS!! (carry clear E7F8)
+		bcc	_BE793		; goto E793 ALWAYS!! (carry clear E7F8)
 					; this reads bytes from table and enters routine
 
 
@@ -571,7 +571,7 @@
 ;XY +0  ADDRESS of byte
 ;   +4  on exit byte read
 
-		jsr	$E815		; set up address of data block
+		jsr	_LE815		; set up address of data block
 		lda	($F9,X)		; get byte
 		sta	($F0),Y		; store it
 		rts			; exit
@@ -588,20 +588,20 @@
 ;XY +0  ADDRESS of byte
 ;   +4  byte to be written
 
-		jsr	$E815		; set up address
+		jsr	_LE815		; set up address
 		lda	($F0),Y		; get byte
 		sta	($F9,X)		; store it
-		lda	#$00		; a=0
+_BE812:		lda	#$00		; a=0
 		rts			; exit
 
 ;********************: set up data block *********************************
 
-		sta	$FA		; &FA=A
+_LE815:		sta	$FA		; &FA=A
 		iny			; Y=1
 		lda	($F0),Y		; get byte from block
 		sta	$FB		; store it
 		ldy	#$04		; Y=4
-		ldx	#$01		; X=1
+_BE81E:		ldx	#$01		; X=1
 		rts			; and exit
 
 
@@ -613,7 +613,7 @@
 ;*                                                                       *
 ;*************************************************************************
 
-		bne	$E81E		; if A <> 0 then exit else print error
+		bne	_BE81E		; if A <> 0 then exit else print error
 		brk			; 
 		.byte	$F7		; error number
 		.byte	"OS 1.20"		; error message

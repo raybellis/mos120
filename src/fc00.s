@@ -93,22 +93,22 @@
 		;	
 		;	
 		;	
-		;mos	6522 VIA Output Register B                 Input Register B
-		;mos	6522 VIA Output Register A                 Input Register A
-		;mos	6522 VIA data direction register B
-		;mos	6522 VIA data direction register A
-		;mos	6522 VIA T1C-L  latches                    T1 low Order counter
-		;mos	6522 VIA T1C-H  counter
-		;mos	6522 VIA T1L-L low order latches
-		;mos	6522 VIA T1L-H high order latches
-		;mos	6522 VIA T2C-L latches                     T2C-L lo order counter
-		;mos	6522 VIA T2C-H T2 high order counter
-		;mos	6522 VIA shift register
-		;mos	6522 VIA auxilliary control register ACR
-		;mos	6522 VIA Peripheral control register PCR
-		;mos	6522 VIA Interrupt  flag    register IFR
-		;mos	6522 VIA Interrupt enable   register IER
-		;mos	6522 VIA ORB/IRB but no handshake
+		;mos	$6522 VIA Output Register B                 Input Register B
+		;mos	$6522 VIA Output Register A                 Input Register A
+		;mos	$6522 VIA data direction register B
+		;mos	$6522 VIA data direction register A
+		;mos	$6522 VIA T1C-L  latches                    T1 low Order counter
+		;mos	$6522 VIA T1C-H  counter
+		;mos	$6522 VIA T1L-L low order latches
+		;mos	$6522 VIA T1L-H high order latches
+		;mos	$6522 VIA T2C-L latches                     T2C-L lo order counter
+		;mos	$6522 VIA T2C-H T2 high order counter
+		;mos	$6522 VIA shift register
+		;mos	$6522 VIA auxilliary control register ACR
+		;mos	$6522 VIA Peripheral control register PCR
+		;mos	$6522 VIA Interrupt  flag    register IFR
+		;mos	$6522 VIA Interrupt enable   register IER
+		;mos	$6522 VIA ORB/IRB but no handshake
 		;	
 		;	
 		;	
@@ -125,22 +125,22 @@
 		;	
 		;	
 		;	
-		;user	6522 VIA Output Register B                Input Register B
-		;user	6522 VIA Output Register A                Input Register A
-		;user	6522 VIA data direction register B
-		;user	6522 VIA data direction register A
-		;user	6522 VIA T1C-L  latches                   T1 low Order counter
-		;user	6522 VIA T1C-H  counter
-		;user	6522 VIA T1L-L low order latches
-		;user	6522 VIA T1L-H high order latches
-		;user	6522 VIA T2C-L latches                    T2C-L lo order counter
-		;user	6522 VIA T2C-H T2 high order counter
-		;user	6522 VIA shift register
-		;user	6522 VIA auxilliary control register ACR
-		;user	6522 VIA Peripheral control register PCR
-		;user	6522 VIA Interrupt  flag    register IFR
-		;user	6522 VIA Interrupt enable   register IER
-		;user	6522 VIA ORB/IRB but no handshake
+		;user	$6522 VIA Output Register B                Input Register B
+		;user	$6522 VIA Output Register A                Input Register A
+		;user	$6522 VIA data direction register B
+		;user	$6522 VIA data direction register A
+		;user	$6522 VIA T1C-L  latches                   T1 low Order counter
+		;user	$6522 VIA T1C-H  counter
+		;user	$6522 VIA T1L-L low order latches
+		;user	$6522 VIA T1L-H high order latches
+		;user	$6522 VIA T2C-L latches                    T2C-L lo order counter
+		;user	$6522 VIA T2C-H T2 high order counter
+		;user	$6522 VIA shift register
+		;user	$6522 VIA auxilliary control register ACR
+		;user	$6522 VIA Peripheral control register PCR
+		;user	$6522 VIA Interrupt  flag    register IFR
+		;user	$6522 VIA Interrupt enable   register IER
+		;user	$6522 VIA ORB/IRB but no handshake
 		;	
 		;	
 		;	

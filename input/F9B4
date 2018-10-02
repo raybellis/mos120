@@ -12,7 +12,7 @@ F9BB	DB  'Loading';
 F9C2	DB  &0D     ;
 F9C3	BRK         ;
 
-F9C5	STA &BA     ;current block flag
+F9C4	STA &BA     ;current block flag		;; typo in address
 F9C6	LDX #&FF    ;X=&FF
 F9C8	LDA &C1     ;Checksum result
 F9CA	BNE &F9D9   ;if not 0 F9D9

@@ -1,0 +1,2 @@
+DC1C		_IRQ
+D9CD		_RESET
