@@ -1,5 +1,5 @@
-OS SERIES 9
-GEOFF COX
+;OS SERIES 9
+;GEOFF COX
 *************************************************************************
 *                                                                       *
 *       OSBYTE 140  *TAPE                                               *
@@ -203,8 +203,8 @@ F1F4	BCC &F209   ;if carry clear F209
 F1F6	JSR &FAF2   ;enable second processor and reset serial system
 
 F1F9	BRK         ;
-F1FA	DB  &E5     ;error number
-F1FC	'Locked'        ;
+F1FA	DB  &D5     ;error number	;; was &E5
+F1FC	DS  'Locked'        ;
 F201	BRK         ;
 
 F202	BCC &F209   ;if carry clear F209
@@ -253,6 +253,7 @@ F24B	BMI &F254   ;return
 F24D	PHP         ;save flags on stack
 F24E	JSR &FA46   ; print message following call (in this case NEWLINE!)
 F251	DB  &0D,&00 ;message
+F253	PLP         ;; missing in original listing
 F254	RTS         ;return
     	;
 ************RETRY AFTER A FAILURE ROUTINE *******************************

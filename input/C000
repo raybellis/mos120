@@ -1,14 +1,14 @@
-BBC Operating System OS 1.20
-============================
-Commented disassembly by Geoff Cox, originally published on Micronet.
-Additional comments by J.G.Harston.
+* BBC Operating System OS 1.20
+* ============================
+* Commented disassembly by Geoff Cox, originally published on Micronet.
+* Additional comments by J.G.Harston.
 
 ***************** VDU CHARACTER FONT LOOK UP TABLE ****************************
 
-These are the default definitions for characters 32-127. The are accessed with
-OSWORD 10 (read character definition) and reprogrammed with VDU 23 (define
-character). If the character set is not exploded, then a block of 32 characters
-is copied to the soft character buffer at &0C00 when a character is defined.
+* These are the default definitions for characters 32-127. The are accessed with
+* OSWORD 10 (read character definition) and reprogrammed with VDU 23 (define
+* character). If the character set is not exploded, then a block of 32 characters
+* is copied to the soft character buffer at &0C00 when a character is defined.
 
 C000  DB  00  ;00000000   ........   &20  32 - ' '
 C001  DB  00  ;00000000   ........

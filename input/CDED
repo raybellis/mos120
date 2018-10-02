@@ -1,1 +1,556 @@
-CDED	PHA         ;store itCDEE	LDA &0300,Y ;get byte pointed to by YCDF1	STA &0300,X ;put it in 300+XCDF4	PLA         ;get back ACDF5	STA &0300,Y ;put it in 300+YCDF8	INX         ;increment pointersCDF9	INY         ;CDFA	DEC &DA     ;decrement loop counterCDFC	BNE &CDEA   ;and if not 0 do it againCDFE	RTS         ;and exit******** execute upward scroll ******************************************;CDFF	JSR &CE5B   ;exchange line and column cursors with workspace copiesCE02	LDY &030B   ;top of text windowCE05	STY &0319   ;current text lineCE08	JSR &CF06   ;set up display addressCE0B	JSR &CAD4   ;add bytes per char. rowCE0E	BPL &CE14   ;CE10	SEC         ;CE11	SBC &0354   ;screen RAM size hi byteCE14	STA &DB     ;(&DA)=X/ACE16	STX &DA     ;CE18	STA &DC     ;&DC=ACE1A	BCC &CE22   ;CE1C	JSR &CE73   ;copy line to new position    	            ;using (&DA) for read    	            ;and (&D8) for writeCE1F	JMP &CE2A   ;exitCE22	JSR &CAD4   ;add bytes per char. rowCE25	BMI &CE1C   ;if outside screen RAM CE1CCE27	JSR &CE38   ;perform a copyCE2A	LDA &DC     ;CE2C	LDX &DA     ;CE2E	STA &D9     ;CE30	STX &D8     ;CE32	DEC &DE     ;decrement window heightCE34	BNE &CE0B   ;CE0B if not 0CE36	BEQ &CDDA   ;exchange text column/linelse CDDA*********** copy routines ***********************************************CE38	LDX &034D   ;text window width hi (bytes)CE3B	BEQ &CE4D   ;if no more than 256 bytes to copy X=0 so CE4DCE3D	LDY #&00    ;Y=0 to set loop counterCE3F	LDA (&DA),Y ;copy 256 bytesCE41	STA (&D8),Y ;CE43	INY         ;CE44	BNE &CE3F   ;Till Y=0 againCE46	INC &D9     ;increment hi bytesCE48	INC &DB     ;CE4A	DEX         ;decrement window widthCE4B	BNE &CE3F   ;if not 0 go back and do loop againCE4D	LDY &034C   ;text window width lo (bytes)CE50	BEQ &CE5A   ;if Y=0 CE5ACE52	DEY         ;else Y=Y-1CE53	LDA (&DA),Y ;copy Y bytesCE55	STA (&D8),Y ;CE57	TYA         ;A=YCE58	BNE &CE52   ;if not 0 CE52CE5A	RTS         ;and exit;CE5B	JSR &CDDA   ;exchange text column/line with workspaceCE5E	SEC         ;set carryCE5F	LDA &0309   ;bottom marginCE62	SBC &030B   ;top of text windowCE65	STA &DE     ;store itCE67	BNE &CE6E   ;set text column to left hand columnCE69	PLA         ;get back return addressCE6A	PLA         ;CE6B	JMP &CDDA   ;exchange text column/line with workspaceCE6E	LDA &0308   ;text window leftCE71	BPL &CEE3   ;Jump CEE3 always!CE73	LDA &DA     ;get back ACE75	PHA         ;push ACE76	SEC         ;set carryCE77	LDA &030A   ;text window rightCE7A	SBC &0308   ;text window leftCE7D	STA &DF     ;CE7F	LDY &034F   ;bytes per character to set loop counterCE82	DEY         ;copy loopCE83	LDA (&DA),Y ;CE85	STA (&D8),Y ;CE87	DEY         ;CE88	BPL &CE83   ;CE8A	LDX #&02    ;X=2CE8C	CLC         ;clear carryCE8D	LDA &D8,X   ;CE8F	ADC &034F   ;bytes per characterCE92	STA &D8,X   ;CE94	LDA &D9,X   ;CE96	ADC #&00    ;CE98	BPL &CE9E   ;if this remains in screen RAM OKCE9A	SEC         ;else wrap around screenCE9B	SBC &0354   ;screen RAM size hi byteCE9E	STA &D9,X   ;CEA0	DEX         ;X=X-2CEA1	DEX         ;CEA2	BEQ &CE8C   ;if X=0 adjust second set of pointersCEA4	DEC &DF     ;decrement window widthCEA6	BPL &CE7F   ;and if still +ve do it all againCEA8	PLA         ;get back ACEA9	STA &DA     ;and store itCEAB	RTS         ;then exit;*********** clear a line ************************************************CEAC	LDA &0318   ;text columnCEAF	PHA         ;save itCEB0	JSR &CE6E   ;set text column to left hand columnCEB3	JSR &CF06   ;set up display addressCEB6	SEC         ;set carryCEB7	LDA &030A   ;text window rightCEBA	SBC &0308   ;text window leftCEBD	STA &DC     ;as window widthCEBF	LDA &0358   ;background text colourCEC2	LDY &034F   ;bytes per characterCEC5	DEY         ;Y=Y-1 decrementing loop counterCEC6	STA (&D8),Y ;store background colour at this point on screenCEC8	BNE &CEC5   ;if Y<>0 do it againCECA	TXA         ;else A=XCECB	CLC         ;clear carry to addCECC	ADC &034F   ;bytes per characterCECF	TAX         ;X=A restoring itCED0	LDA &D9     ;get hi byteCED2	ADC #&00    ;Add carry if anyCED4	BPL &CEDA   ;if +ve CeDACED6	SEC         ;else wrap aroundCED7	SBC &0354   ;screen RAM size hi byteCEDA	STX &D8     ;restore D8/9CEDC	STA &D9     ;CEDE	DEC &DC     ;decrement window widthCEE0	BPL &CEBF   ;ind if not 0 do it all againCEE2	PLA         ;get back ACEE3	STA &0318   ;restore text columnCEE6	SEC         ;set carryCEE7	RTS         ;and exit;CEE8	LDX &0318   ;text columnCEEB	CPX &0308   ;text window leftCEEE	BMI &CEE6   ;if less than left margin return with carry setCEF0	CPX &030A   ;text window rightCEF3	BEQ &CEF7   ;if equal to right margin thats OKCEF5	BPL &CEE6   ;if greater than right margin return with carry setCEF7	LDX &0319   ;current text lineCEFA	CPX &030B   ;top of text windowCEFD	BMI &CEE6   ;if less than top marginCEFF	CPX &0309   ;bottom marginCF02	BEQ &CF06   ;set up display addressCF04	BPL &CEE6   ;or greater than bottom margin return with carry set************:set up display address *************************************;Mode 0: (0319)*640+(0318)* 8;Mode 1: (0319)*640+(0318)*16;Mode 2: (0319)*640+(0318)*32;Mode 3: (0319)*640+(0318)* 8;Mode 4: (0319)*320+(0318)* 8;Mode 5: (0319)*320+(0318)*16;Mode 6: (0319)*320+(0318)* 8;Mode 7: (0319)* 40+(0318);this gives a displacement relative to the screen RAM start address;which is added to the calculated number and stored in in 34A/B;if the result is less than &8000, the top of screen RAM it is copied into X/A;and D8/9.;if the result is greater than &7FFF the hi byte of screen RAM size is;subtracted to wraparound the screen. X/A, D8/9 are then set from thisCF06	LDA &0319   ;current text lineCF09	ASL         ;A=A*2CF0A	TAY         ;Y=ACF0B	LDA (&E0),Y ;get CRTC multiplication table pointerCF0D	STA &D9     ;&D9=ACF0F	INY         ;Y=Y+1CF10	LDA #&02    ;A=2CF12	AND &0356   ;memory map typeCF15	PHP         ;save flagsCF16	LDA (&E0),Y ;get CRTC multiplication table pointerCF18	PLP         ;pull flagsCF19	BEQ &CF1E   ;CF1B	LSR &D9     ;&D9=&D9/2CF1D	ROR         ;A=A/2 +(128*carry)CF1E	ADC &0350   ;window area start address loCF21	STA &D8     ;store itCF23	LDA &D9     ;CF25	ADC &0351   ;window area start address hiCF28	TAY         ;CF29	LDA &0318   ;text columnCF2C	LDX &034F   ;bytes per characterCF2F	DEX         ;X=X-1CF30	BEQ &CF44   ;if X=0 mode 7 CF44CF32	CPX #&0F    ;is it mode 1 or mode 5?CF34	BEQ &CF39   ;yes CF39 with carry setCF36	BCC &CF3A   ;if its less (mode 0,3,4,6) CF3ACF38	ASL         ;A=A*16 if entered here (mode 2)CF39	ASL         ;A=A*8 if entered hereCF3A	ASL         ;A=A*4 if entered hereCF3B	ASL         ;CF3C	BCC &CF40   ;if carry clearCF3E	INY         ;Y=Y+2CF3F	INY         ;CF40	ASL         ;A=A*2CF41	BCC &CF45   ;if carry clear add to &D8CF43	INY         ;if not Y=Y+1CF44	CLC         ;clear carryCF45	ADC &D8     ;add to &D8CF47	STA &D8     ;and store itCF49	STA &034A   ;text cursor 6845 addressCF4C	TAX         ;X=ACF4D	TYA         ;A=YCF4E	ADC #&00    ;Add carry if setCF50	STA &034B   ;text cursor 6845 addressCF53	BPL &CF59   ;if less than &800 goto &CF59CF55	SEC         ;else wrap aroundCF56	SBC &0354   ;screen RAM size hi byteCF59	STA &D9     ;store in high byteCF5B	CLC         ;clear carryCF5C	RTS         ;and exit******** Graphics cursor display routine ********************************CF5D	LDX &0359   ;foreground graphics colourCF60	LDY &035B   ;foreground graphics plot mode (GCOL n)CF63	JSR &D0B3   ;set graphics byte mask in &D4/5CF66	JSR &D486   ;copy (324/7) graphics cursor to workspace (328/B)CF69	LDY #&00    ;Y=0CF6B	STY &DC     ;&DC=YCF6D	LDY &DC     ;Y=&DCCF6F	LDA (&DE),Y ;get pattern byteCF71	BEQ &CF86   ;if A=0 CF86CF73	STA &DD     ;else &DD=ACF75	BPL &CF7A   ;and if >0 CF7ACF77	JSR &D0E3   ;else display a pixelCF7A	INC &0324   ;current horizontal graphics cursorCF7D	BNE &CF82   ;CF7F	INC &0325   ;current horizontal graphics cursorCF82	ASL &DD     ;&DD=&DD*2CF84	BNE &CF75   ;and if<>0 CF75CF86	LDX #&28    ;point to workspaceCF88	LDY #&24    ;point to horizontal graphics cursorCF8A	JSR &D482   ;0300/1+Y=0300/1+XCF8D	LDY &0326   ;current vertical graphics cursorCF90	BNE &CF95   ;CF92	DEC &0327   ;current vertical graphics cursorCF95	DEC &0326   ;current vertical graphics cursorCF98	LDY &DC     ;CF9A	INY         ;CF9B	CPY #&08    ;if Y<8 then do loop againCF9D	BNE &CF6B   ;elseCF9F	LDX #&28    ;point to workspaceCFA1	LDY #&24    ;point to graphics cursorCFA3	JMP &D48A   ;(&300/3+Y)=(&300/3+X)*********** home graphics cursor ***************************************CFA6	LDX #&06    ;point to graphics window TOPCFA8	LDY #&26    ;point to workspaceCFAA	JSR &D482   ;0300/1+Y=0300/1+X************* set graphics cursor to left hand column *******************CFAD	LDX #&00    ;X=0 point to graphics window leftCFAF	LDY #&24    ;Y=&24CFB1	JSR &D482   ;0300/1+Y=0300/1+XCFB4	JMP &D1B8   ;set up external coordinates for graphicsCFB7	LDX &0360   ;number of logical colours less 1CFBA	BEQ &CFDC   ;if MODE 7 CFDCCFBC	JSR &D03E   ;set up character definition pointersCFBF	LDX &0360   ;number of logical colours less 1CFC2	LDA &D0     ;VDU status byteCFC4	AND #&20    ;and out bit 5 printing at graphics cursorCFC6	BNE &CF5D   ;if set CF5DCFC8	LDY #&07    ;else Y=7CFCA	CPX #&03    ;if X=3CFCC	BEQ &CFEE   ;goto CFEE to handle 4 colour modesCFCE	BCS &D01E   ;else if X>3 D01E to deal with 16 coloursCFD0	LDA (&DE),Y ;get pattern byteCFD2	ORA &D2     ;text colour byte to be orred or EORed into memoryCFD4	EOR &D3     ;text colour byte to be orred or EORed into memoryCFD6	STA (&D8),Y ; write to screenCFD8	DEY         ;Y=Y-1CFD9	BPL &CFD0   ;if still +ve do loop againCFDB	RTS         ;and exit******* convert teletext characters *************************************;mode 7CFDC	LDY #&02    ;Y=2CFDE	CMP &C4B6,Y ;compare with teletext conversion tableCFE1	BEQ &CFE9   ;if equal then CFE9CFE3	DEY         ;else Y=Y-1CFE4	BPL &CFDE   ;and if +ve CFDECFE6	STA (&D8,X) ;if not write byte to screenCFE8	RTS         ;and exitCFE9	LDA &C4B7,Y ;convert with teletext conversion tableCFEC	BNE &CFE6   ;and write it***********four colour modes ********************************************CFEE	LDA (&DE),Y ;get pattern byteCFF0	PHA         ;save itCFF1	LSR         ;move hi nybble to loCFF2	LSR         ;CFF3	LSR         ;CFF4	LSR         ;CFF5	TAX         ;X=ACFF6	LDA &C31F,X ;4 colour mode byte mask look up tableCFF9	ORA &D2     ;text colour byte to be orred or EORed into memoryCFFB	EOR &D3     ;text colour byte to be orred or EORed into memoryCFFD	STA (&D8),Y ; write to screenCFFF	TYA         ;A=YD000	CLC         ;clear carryD001	ADC #&08    ;add 8 to move screen RAM pointer 8 bytesD003	TAY         ;Y=AD004	PLA         ;get back AD005	AND #&0F    ;clear high nybbleD007	TAX         ;X=AD008	LDA &C31F,X ;4 colour mode byte mask look up tableD00B	ORA &D2     ;text colour byte to be orred or EORed into memoryD00D	EOR &D3     ;text colour byte to be orred or EORed into memoryD00F	STA (&D8),Y ; write to screenD011	TYA         ;A=YD012	SBC #&08    ;A=A-9D014	TAY         ;Y=AD015	BPL &CFEE   ;if +ve do loop againD017	RTS         ;exit    	D018	TYA         ;Y=Y-&21D019	SBC #&21    ;D01B	BMI &D017   ;IF Y IS negative then RETURND01D	TAY         ;else A=Y******* 16 COLOUR MODES *************************************************D01E	LDA (&DE),Y ;get pattern byteD020	STA &DC     ;store itD022	SEC         ;set carryD023	LDA #&00    ;A=0D025	ROL &DC     ;carry now occupies bit 0 of DCD027	BEQ &D018   ;when DC=0 again D018 to deal with next pattern byteD029	ROL         ;get bit 7 from &DC into A bit 0D02A	ASL &DC     ;rotate again to get secondD02C	ROL         ;bit into AD02D	TAX         ;and store result in XD02E	LDA &C32F,X ;multiply by &55 using look up tableD031	ORA &D2     ;and set colour factorsD033	EOR &D3     ;D035	STA (&D8),Y ;and store resultD037	CLC         ;clear carryD038	TYA         ;Y=Y+8 moving screen RAM pointer on 8 bytesD039	ADC #&08    ;D03B	TAY         ;D03C	BCC &D023   ;iloop to D023 to deal with next bit pair************* calculate pattern address for given code ******************;A contains code on entry = 12345678D03E	ASL         ;23456780  C holds 1D03F	ROL         ;34567801  C holds 2D040	ROL         ;45678012  C holds 3D041	STA &DE     ;save this patternD043	AND #&03    ;00000012D045	ROL         ;00000123 C=0D046	TAX         ;X=A=0 - 7D047	AND #&03    ;A=00000023D049	ADC #&BF    ;A=&BF,C0 or C1D04B	TAY         ;this is used as a pointerD04C	LDA &C40D,X ;A=&80/2^X i.e.1,2,4,8,&10,&20,&40, or &80D04F	BIT &0367   ;with font flagD052	BEQ &D057   ;if 0 D057D054	LDY &0367,X ;else get hi byte from tableD057	STY &DF     ;store YD059	LDA &DE     ;get back patternD05B	AND #&F8    ;convert to 45678000D05D	STA &DE     ;and re store itD05F	RTS         ;exit    	            ;****************************************************************************************************************************************************                                                                      ****                                                                      ****      PLOT ROUTINES ENTER HERE                                        ****                                                                      ****                                                                      ****************************************************************************************************************************************************;on entry    ADDRESS    PARAMETER        DESCRIPTION;   	    031F    1               plot type;   	    0320/1  2,3             X coordinate;   	    0322/3  4,5             Y coordinateD060	LDX #&20    ;X=&20D062	JSR &D14D   ;translate coordinatesD065	LDA &031F   ;get plot typeD068	CMP #&04    ;if its 4D06A	BEQ &D0D9   ;D0D9 move absoluteD06C	LDY #&05    ;Y=5D06E	AND #&03    ;mask only bits 0 and 1D070	BEQ &D080   ;if result is 0 then its a move (multiple of 8)D072	LSR         ;else move bit 0 int CD073	BCS &D078   ;if set then D078 graphics colour requiredD075	DEY         ;Y=4D076	BNE &D080   ;logic inverse colour must be wanted******** graphics colour wanted *****************************************D078	TAX         ;X=A if A=0 its a foreground colour 1 its backgroundD079	LDY &035B,X ;get fore or background graphics PLOT modeD07C	LDA &0359,X ;get fore or background graphics colourD07F	TAX         ;X=AD080	JSR &D0B3   ;set up colour masks in D4/5D083	LDA &031F   ;get plot typeD086	BMI &D0AB   ;if &80-&FF then D0AB type not implementedD088	ASL         ;bit 7=bit 6D089	BPL &D0C6   ;if bit 6 is 0 then plot type is 0-63 so D0C6D08B	AND #&F0    ;else mask out lower nybbleD08D	ASL         ;shift old bit 6 into C bit old 5 into bit 7D08E	BEQ &D0D6   ;if 0 then type 64-71 was called single point plot    	            ;goto D0D6D090	EOR #&40    ;if bit 6 NOT set type &80-&87 fill triangleD092	BEQ &D0A8   ;so D0A8D094	PHA         ;else push AD095	JSR &D0DC   ;copy 0320/3 to 0324/7 setting XY in current graphics    	            ;coordinatesD098	PLA         ;get back AD099	EOR #&60    ;if BITS 6 and 5 NOT SET type 72-79 lateral fillD09B	BEQ &D0AE   ;so D0AED09D	CMP #&40    ;if type 88-95 horizontal line blankingD09F	BNE &D0AB   ;so D0ABD0A1	LDA #&02    ;else A=2D0A3	STA &DC     ;store itD0A5	JMP &D506   ;and jump to D506 type not implementedD0A8	JMP &D5EA   ;to fill triangle routineD0AB	JMP &C938   ;VDU extension access entryD0AE	STA &DC     ;store AD0B0	JMP &D4BF   ;*********:set colour masks **********************************************;graphics mode in Y;colour in XD0B3	TXA         ;A=XD0B4	ORA &C41C,Y ;or with GCOL plot options table byteD0B7	EOR &C41D,Y ;EOR with following byteD0BA	STA &D4     ;and store itD0BC	TXA         ;A=XD0BD	ORA &C41B,Y ;D0C0	EOR &C420,Y ;D0C3	STA &D5     ;D0C5	RTS         ;exit with masks in &D4/5************** analyse first parameter in 0-63 range ********************    	            ;D0C6	ASL         ;shift left againD0C7	BMI &D0AB   ;if -ve options are in range 32-63 not implementedD0C9	ASL         ;shift left twice moreD0CA	ASL         ;D0CB	BPL &D0D0   ;if still +ve type is 0-7 or 16-23 so D0D0D0CD	JSR &D0EB   ;else display a pointD0D0	JSR &D1ED   ;perform calculationsD0D3	JMP &D0D9   ;**************************************************************************                                                                       **       PLOT A SINGLE POINT                                             **                                                                       **************************************************************************D0D6	JSR &D0EB   ;display a pointD0D9	JSR &CDE2   ;swap current and last graphics positionD0DC	LDY #&24    ;Y=&24D0DE	LDX #&20    ;X=&20D0E0	JMP &D48A   ;copy parameters to 324/7 (300/3 +Y)D0E3	LDX #&24    ;D0E5	JSR &D85F   ;calculate positionD0E8	BEQ &D0F0   ;if result =0 then D0F0D0EA	RTS         ;else exit    	            ;D0EB	JSR &D85D   ;calculate positionD0EE	BNE &D103   ;if A<>0 D103 and returnD0F0	LDY &031A   ;else get current graphics scan lineD0F3	LDA &D1     ;pick up and modify screen byteD0F5	AND &D4     ;D0F7	ORA (&D6),Y ;D0F9	STA &DA     ;D0FB	LDA &D5     ;D0FD	AND &D1     ;D0FF	EOR &DA     ;D101	STA (&D6),Y ;put it back againD103	RTS         ;and exit    	            ;D104	LDA (&D6),Y ;this is a more simplistic version of the aboveD106	ORA &D4     ;D108	EOR &D5     ;D10A	STA (&D6),Y ;D10C	RTS         ;and exit
+;; code below shouldn't be here - duplicated from previous file
+; CDED	PHA         ;store it
+; CDEE	LDA &0300,Y ;get byte pointed to by Y
+; CDF1	STA &0300,X ;put it in 300+X
+; CDF4	PLA         ;get back A
+; CDF5	STA &0300,Y ;put it in 300+Y
+; CDF8	INX         ;increment pointers
+; CDF9	INY         ;
+; CDFA	DEC &DA     ;decrement loop counter
+; CDFC	BNE &CDEA   ;and if not 0 do it again
+; CDFE	RTS         ;and exit
+
+******** execute upward scroll ******************************************
+;
+CDFF	JSR &CE5B   ;exchange line and column cursors with workspace copies
+CE02	LDY &030B   ;top of text window
+CE05	STY &0319   ;current text line
+CE08	JSR &CF06   ;set up display address
+CE0B	JSR &CAD4   ;add bytes per char. row
+CE0E	BPL &CE14   ;
+CE10	SEC         ;
+CE11	SBC &0354   ;screen RAM size hi byte
+
+CE14	STA &DB     ;(&DA)=X/A
+CE16	STX &DA     ;
+CE18	STA &DC     ;&DC=A
+CE1A	BCC &CE22   ;
+CE1C	JSR &CE73   ;copy line to new position
+    	            ;using (&DA) for read
+    	            ;and (&D8) for write
+CE1F	JMP &CE2A   ;exit
+
+
+CE22	JSR &CAD4   ;add bytes per char. row
+CE25	BMI &CE1C   ;if outside screen RAM CE1C
+CE27	JSR &CE38   ;perform a copy
+CE2A	LDA &DC     ;
+CE2C	LDX &DA     ;
+CE2E	STA &D9     ;
+CE30	STX &D8     ;
+CE32	DEC &DE     ;decrement window height
+CE34	BNE &CE0B   ;CE0B if not 0
+CE36	BEQ &CDDA   ;exchange text column/linelse CDDA
+
+
+*********** copy routines ***********************************************
+
+CE38	LDX &034D   ;text window width hi (bytes)
+CE3B	BEQ &CE4D   ;if no more than 256 bytes to copy X=0 so CE4D
+
+CE3D	LDY #&00    ;Y=0 to set loop counter
+
+CE3F	LDA (&DA),Y ;copy 256 bytes
+CE41	STA (&D8),Y ;
+CE43	INY         ;
+CE44	BNE &CE3F   ;Till Y=0 again
+CE46	INC &D9     ;increment hi bytes
+CE48	INC &DB     ;
+CE4A	DEX         ;decrement window width
+CE4B	BNE &CE3F   ;if not 0 go back and do loop again
+
+CE4D	LDY &034C   ;text window width lo (bytes)
+CE50	BEQ &CE5A   ;if Y=0 CE5A
+
+CE52	DEY         ;else Y=Y-1
+CE53	LDA (&DA),Y ;copy Y bytes
+CE55	STA (&D8),Y ;
+CE57	TYA         ;A=Y
+CE58	BNE &CE52   ;if not 0 CE52
+CE5A	RTS         ;and exit
+;
+
+CE5B	JSR &CDDA   ;exchange text column/line with workspace
+CE5E	SEC         ;set carry
+CE5F	LDA &0309   ;bottom margin
+CE62	SBC &030B   ;top of text window
+CE65	STA &DE     ;store it
+CE67	BNE &CE6E   ;set text column to left hand column
+CE69	PLA         ;get back return address
+CE6A	PLA         ;
+CE6B	JMP &CDDA   ;exchange text column/line with workspace
+
+CE6E	LDA &0308   ;text window left
+CE71	BPL &CEE3   ;Jump CEE3 always!
+
+CE73	LDA &DA     ;get back A
+CE75	PHA         ;push A
+CE76	SEC         ;set carry
+CE77	LDA &030A   ;text window right
+CE7A	SBC &0308   ;text window left
+CE7D	STA &DF     ;
+CE7F	LDY &034F   ;bytes per character to set loop counter
+
+CE82	DEY         ;copy loop
+CE83	LDA (&DA),Y ;
+CE85	STA (&D8),Y ;
+CE87	DEY         ;
+CE88	BPL &CE83   ;
+
+CE8A	LDX #&02    ;X=2
+CE8C	CLC         ;clear carry
+CE8D	LDA &D8,X   ;
+CE8F	ADC &034F   ;bytes per character
+CE92	STA &D8,X   ;
+CE94	LDA &D9,X   ;
+CE96	ADC #&00    ;
+CE98	BPL &CE9E   ;if this remains in screen RAM OK
+
+CE9A	SEC         ;else wrap around screen
+CE9B	SBC &0354   ;screen RAM size hi byte
+CE9E	STA &D9,X   ;
+CEA0	DEX         ;X=X-2
+CEA1	DEX         ;
+CEA2	BEQ &CE8C   ;if X=0 adjust second set of pointers
+CEA4	DEC &DF     ;decrement window width
+CEA6	BPL &CE7F   ;and if still +ve do it all again
+CEA8	PLA         ;get back A
+CEA9	STA &DA     ;and store it
+CEAB	RTS         ;then exit
+;
+*********** clear a line ************************************************
+
+CEAC	LDA &0318   ;text column
+CEAF	PHA         ;save it
+CEB0	JSR &CE6E   ;set text column to left hand column
+CEB3	JSR &CF06   ;set up display address
+CEB6	SEC         ;set carry
+CEB7	LDA &030A   ;text window right
+CEBA	SBC &0308   ;text window left
+CEBD	STA &DC     ;as window width
+CEBF	LDA &0358   ;background text colour
+CEC2	LDY &034F   ;bytes per character
+
+CEC5	DEY         ;Y=Y-1 decrementing loop counter
+CEC6	STA (&D8),Y ;store background colour at this point on screen
+CEC8	BNE &CEC5   ;if Y<>0 do it again
+CECA	TXA         ;else A=X
+CECB	CLC         ;clear carry to add
+CECC	ADC &034F   ;bytes per character
+CECF	TAX         ;X=A restoring it
+CED0	LDA &D9     ;get hi byte
+CED2	ADC #&00    ;Add carry if any
+CED4	BPL &CEDA   ;if +ve CeDA
+CED6	SEC         ;else wrap around
+CED7	SBC &0354   ;screen RAM size hi byte
+
+
+
+
+
+
+CEDA	STX &D8     ;restore D8/9
+CEDC	STA &D9     ;
+CEDE	DEC &DC     ;decrement window width
+CEE0	BPL &CEBF   ;ind if not 0 do it all again
+CEE2	PLA         ;get back A
+CEE3	STA &0318   ;restore text column
+CEE6	SEC         ;set carry
+CEE7	RTS         ;and exit
+;
+
+CEE8	LDX &0318   ;text column
+CEEB	CPX &0308   ;text window left
+CEEE	BMI &CEE6   ;if less than left margin return with carry set
+CEF0	CPX &030A   ;text window right
+CEF3	BEQ &CEF7   ;if equal to right margin thats OK
+CEF5	BPL &CEE6   ;if greater than right margin return with carry set
+
+CEF7	LDX &0319   ;current text line
+CEFA	CPX &030B   ;top of text window
+CEFD	BMI &CEE6   ;if less than top margin
+CEFF	CPX &0309   ;bottom margin
+CF02	BEQ &CF06   ;set up display address
+CF04	BPL &CEE6   ;or greater than bottom margin return with carry set
+
+
+
+************:set up display address *************************************
+
+;Mode 0: (0319)*640+(0318)* 8
+;Mode 1: (0319)*640+(0318)*16
+;Mode 2: (0319)*640+(0318)*32
+;Mode 3: (0319)*640+(0318)* 8
+;Mode 4: (0319)*320+(0318)* 8
+;Mode 5: (0319)*320+(0318)*16
+;Mode 6: (0319)*320+(0318)* 8
+;Mode 7: (0319)* 40+(0318)
+;this gives a displacement relative to the screen RAM start address
+;which is added to the calculated number and stored in in 34A/B
+;if the result is less than &8000, the top of screen RAM it is copied into X/A
+;and D8/9.
+;if the result is greater than &7FFF the hi byte of screen RAM size is
+;subtracted to wraparound the screen. X/A, D8/9 are then set from this
+
+CF06	LDA &0319   ;current text line
+CF09	ASL         ;A=A*2
+CF0A	TAY         ;Y=A
+CF0B	LDA (&E0),Y ;get CRTC multiplication table pointer
+CF0D	STA &D9     ;&D9=A
+CF0F	INY         ;Y=Y+1
+CF10	LDA #&02    ;A=2
+CF12	AND &0356   ;memory map type
+CF15	PHP         ;save flags
+CF16	LDA (&E0),Y ;get CRTC multiplication table pointer
+CF18	PLP         ;pull flags
+CF19	BEQ &CF1E   ;
+CF1B	LSR &D9     ;&D9=&D9/2
+CF1D	ROR         ;A=A/2 +(128*carry)
+CF1E	ADC &0350   ;window area start address lo
+CF21	STA &D8     ;store it
+CF23	LDA &D9     ;
+CF25	ADC &0351   ;window area start address hi
+CF28	TAY         ;
+CF29	LDA &0318   ;text column
+CF2C	LDX &034F   ;bytes per character
+CF2F	DEX         ;X=X-1
+CF30	BEQ &CF44   ;if X=0 mode 7 CF44
+CF32	CPX #&0F    ;is it mode 1 or mode 5?
+CF34	BEQ &CF39   ;yes CF39 with carry set
+CF36	BCC &CF3A   ;if its less (mode 0,3,4,6) CF3A
+CF38	ASL         ;A=A*16 if entered here (mode 2)
+
+CF39	ASL         ;A=A*8 if entered here
+
+CF3A	ASL         ;A=A*4 if entered here
+CF3B	ASL         ;
+CF3C	BCC &CF40   ;if carry clear
+CF3E	INY         ;Y=Y+2
+CF3F	INY         ;
+CF40	ASL         ;A=A*2
+CF41	BCC &CF45   ;if carry clear add to &D8
+CF43	INY         ;if not Y=Y+1
+
+CF44	CLC         ;clear carry
+CF45	ADC &D8     ;add to &D8
+CF47	STA &D8     ;and store it
+CF49	STA &034A   ;text cursor 6845 address
+CF4C	TAX         ;X=A
+CF4D	TYA         ;A=Y
+CF4E	ADC #&00    ;Add carry if set
+CF50	STA &034B   ;text cursor 6845 address
+CF53	BPL &CF59   ;if less than &800 goto &CF59
+CF55	SEC         ;else wrap around
+CF56	SBC &0354   ;screen RAM size hi byte
+
+CF59	STA &D9     ;store in high byte
+CF5B	CLC         ;clear carry
+CF5C	RTS         ;and exit
+
+
+******** Graphics cursor display routine ********************************
+
+CF5D	LDX &0359   ;foreground graphics colour
+CF60	LDY &035B   ;foreground graphics plot mode (GCOL n)
+CF63	JSR &D0B3   ;set graphics byte mask in &D4/5
+CF66	JSR &D486   ;copy (324/7) graphics cursor to workspace (328/B)
+CF69	LDY #&00    ;Y=0
+CF6B	STY &DC     ;&DC=Y
+CF6D	LDY &DC     ;Y=&DC
+CF6F	LDA (&DE),Y ;get pattern byte
+CF71	BEQ &CF86   ;if A=0 CF86
+CF73	STA &DD     ;else &DD=A
+CF75	BPL &CF7A   ;and if >0 CF7A
+CF77	JSR &D0E3   ;else display a pixel
+CF7A	INC &0324   ;current horizontal graphics cursor
+CF7D	BNE &CF82   ;
+CF7F	INC &0325   ;current horizontal graphics cursor
+
+CF82	ASL &DD     ;&DD=&DD*2
+CF84	BNE &CF75   ;and if<>0 CF75
+CF86	LDX #&28    ;point to workspace
+CF88	LDY #&24    ;point to horizontal graphics cursor
+CF8A	JSR &D482   ;0300/1+Y=0300/1+X
+CF8D	LDY &0326   ;current vertical graphics cursor
+CF90	BNE &CF95   ;
+CF92	DEC &0327   ;current vertical graphics cursor
+CF95	DEC &0326   ;current vertical graphics cursor
+CF98	LDY &DC     ;
+CF9A	INY         ;
+CF9B	CPY #&08    ;if Y<8 then do loop again
+CF9D	BNE &CF6B   ;else
+CF9F	LDX #&28    ;point to workspace
+CFA1	LDY #&24    ;point to graphics cursor
+CFA3	JMP &D48A   ;(&300/3+Y)=(&300/3+X)
+
+
+*********** home graphics cursor ***************************************
+
+CFA6	LDX #&06    ;point to graphics window TOP
+CFA8	LDY #&26    ;point to workspace
+CFAA	JSR &D482   ;0300/1+Y=0300/1+X
+
+
+************* set graphics cursor to left hand column *******************
+
+CFAD	LDX #&00    ;X=0 point to graphics window left
+CFAF	LDY #&24    ;Y=&24
+CFB1	JSR &D482   ;0300/1+Y=0300/1+X
+CFB4	JMP &D1B8   ;set up external coordinates for graphics
+CFB7	LDX &0360   ;number of logical colours less 1
+CFBA	BEQ &CFDC   ;if MODE 7 CFDC
+
+CFBC	JSR &D03E   ;set up character definition pointers
+CFBF	LDX &0360   ;number of logical colours less 1
+CFC2	LDA &D0     ;VDU status byte
+CFC4	AND #&20    ;and out bit 5 printing at graphics cursor
+CFC6	BNE &CF5D   ;if set CF5D
+CFC8	LDY #&07    ;else Y=7
+CFCA	CPX #&03    ;if X=3
+CFCC	BEQ &CFEE   ;goto CFEE to handle 4 colour modes
+CFCE	BCS &D01E   ;else if X>3 D01E to deal with 16 colours
+
+CFD0	LDA (&DE),Y ;get pattern byte
+CFD2	ORA &D2     ;text colour byte to be orred or EORed into memory
+CFD4	EOR &D3     ;text colour byte to be orred or EORed into memory
+CFD6	STA (&D8),Y ; write to screen
+CFD8	DEY         ;Y=Y-1
+CFD9	BPL &CFD0   ;if still +ve do loop again
+CFDB	RTS         ;and exit
+
+******* convert teletext characters *************************************
+;mode 7
+CFDC	LDY #&02    ;Y=2
+CFDE	CMP &C4B6,Y ;compare with teletext conversion table
+CFE1	BEQ &CFE9   ;if equal then CFE9
+CFE3	DEY         ;else Y=Y-1
+CFE4	BPL &CFDE   ;and if +ve CFDE
+
+CFE6	STA (&D8,X) ;if not write byte to screen
+CFE8	RTS         ;and exit
+
+
+
+CFE9	LDA &C4B7,Y ;convert with teletext conversion table
+CFEC	BNE &CFE6   ;and write it
+
+
+***********four colour modes ********************************************
+
+CFEE	LDA (&DE),Y ;get pattern byte
+CFF0	PHA         ;save it
+CFF1	LSR         ;move hi nybble to lo
+CFF2	LSR         ;
+CFF3	LSR         ;
+CFF4	LSR         ;
+CFF5	TAX         ;X=A
+CFF6	LDA &C31F,X ;4 colour mode byte mask look up table
+CFF9	ORA &D2     ;text colour byte to be orred or EORed into memory
+CFFB	EOR &D3     ;text colour byte to be orred or EORed into memory
+CFFD	STA (&D8),Y ; write to screen
+CFFF	TYA         ;A=Y
+
+D000	CLC         ;clear carry
+D001	ADC #&08    ;add 8 to move screen RAM pointer 8 bytes
+D003	TAY         ;Y=A
+D004	PLA         ;get back A
+D005	AND #&0F    ;clear high nybble
+D007	TAX         ;X=A
+D008	LDA &C31F,X ;4 colour mode byte mask look up table
+D00B	ORA &D2     ;text colour byte to be orred or EORed into memory
+D00D	EOR &D3     ;text colour byte to be orred or EORed into memory
+D00F	STA (&D8),Y ; write to screen
+D011	TYA         ;A=Y
+D012	SBC #&08    ;A=A-9
+D014	TAY         ;Y=A
+D015	BPL &CFEE   ;if +ve do loop again
+D017	RTS         ;exit
+
+    	
+
+D018	TYA         ;Y=Y-&21
+D019	SBC #&21    ;
+D01B	BMI &D017   ;IF Y IS negative then RETURN
+D01D	TAY         ;else A=Y
+
+******* 16 COLOUR MODES *************************************************
+
+D01E	LDA (&DE),Y ;get pattern byte
+D020	STA &DC     ;store it
+D022	SEC         ;set carry
+D023	LDA #&00    ;A=0
+D025	ROL &DC     ;carry now occupies bit 0 of DC
+D027	BEQ &D018   ;when DC=0 again D018 to deal with next pattern byte
+D029	ROL         ;get bit 7 from &DC into A bit 0
+D02A	ASL &DC     ;rotate again to get second
+D02C	ROL         ;bit into A
+D02D	TAX         ;and store result in X
+D02E	LDA &C32F,X ;multiply by &55 using look up table
+D031	ORA &D2     ;and set colour factors
+D033	EOR &D3     ;
+D035	STA (&D8),Y ;and store result
+D037	CLC         ;clear carry
+D038	TYA         ;Y=Y+8 moving screen RAM pointer on 8 bytes
+D039	ADC #&08    ;
+D03B	TAY         ;
+D03C	BCC &D023   ;iloop to D023 to deal with next bit pair
+
+
+************* calculate pattern address for given code ******************
+;A contains code on entry = 12345678
+
+D03E	ASL         ;23456780  C holds 1
+D03F	ROL         ;34567801  C holds 2
+D040	ROL         ;45678012  C holds 3
+D041	STA &DE     ;save this pattern
+D043	AND #&03    ;00000012
+D045	ROL         ;00000123 C=0
+D046	TAX         ;X=A=0 - 7
+D047	AND #&03    ;A=00000023
+D049	ADC #&BF    ;A=&BF,C0 or C1
+D04B	TAY         ;this is used as a pointer
+D04C	LDA &C40D,X ;A=&80/2^X i.e.1,2,4,8,&10,&20,&40, or &80
+D04F	BIT &0367   ;with font flag
+D052	BEQ &D057   ;if 0 D057
+D054	LDY &0367,X ;else get hi byte from table
+D057	STY &DF     ;store Y
+D059	LDA &DE     ;get back pattern
+D05B	AND #&F8    ;convert to 45678000
+D05D	STA &DE     ;and re store it
+D05F	RTS         ;exit
+    	            ;
+*************************************************************************
+*************************************************************************
+**                                                                      **
+**                                                                      **
+**      PLOT ROUTINES ENTER HERE                                        **
+**                                                                      **
+**                                                                      **
+*************************************************************************
+*************************************************************************
+;on entry    ADDRESS    PARAMETER        DESCRIPTION
+;   	    031F    1               plot type
+;   	    0320/1  2,3             X coordinate
+;   	    0322/3  4,5             Y coordinate
+
+D060	LDX #&20    ;X=&20
+D062	JSR &D14D   ;translate coordinates
+
+D065	LDA &031F   ;get plot type
+D068	CMP #&04    ;if its 4
+D06A	BEQ &D0D9   ;D0D9 move absolute
+D06C	LDY #&05    ;Y=5
+D06E	AND #&03    ;mask only bits 0 and 1
+D070	BEQ &D080   ;if result is 0 then its a move (multiple of 8)
+D072	LSR         ;else move bit 0 int C
+D073	BCS &D078   ;if set then D078 graphics colour required
+D075	DEY         ;Y=4
+D076	BNE &D080   ;logic inverse colour must be wanted
+
+******** graphics colour wanted *****************************************
+
+D078	TAX         ;X=A if A=0 its a foreground colour 1 its background
+D079	LDY &035B,X ;get fore or background graphics PLOT mode
+D07C	LDA &0359,X ;get fore or background graphics colour
+D07F	TAX         ;X=A
+
+D080	JSR &D0B3   ;set up colour masks in D4/5
+
+D083	LDA &031F   ;get plot type
+D086	BMI &D0AB   ;if &80-&FF then D0AB type not implemented
+D088	ASL         ;bit 7=bit 6
+D089	BPL &D0C6   ;if bit 6 is 0 then plot type is 0-63 so D0C6
+D08B	AND #&F0    ;else mask out lower nybble
+D08D	ASL         ;shift old bit 6 into C bit old 5 into bit 7
+D08E	BEQ &D0D6   ;if 0 then type 64-71 was called single point plot
+    	            ;goto D0D6
+D090	EOR #&40    ;if bit 6 NOT set type &80-&87 fill triangle
+D092	BEQ &D0A8   ;so D0A8
+D094	PHA         ;else push A
+D095	JSR &D0DC   ;copy 0320/3 to 0324/7 setting XY in current graphics
+    	            ;coordinates
+D098	PLA         ;get back A
+D099	EOR #&60    ;if BITS 6 and 5 NOT SET type 72-79 lateral fill
+D09B	BEQ &D0AE   ;so D0AE
+D09D	CMP #&40    ;if type 88-95 horizontal line blanking
+D09F	BNE &D0AB   ;so D0AB
+
+D0A1	LDA #&02    ;else A=2
+D0A3	STA &DC     ;store it
+D0A5	JMP &D506   ;and jump to D506 type not implemented
+
+D0A8	JMP &D5EA   ;to fill triangle routine
+
+D0AB	JMP &C938   ;VDU extension access entry
+
+D0AE	STA &DC     ;store A
+D0B0	JMP &D4BF   ;
+
+*********:set colour masks **********************************************
+;graphics mode in Y
+;colour in X
+
+D0B3	TXA         ;A=X
+D0B4	ORA &C41C,Y ;or with GCOL plot options table byte
+D0B7	EOR &C41D,Y ;EOR with following byte
+D0BA	STA &D4     ;and store it
+D0BC	TXA         ;A=X
+D0BD	ORA &C41B,Y ;
+D0C0	EOR &C420,Y ;
+D0C3	STA &D5     ;
+D0C5	RTS         ;exit with masks in &D4/5
+
+
+************** analyse first parameter in 0-63 range ********************
+    	            ;
+D0C6	ASL         ;shift left again
+D0C7	BMI &D0AB   ;if -ve options are in range 32-63 not implemented
+D0C9	ASL         ;shift left twice more
+D0CA	ASL         ;
+D0CB	BPL &D0D0   ;if still +ve type is 0-7 or 16-23 so D0D0
+D0CD	JSR &D0EB   ;else display a point
+
+D0D0	JSR &D1ED   ;perform calculations
+D0D3	JMP &D0D9   ;
+
+
+*************************************************************************
+*                                                                       *
+*       PLOT A SINGLE POINT                                             *
+*                                                                       *
+*************************************************************************
+
+D0D6	JSR &D0EB   ;display a point
+D0D9	JSR &CDE2   ;swap current and last graphics position
+D0DC	LDY #&24    ;Y=&24
+D0DE	LDX #&20    ;X=&20
+D0E0	JMP &D48A   ;copy parameters to 324/7 (300/3 +Y)
+
+
+D0E3	LDX #&24    ;
+D0E5	JSR &D85F   ;calculate position
+D0E8	BEQ &D0F0   ;if result =0 then D0F0
+D0EA	RTS         ;else exit
+    	            ;
+D0EB	JSR &D85D   ;calculate position
+D0EE	BNE &D103   ;if A<>0 D103 and return
+D0F0	LDY &031A   ;else get current graphics scan line
+D0F3	LDA &D1     ;pick up and modify screen byte
+D0F5	AND &D4     ;
+D0F7	ORA (&D6),Y ;
+D0F9	STA &DA     ;
+D0FB	LDA &D5     ;
+D0FD	AND &D1     ;
+D0FF	EOR &DA     ;
+D101	STA (&D6),Y ;put it back again
+D103	RTS         ;and exit
+    	            ;
+
+D104	LDA (&D6),Y ;this is a more simplistic version of the above
+D106	ORA &D4     ;
+D108	EOR &D5     ;
+D10A	STA (&D6),Y ;
+D10C	RTS         ;and exit
+
+
+

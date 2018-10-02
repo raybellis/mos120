@@ -1,0 +1,208 @@
+********** EXTENDED VECTOR ENTRY POINTS**********************************
+;vectors are pointed to &F000 +vector No. vectors may then be directed thru
+;a three byte vector table whose XY address is given by osbyte A8, X=0, Y=&FF
+;this is set up as lo-hi byte in ROM and ROM number
+
+FF00	JSR &FF51   ;XUSERV
+FF03	JSR &FF51   ;XBRKV
+FF06	JSR &FF51   ;XIRQ1V
+FF09	JSR &FF51   ;XIRQ2V
+FF0C	JSR &FF51   ;XCLIV
+FF0F	JSR &FF51   ;XBYTEV
+FF12	JSR &FF51   ;XWORDV
+FF15	JSR &FF51   ;XWRCHV
+FF18	JSR &FF51   ;XRDCHV
+FF1B	JSR &FF51   ;XFILEV
+FF1E	JSR &FF51   ;XARGSV
+FF21	JSR &FF51   ;XBGETV
+FF24	JSR &FF51   ;XBPUTV
+FF27	JSR &FF51   ;XGBPBV
+FF2A	JSR &FF51   ;XFINDV
+FF2D	JSR &FF51   ;XFSCV
+FF30	JSR &FF51   ;XEVENTV
+FF33	JSR &FF51   ;XUPTV
+FF36	JSR &FF51   ;XNETV
+FF39	JSR &FF51   ;XVDUV
+FF3C	JSR &FF51   ;XKEYV
+FF3F	JSR &FF51   ;XINSV
+FF42	JSR &FF51   ;XREMV
+FF45	JSR &FF51   ;XCNPV
+FF48	JSR &FF51   ;XIND1V
+FF4B	JSR &FF51   ;XIND2V
+FF4E	JSR &FF51   ;XIND3V
+
+;at this point the stack will hold 4 bytes (at least)
+;S 0,1 extended vector address
+;S 2,3 address of calling routine
+;A,X,Y,P will be as at entry
+
+FF51	PHA         ;save A on stack
+FF52	PHA         ;save A on stack
+FF53	PHA         ;save A on stack
+FF54	PHA         ;save A on stack
+FF55	PHA         ;save A on stack
+FF56	PHP         ;save flags on stack
+FF57	PHA         ;save A on stack
+FF58	TXA         ;A=X
+FF59	PHA         ;save X on stack
+FF5A	TYA         ;A=Y
+FF5B	PHA         ;save Y on stack
+FF5C	TSX         ;get stack pointer into X (&F2 or less)
+FF5D	LDA #&FF    ;A=&FF
+FF5F	STA &0108,X ;A
+FF62	LDA #&88    ;
+FF64	STA &0107,X ;
+FF67	LDY &010A,X ;this is VECTOR number*3+2!!
+FF6A	LDA &0D9D,Y ;lo byte of action address
+FF6D	STA &0105,X ;store it on stack
+FF70	LDA &0D9E,Y ;get hi byte
+FF73	STA &0106,X ;store it on stack
+    	            ;at this point stack has YXAP and action address
+    	            ;followed by return address and 5 more bytes
+FF76	LDA &F4     ;
+FF78	STA &0109,X ;store original ROM number below this
+FF7B	LDA &0D9F,Y ;get new ROM number
+FF7E	STA &F4     ;store it as ram copy
+FF80	STA &FE30   ;and switch to that ROM
+FF83	PLA         ;get back A
+FF84	TAY         ;Y=A
+FF85	PLA         ;get back A
+FF86	TAX         ;X=A
+FF87	PLA         ;get back A
+FF88	RTI         ;get back flags and jump to ROM vectored entry
+    	            ;leaving return address and 5 more bytes on stack
+
+************ return address from ROM indirection ************************
+
+;at this point stack comprises original ROM number,return from JSR &FF51,
+;return from original call the return from FF51 is garbage so;
+
+FF89	PHP         ;save flags on stack
+FF8A	PHA         ;save A on stack
+FF8B	TXA         ;A=X
+FF8C	PHA         ;save X on stack
+FF8D	TSX         ; (&F7 or less)
+FF8E	LDA &0102,X ;STORE A AND P OVER
+FF91	STA &0105,X ;return address from (JSR &FF51)
+FF94	LDA &0103,X ;hiding garbage by duplicating A and X just saved
+FF97	STA &0106,X ;
+    	            ;now we have
+    	            ;flags,
+    	            ;A,
+    	            ;X,
+    	            ;ROM number,
+    	            ;A,
+    	            ;flags,
+    	            ;and original return address on stack
+    	            ;so
+FF9A	PLA         ;get back X
+FF9B	TAX         ;X=A
+FF9C	PLA         ;get back A lose next two bytes
+FF9D	PLA         ;get back A lose
+FF9E	PLA         ;get back A ROM number
+FF9F	STA &F4     ;store it
+FFA1	STA &FE30   ;and set it
+FFA4	PLA         ;get back A
+FFA5	PLP         ;get back flags
+FFA6	RTS         ;return and exit pulling original return address
+    	            ;from stack
+;FFA6 is also default input for CFS OSBPGB, VDUV, IND1V,IND2V,IND3V
+;as these functions are not implemented by the OS but may be used
+;by software or other filing systems or ROMs
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE &9D    FAST BPUT                                         *
+*                                                                       *
+*************************************************************************
+FFA7	TXA         ;A=X
+FFA8	BCS &FFD4   ;carry always set, jump to BPUT
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE &92      READ A BYTE FROM FRED                           *
+*                                                                       *
+*************************************************************************       ;
+
+FFAA	LDY &FC00,X ;read a byte from FRED area
+FFAD	RTS         ;return
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE &94      READ A BYTE FROM JIM                            *
+*                                                                       *
+*************************************************************************       ;
+    	;
+FFAE	LDY &FD00,X ;read a byte from JIM area
+FFB1	RTS         ;return
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE &96      READ A BYTE FROM SHEILA                         *
+*                                                                       *
+*************************************************************************       ;
+    	;
+FFB2	LDY &FE00,X ;read a byte from SHEILA memory mapped I/O area
+FFB5	RTS         ;return
+
+
+*********** DEFAULT VECTOR TABLE ****************************************
+
+FFB6	DB  36      ;length of look up table in bytes
+FFB7	DB  40      ;low byte of address of this table
+FFB8	DB  D9      ;high byte of address of this table
+
+
+**************************************************************************
+**************************************************************************
+**                                                                      **
+**      OPERATING SYSTEM FUNCTION CALLS                                 **
+**                                                                      **
+**************************************************************************
+**************************************************************************
+
+FFB9	JMP &DC0B   ;OSRDRM get a byte from sideways ROM
+FFBC	JMP &C4C0   ;VDUCHR VDU character output
+FFBF	JMP &E494   ;OSEVEN generate an EVENT
+FFC2	JMP &EA1E   ;GSINIT initialise OS string
+FFC5	JMP &EA2F   ;GSREAD read character from input stream
+FFC8	JMP &DEC5   ;NVRDCH non vectored OSRDCH
+FFCB	JMP &E0A4   ;NVWRCH non vectored OSWRCH
+FFCE	JMP (&021C) ;OSFIND open or close a file
+FFD1	JMP (&021A) ;OSGBPB transfer block to or from a file
+FFD4	JMP (&0218) ;OSBPUT save a byte to file
+FFD7	JMP (&0216) ;OSBGET get a byte from file
+FFDA	JMP (&0214) ;OSARGS read or write file arguments
+FFDD	JMP (&0212) ;OSFILE read or write a file
+FFE0	JMP (&0210) ;OSRDCH get a byte from current input stream
+FFE3	CMP #&0D    ;OSASCI output a byte to VDU stream expanding
+FFE5	BNE &FFEE   ; carriage returns (&0D) to LF/CR (&0A,&0D)
+FFE7	LDA #&0A    ;OSNEWL output a CR/LF to VDU stream
+FFE9	JSR OSWRCH  ;Outputs A followed by CR to VDU stream
+FFEC	LDA #&0D    ;OSWRCR output a CR to VDU stream
+FFEE	JMP (&020E) ;OSWRCH output a character to the VDU stream
+FFF1	JMP (&020C) ;OSWORD perform operation using parameter table
+FFF4	JMP (&020A) ;OSBYTE perform operation with single bytes
+FFF7	JMP (&0208) ;OSCLI  pass string to command line interpreter
+
+
+*************************************************************************
+*                                                                       *
+*       6502 Vectors                                                    *
+*                                                                       *
+*************************************************************************
+
+FFFA	DW  &0D00   ;NMI   address
+FFFC	DW  &D9CD   ;RESET address
+FFFE	DW  &DC1C   ;IRQ   address
+
+That's it the end of the series and the end of Micronet.
+
+See you on the new system or in the paper mags.
+
+Geoff
+

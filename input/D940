@@ -59,10 +59,10 @@ D974	DW  &FFA6	; IND3V				&234
 
 D976	DW  &0190   ; OSBYTE variables base address          &236   *FX166/7
 		    ; (address to add to osbyte number)
-D978	DB  &0D9F   ; Address of extended vectors            &238   *FX168/9
-D97A	DB  &02A1   ; Address of ROM information table       &23A   *FX170/1
-D97C	DB  &F02B   ; Address of key translation table       &23C   *FX172/3
-D97E	DB  &0300   ; Address of VDU variables               &23E   *FX174/5
+D978	DW  &0D9F   ; Address of extended vectors            &238   *FX168/9
+D97A	DW  &02A1   ; Address of ROM information table       &23A   *FX170/1
+D97C	DW  &F02B   ; Address of key translation table       &23C   *FX172/3
+D97E	DW  &0300   ; Address of VDU variables               &23E   *FX174/5
 
 D980	DB  &00     ; CFS/Vertical sync Timeout counter      &240   *FX176
 D981	DB  &00     ; Current input buffer number            &241   *FX177
