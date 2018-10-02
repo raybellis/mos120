@@ -24,7 +24,7 @@ _LEAD9:		lda	$0287		; get BREAK vector code
 		; X=display delay
 		; Y=interlace flag
 
-		lda	$0290		; VDU vertical adjustment
+_LEAE3:		lda	$0290		; VDU vertical adjustment
 		stx	$0290		; store new value
 		tax			; put old value in X
 		tya			; put interlace flag in A
@@ -41,7 +41,7 @@ _BEAF3:		rts			; and Exit
 ;*************************************************************************
 		; X is offset within page
 		; Y is byte to write
-		tya			; 
+_LEAF4:		tya			; 
 		sta	$fc00,X		; 
 		rts			; 
 
@@ -54,7 +54,7 @@ _BEAF3:		rts			; and Exit
 		; X is offset within page
 		; Y is byte to write
 		; 
-		tya			; 
+_LEAF9:		tya			; 
 		sta	$fd00,X		; 
 		rts			; 
 
@@ -67,7 +67,7 @@ _BEAF3:		rts			; and Exit
 		; X is offset within page
 		; Y is byte to write
 		; 
-		tya			; 
+_LEAFE:		tya			; 
 		sta	$fe00,X		; 
 		rts			; 
 

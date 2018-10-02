@@ -15,7 +15,7 @@
 ;
 .org		$c735
 
-		ldy	#$03		; Y=3 to point to hi byte of Y coordinate
+_LC735:		ldy	#$03		; Y=3 to point to hi byte of Y coordinate
 _BC737:		lda	($F0),Y		; get it
 		sta	$0328,Y		; store it
 		dey			; point to next byte
@@ -43,7 +43,7 @@ _BC737:		lda	($F0),Y		; get it
 ;       3=green colour component } when set using analogue colours
 ;       4=blue colour component /
 
-		and	$0360		; number of logical colours less 1
+_LC748:		and	$0360		; number of logical colours less 1
 		tax			; put it in X
 		lda	$036f,X		; colour pallette
 _BC74F:		iny			; increment Y to point to byte 1
@@ -353,7 +353,7 @@ _BC8CC:		jsr	_LEA11		; call Osbyte 155 pass data to pallette register
 ;on entry X=&F0:Y=&F1:YX points to parameter block
 ;byte 0 = logical colour;  byte 1 physical colour; bytes 2-4=0
 
-		php			; push flags
+_LC8E0:		php			; push flags
 		and	$0360		; and with number of logical colours less 1
 		tax			; X=A
 		iny			; Y=Y+1

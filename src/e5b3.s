@@ -5,74 +5,74 @@
 
 .org		$e5b3
 
-_LE5B3:		.byte	$21,$E8		; OSBYTE   0  (&E821)
-		.byte	$88,$E9		; OSBYTE   1  (&E988)
-		.byte	$D3,$E6		; OSBYTE   2  (&E6D3)
-		.byte	$97,$E9		; OSBYTE   3  (&E997)
-		.byte	$97,$E9		; OSBYTE   4  (&E997)
-		.byte	$76,$E9		; OSBYTE   5  (&E976)
-		.byte	$88,$E9		; OSBYTE   6  (&E988)
-		.byte	$8B,$E6		; OSBYTE   7  (&E68B)
-		.byte	$89,$E6		; OSBYTE   8  (&E689)
-		.byte	$B0,$E6		; OSBYTE   9  (&E6B0)
-		.byte	$B2,$E6		; OSBYTE  10  (&E6B2)
-		.byte	$95,$E9		; OSBYTE  11  (&E995)
-		.byte	$8C,$E9		; OSBYTE  12  (&E98C)
-		.byte	$F9,$E6		; OSBYTE  13  (&E6F9)
-		.byte	$FA,$E6		; OSBYTE  14  (&E6FA)
-		.byte	$A8,$F0		; OSBYTE  15  (&F0A8)
-		.byte	$06,$E7		; OSBYTE  16  (&E706)
-		.byte	$8C,$DE		; OSBYTE  17  (&DE8C)
-		.byte	$C8,$E9		; OSBYTE  18  (&E9C8)
-		.byte	$B6,$E9		; OSBYTE  19  (&E9B6)
-		.byte	$07,$CD		; OSBYTE  20  (&CD07)
-		.byte	$B4,$F0		; OSBYTE  21  (&F0B4)
-		.byte	$6C,$E8		; OSBYTE 117  (&E86C)
-		.byte	$D9,$E9		; OSBYTE 118  (&E9D9)
-		.byte	$75,$E2		; OSBYTE 119  (&E275)
-		.byte	$45,$F0		; OSBYTE 120  (&F045)
-		.byte	$CF,$F0		; OSBYTE 121  (&F0CF)
-		.byte	$CD,$F0		; OSBYTE 122  (&F0CD)
-		.byte	$97,$E1		; OSBYTE 123  (&E197)
-		.byte	$73,$E6		; OSBYTE 124  (&E673)
-		.byte	$74,$E6		; OSBYTE 125  (&E674)
-		.byte	$5C,$E6		; OSBYTE 126  (&E65C)
-		.byte	$35,$E0		; OSBYTE 127  (&E035)
-		.byte	$4F,$E7		; OSBYTE 128  (&E74F)
-		.byte	$13,$E7		; OSBYTE 129  (&E713)
-		.byte	$29,$E7		; OSBYTE 130  (&E729)
-		.byte	$85,$F0		; OSBYTE 131  (&F085)
-		.byte	$23,$D9		; OSBYTE 132  (&D923)
-		.byte	$26,$D9		; OSBYTE 133  (&D926)
-		.byte	$47,$D6		; OSBYTE 134  (&D647)
-		.byte	$C2,$D7		; OSBYTE 135  (&D7C2)
-		.byte	$57,$E6		; OSBYTE 136  (&E657)
-		.byte	$7F,$E6		; OSBYTE 137  (&E67F)
-		.byte	$AF,$E4		; OSBYTE 138  (&E4AF)
-		.byte	$34,$E0		; OSBYTE 139  (&E034)
-		.byte	$35,$F1		; OSBYTE 140  (&F135)
-		.byte	$35,$F1		; OSBYTE 141  (&F135)
-		.byte	$E7,$DB		; OSBYTE 142  (&DBE7)
-		.byte	$68,$F1		; OSBYTE 143  (&F168)
-		.byte	$E3,$EA		; OSBYTE 144  (&EAE3)
-		.byte	$60,$E4		; OSBYTE 145  (&E460)
-		.byte	$AA,$FF		; OSBYTE 146  (&FFAA)
-		.byte	$F4,$EA		; OSBYTE 147  (&EAF4)
-		.byte	$AE,$FF		; OSBYTE 148  (&FFAE)
-		.byte	$F9,$EA		; OSBYTE 149  (&EAF9)
-		.byte	$B2,$FF		; OSBYTE 150  (&FFB2)
-		.byte	$FE,$EA		; OSBYTE 151  (&EAFE)
-		.byte	$5B,$E4		; OSBYTE 152  (&E45B)
-		.byte	$F3,$E4		; OSBYTE 153  (&E4F3)
-		.byte	$FF,$E9		; OSBYTE 154  (&E9FF)
-		.byte	$10,$EA		; OSBYTE 155  (&EA10)
-		.byte	$7C,$E1		; OSBYTE 156  (&E17C)
-		.byte	$A7,$FF		; OSBYTE 157  (&FFA7)
-		.byte	$6D,$EE		; OSBYTE 158  (&EE6D)
-		.byte	$7F,$EE		; OSBYTE 159  (&EE7F)
-		.byte	$C0,$E9		; OSBYTE 160  (&E9C0)
-		.byte	$9C,$E9		; OSBYTE 166+
-		.byte	$59,$E6		; OSWORD &E0+
+_LE5B3:		.word	_LE821		; OSBYTE   0  (&E821)
+		.word	_LE988		; OSBYTE   1  (&E988)
+		.word	_LE6D3		; OSBYTE   2  (&E6D3)
+		.word	_LE997		; OSBYTE   3  (&E997)
+		.word	_LE997		; OSBYTE   4  (&E997)
+		.word	_LE976		; OSBYTE   5  (&E976)
+		.word	_LE988		; OSBYTE   6  (&E988)
+		.word	_LE68B		; OSBYTE   7  (&E68B)
+		.word	_LE689		; OSBYTE   8  (&E689)
+		.word	_LE6B0		; OSBYTE   9  (&E6B0)
+		.word	_LE6B2		; OSBYTE  10  (&E6B2)
+		.word	_LE995		; OSBYTE  11  (&E995)
+		.word	_LE98C		; OSBYTE  12  (&E98C)
+		.word	_LE6F9		; OSBYTE  13  (&E6F9)
+		.word	_LE6FA		; OSBYTE  14  (&E6FA)
+		.word	_LF0A8		; OSBYTE  15  (&F0A8)
+		.word	_LE706		; OSBYTE  16  (&E706)
+		.word	_LDE8C		; OSBYTE  17  (&DE8C)
+		.word	_LE9C8		; OSBYTE  18  (&E9C8)
+		.word	_LE9B6		; OSBYTE  19  (&E9B6)
+		.word	_LCD07		; OSBYTE  20  (&CD07)
+		.word	_LF0B4		; OSBYTE  21  (&F0B4)
+		.word	_LE86C		; OSBYTE 117  (&E86C)
+		.word	_LE9D9		; OSBYTE 118  (&E9D9)
+		.word	_LE275		; OSBYTE 119  (&E275)
+		.word	_LF045		; OSBYTE 120  (&F045)
+		.word	_LF0CF		; OSBYTE 121  (&F0CF)
+		.word	_LF0CD		; OSBYTE 122  (&F0CD)
+		.word	_LE197		; OSBYTE 123  (&E197)
+		.word	_LE673		; OSBYTE 124  (&E673)
+		.word	_LE674		; OSBYTE 125  (&E674)
+		.word	_LE65C		; OSBYTE 126  (&E65C)
+		.word	_LE035		; OSBYTE 127  (&E035)
+		.word	_LE74F		; OSBYTE 128  (&E74F)
+		.word	_LE713		; OSBYTE 129  (&E713)
+		.word	_LE729		; OSBYTE 130  (&E729)
+		.word	_LF085		; OSBYTE 131  (&F085)
+		.word	_LD923		; OSBYTE 132  (&D923)
+		.word	_LD926		; OSBYTE 133  (&D926)
+		.word	_LD647		; OSBYTE 134  (&D647)
+		.word	_LD7C2		; OSBYTE 135  (&D7C2)
+		.word	_LE657		; OSBYTE 136  (&E657)
+		.word	_LE67F		; OSBYTE 137  (&E67F)
+		.word	_BE4AF		; OSBYTE 138  (&E4AF)
+		.word	_LE034		; OSBYTE 139  (&E034)
+		.word	_LF135		; OSBYTE 140  (&F135)
+		.word	_LF135		; OSBYTE 141  (&F135)
+		.word	_LDBE7		; OSBYTE 142  (&DBE7)
+		.word	_LF168		; OSBYTE 143  (&F168)
+		.word	_LEAE3		; OSBYTE 144  (&EAE3)
+		.word	_LE460		; OSBYTE 145  (&E460)
+		.word	_LFFAA		; OSBYTE 146  (&FFAA)
+		.word	_LEAF4		; OSBYTE 147  (&EAF4)
+		.word	_LFFAE		; OSBYTE 148  (&FFAE)
+		.word	_LEAF9		; OSBYTE 149  (&EAF9)
+		.word	_LFFB2		; OSBYTE 150  (&FFB2)
+		.word	_LEAFE		; OSBYTE 151  (&EAFE)
+		.word	_LE45B		; OSBYTE 152  (&E45B)
+		.word	_LE4F3		; OSBYTE 153  (&E4F3)
+		.word	_LE9FF		; OSBYTE 154  (&E9FF)
+		.word	_LEA10		; OSBYTE 155  (&EA10)
+		.word	_LE17C		; OSBYTE 156  (&E17C)
+		.word	_LFFA7		; OSBYTE 157  (&FFA7)
+		.word	_LEE6D		; OSBYTE 158  (&EE6D)
+		.word	_LEE7F		; OSBYTE 159  (&EE7F)
+		.word	_LE9C0		; OSBYTE 160  (&E9C0)
+		.word	_LE99C		; OSBYTE 166+
+		.word	_LE659		; OSWORD &E0+
 
 
 ;*************************************************************************
@@ -81,20 +81,20 @@ _LE5B3:		.byte	$21,$E8		; OSBYTE   0  (&E821)
 ;*                                                                       *
 ;*************************************************************************
 
-		.byte	$02,$E9		; OSWORD   0  (&E902)
-		.byte	$D5,$E8		; OSWORD   1  (&E8D5)
-		.byte	$E8,$E8		; OSWORD   2  (&E8E8)
-		.byte	$D1,$E8		; OSWORD   3  (&E8D1)
-		.byte	$E4,$E8		; OSWORD   4  (&E8E4)
-		.byte	$03,$E8		; OSWORD   5  (&E803)
-		.byte	$0B,$E8		; OSWORD   6  (&E80B)
-		.byte	$2D,$E8		; OSWORD   7  (&E82D)
-		.byte	$AE,$E8		; OSWORD   8  (&E8AE)
-		.byte	$35,$C7		; OSWORD   9  (&C735)
-		.byte	$F3,$CB		; OSWORD  10  (&CBF3)
-		.byte	$48,$C7		; OSWORD  11  (&C748)
-		.byte	$E0,$C8		; OSWORD  12  (&C8E0)
-		.byte	$CE,$D5		; OSWORD  13  (&D5CE)
+		.word	_LE902		; OSWORD   0  (&E902)
+		.word	_LE8D5		; OSWORD   1  (&E8D5)
+		.word	_LE8E8		; OSWORD   2  (&E8E8)
+		.word	_LE8D1		; OSWORD   3  (&E8D1)
+		.word	_LE8E4		; OSWORD   4  (&E8E4)
+		.word	_LE803		; OSWORD   5  (&E803)
+		.word	_LE80B		; OSWORD   6  (&E80B)
+		.word	_LE82D		; OSWORD   7  (&E82D)
+		.word	_LE8AE		; OSWORD   8  (&E8AE)
+		.word	_LC735		; OSWORD   9  (&C735)
+		.word	_LCBF3		; OSWORD  10  (&CBF3)
+		.word	_LC748		; OSWORD  11  (&C748)
+		.word	_LC8E0		; OSWORD  12  (&C8E0)
+		.word	_LD5CE		; OSWORD  13  (&D5CE)
 
 
 ;*************************************************************************
@@ -105,7 +105,7 @@ _LE5B3:		.byte	$21,$E8		; OSBYTE   0  (&E821)
 ;*                                                                       *
 ;*************************************************************************
 
-		lda	#00		; A=0
+_LE657:		lda	#00		; A=0
 
 
 ;*************************************************************************
@@ -114,7 +114,7 @@ _LE5B3:		.byte	$21,$E8		; OSBYTE   0  (&E821)
 ;*                                                                       *
 ;*************************************************************************
 
-		jmp	($0200)		; Jump via USERV
+_LE659:		jmp	($0200)		; Jump via USERV
 
 
 ;*************************************************************************
@@ -123,9 +123,9 @@ _LE5B3:		.byte	$21,$E8		; OSBYTE   0  (&E821)
 ;*                                                                       *
 ;*************************************************************************
 
-		ldx	#$00		; X=0
+_LE65C:		ldx	#$00		; X=0
 		bit	$FF		; if bit 7 not set there is no ESCAPE condition
-		bpl	_BE673		; so E673
+		bpl	_LE673		; so E673
 		lda	$0276		; else get ESCAPE Action, if this is 0
 					; Clear ESCAPE
 					; close EXEC files
@@ -146,7 +146,7 @@ _BE671:		ldx	#$FF		; X=&FF to indicate ESCAPE acknowledged
 ;*                                                                       *
 ;*************************************************************************
 
-_BE673:		clc			; clear carry
+_LE673:		clc			; clear carry
 
 
 ;*************************************************************************
@@ -169,7 +169,7 @@ _BE67C:		jmp	$0403		; Jump to Tube entry point
 ;*                                                                       *
 ;*************************************************************************
 
-		lda	$0282		; get serial ULA control setting
+_LE67F:		lda	$0282		; get serial ULA control setting
 		tay			; Y=A
 		rol			; rotate left to get bit 7 into carry
 		cpx	#$01		; if X=1 then user wants motor on so CARRY set else
@@ -178,7 +178,7 @@ _BE67C:		jmp	$0403		; Jump to Tube entry point
 		bvc	_LE6A7		; if bit 6 is clear then cassette is selected
 					; so write to control register and RAM copy
 
-		lda	#$38		; A=ASCII 8
+_LE689:		lda	#$38		; A=ASCII 8
 
 
 ;*************************************************************************
@@ -190,7 +190,7 @@ _BE67C:		jmp	$0403		; Jump to Tube entry point
 ; ###     	     A=8 transmit
 ; ###     	     A=7 receive
 
-		eor	#$3F		; converts ASCII 8 to 7 binary and ASCII 7 to 8 binary
+_LE68B:		eor	#$3F		; converts ASCII 8 to 7 binary and ASCII 7 to 8 binary
 		sta	$FA		; store result
 		ldy	$0282		; get serial ULA control register setting
 		cpx	#$09		; is it 9 or more?
@@ -220,7 +220,7 @@ _BE6AE:		tax			; write new setting to X
 ;*************************************************************************
 ;on entry Y=0, X=new value
 
-		iny			; Y is incremented to 1
+_LE6B0:		iny			; Y is incremented to 1
 		clc			; clear carry
 
 
@@ -232,7 +232,7 @@ _BE6AE:		tax			; write new setting to X
 
 ;on entry Y=0 or 1 if from FX 9 call, X=new value
 
-		lda	$0252,Y		; get mark period count
+_LE6B2:		lda	$0252,Y		; get mark period count
 		pha			; push it
 		txa			; get new count
 		sta	$0252,Y		; store it
@@ -261,7 +261,7 @@ _BE6D1:		bvc	_BE6AD		; then exit via OSBYTE 7/8
 
 ;on input X contains stream number
 
-		txa			; A=X
+_LE6D3:		txa			; A=X
 		and	#$01		; blank out bits 1 - 7
 		pha			; push A
 		lda	$0250		; and get current ACIA control setting
@@ -291,7 +291,7 @@ _BE6F1:		ldx	$0241		; get current input buffer number
 
 		; X contains event number 0-9
 
-		tya			; Y=0 A=0
+_LE6F9:		tya			; Y=0 A=0
 
 
 ;*************************************************************************
@@ -301,7 +301,7 @@ _BE6F1:		ldx	$0241		; get current input buffer number
 ;*************************************************************************
 ;X contains event number 0-9
 
-		cpx	#$0A		; if X>9
+_LE6FA:		cpx	#$0A		; if X>9
 		bcs	_BE6AE		; goto E6AE for exit
 		ldy	$02bf,X		; else get event enable flag
 		sta	$02bf,X		; store new value in flag
@@ -315,7 +315,7 @@ _BE6F1:		ldx	$0241		; get current input buffer number
 ;*************************************************************************
 ;X contains channel number or 0 if disable conversion
 
-		beq	_BE70B		; if X=0 then E70B
+_LE706:		beq	_BE70B		; if X=0 then E70B
 		jsr	_LDE8C		; start conversion
 
 _BE70B:		lda	$024d		; get  current maximum ADC channel number
@@ -332,7 +332,7 @@ _BE70B:		lda	$024d		; get  current maximum ADC channel number
 ;X and Y contains either time limit in centi seconds Y=&7F max
 ; or Y=&FF and X=-ve INKEY value
 
-		tya			; A=Y
+_LE713:		tya			; A=Y
 		bmi	_BE721		; if Y=&FF the E721
 		cli			; else allow interrupts
 		jsr	_LDEBB		; and go to timed routine
@@ -349,7 +349,7 @@ _BE721:		txa			; A=X
 		tax			; X=A
 		jsr	_LF068		; then scan keyboard
 		rol			; put bit 7 into carry
-_BE729:		ldx	#$FF		; X=&FF
+_LE729:		ldx	#$FF		; X=&FF
 		ldy	#$FF		; Y=&FF
 		bcs	_BE731		; if bit 7 of A was set goto E731 (RTS)
 		inx			; else X=0
@@ -409,10 +409,10 @@ _BE74E:		rts			; and exit
 ;   	   X=&F8 (sound 3)        X=number of empty spaces in buffer
 ;   	   X=&F7 (Speech )        X=number of empty spaces in buffer
 
-		bmi	_BE732		; if X is -ve then E732 count spaces
+_LE74F:		bmi	_BE732		; if X is -ve then E732 count spaces
 		beq	_BE75F		; if X=0 then E75F
 		cpx	#$05		; else check for Valid channel
-		bcs	_BE729		; if not E729 set X & Y to 0 and exit
+		bcs	_LE729		; if not E729 set X & Y to 0 and exit
 		ldy	$02b9,X		; get conversion values for channel of interest Hi &
 		lda	$02b5,X		; lo byte
 		tax			; X=lo byte
@@ -571,7 +571,7 @@ _LE7EB:		pha			; Push A
 ;XY +0  ADDRESS of byte
 ;   +4  on exit byte read
 
-		jsr	_LE815		; set up address of data block
+_LE803:		jsr	_LE815		; set up address of data block
 		lda	($F9,X)		; get byte
 		sta	($F0),Y		; store it
 		rts			; exit
@@ -588,7 +588,7 @@ _LE7EB:		pha			; Push A
 ;XY +0  ADDRESS of byte
 ;   +4  byte to be written
 
-		jsr	_LE815		; set up address
+_LE80B:		jsr	_LE815		; set up address
 		lda	($F0),Y		; get byte
 		sta	($F9,X)		; store it
 _BE812:		lda	#$00		; a=0
@@ -613,7 +613,7 @@ _BE81E:		ldx	#$01		; X=1
 ;*                                                                       *
 ;*************************************************************************
 
-		bne	_BE81E		; if A <> 0 then exit else print error
+_LE821:		bne	_BE81E		; if A <> 0 then exit else print error
 		brk			; 
 		.byte	$F7		; error number
 		.byte	"OS 1.20"		; error message

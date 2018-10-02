@@ -20,7 +20,7 @@
 
 .org		$e82d
 
-		iny	
+_LE82D:		iny	
 		lda	($F0),Y		; Get channel high byte byte
 		cmp	#$FF
 		beq	_BE88D		; Channel &FFxx, speech command
@@ -72,7 +72,7 @@ _BE869:		pla			; Drop stacked pitch
 ;|                                                                       |
 ;-------------------------------------------------------------------------
 
-		ldx	$D0		; get VDU status byte in X
+_LE86C:		ldx	$D0		; get VDU status byte in X
 		rts			; and return
 
 ;************* set up sound data for Bell ********************************
@@ -155,7 +155,7 @@ _BE8A4:		pla			; Get word number high byte or pitch back
 ;   12  target level at end of attack phase   (0-126)
 ;   13  target level at end of decay  phase   (0-126)
 
-		sbc	#$01		; set up appropriate displacement to storage area
+_LE8AE:		sbc	#$01		; set up appropriate displacement to storage area
 		asl			; A=(A-1)*16 or 15
 		asl			; 
 		asl			; 
@@ -192,7 +192,7 @@ _LE8C9:		lda	($F0),Y		; get byte
 ;*************************************************************************
 ;F0/1 points to block to store data
 
-		ldx	#$0F		; X=&F displacement from clock to timer
+_LE8D1:		ldx	#$0F		; X=&F displacement from clock to timer
 		bne	_BE8D8		; jump to E8D8
 
 
@@ -205,7 +205,7 @@ _LE8C9:		lda	($F0),Y		; get byte
 ;*************************************************************************
 ;F0/1 points to block to store data
 
-		ldx	$0283		; X=current system clock store pointer
+_LE8D5:		ldx	$0283		; X=current system clock store pointer
 
 _BE8D8:		ldy	#$04		; Y=4
 _BE8DA:		lda	$028d,X		; read byte
@@ -225,7 +225,7 @@ _BE8E3:		rts			; else exit
 ;*************************************************************************
 ;F0/1 points to block to store data
 
-		lda	#$0F		; offset between clock and timer
+_LE8E4:		lda	#$0F		; offset between clock and timer
 		bne	_BE8EE		; jump to E8EE ALWAYS!!
 
 
@@ -238,7 +238,7 @@ _BE8E3:		rts			; else exit
 ;*************************************************************************
 ;F0/1 points to block to store data
 
-		lda	$0283		; get current clock store pointer
+_LE8E8:		lda	$0283		; get current clock store pointer
 		eor	#$0F		; and invert to get inactive timer
 		clc			; clear carry
 
@@ -269,7 +269,7 @@ _BE8F2:		lda	($F0),Y		; and transfer all 5 bytes
 ;   	+3   minimum acceptable ASCII value
 ;   	+4   maximum acceptable ASCII value
 
-		ldy	#$04		; Y=4
+_LE902:		ldy	#$04		; Y=4
 
 _BE904:		lda	($F0),Y		; transfer bytes 4,3,2 to 2B3-2B5
 		sta	$02b1,Y		; 
@@ -350,12 +350,12 @@ _BE972:		lda	$FF		; A=ESCAPE FLAG
 ;*                                                                       *
 ;*************************************************************************
 
-_BE976:		cli			; allow interrupts briefly
+_LE976:		cli			; allow interrupts briefly
 		sei			; bar interrupts
 		bit	$FF		; check if ESCAPE is pending
 		bmi	_BE9AC		; if it is E9AC
 		bit	$02d2		; else check bit 7 buffer 3 (printer)
-		bpl	_BE976		; if not empty bit 7=0 E976
+		bpl	_LE976		; if not empty bit 7=0 E976
 
 		jsr	_LE1A4		; check for user defined routine
 		ldy	#$00		; Y=0
@@ -377,7 +377,7 @@ _BE976:		cli			; allow interrupts briefly
 ;*************************************************************************
 ; A contains osbyte number
 
-		ora	#$F0		; A=osbyte +&F0
+_LE988:		ora	#$F0		; A=osbyte +&F0
 		bne	_BE99A		; JUMP to E99A
 
 
@@ -389,7 +389,7 @@ _BE976:		cli			; allow interrupts briefly
 ;*                                                                       *
 ;*************************************************************************
 
-		bne	_BE995		; if &F0<>0 goto E995
+_LE98C:		bne	_LE995		; if &F0<>0 goto E995
 		ldx	#$32		; if X=0 in original call then X=32
 		stx	$0254		; to set keyboard autorepeat delay ram copy
 		ldx	#$08		; X=8
@@ -403,7 +403,7 @@ _BE976:		cli			; allow interrupts briefly
 ;*                                                                       *
 ;*************************************************************************
 
-_BE995:		adc	#$CF		; A=A+&D0 (carry set)
+_LE995:		adc	#$CF		; A=A+&D0 (carry set)
 
 
 ;*************************************************************************
@@ -421,7 +421,7 @@ _BE995:		adc	#$CF		; A=A+&D0 (carry set)
 ;*                                                                       *
 ;*************************************************************************
 
-		clc			; c,ear carry
+_LE997:		clc			; c,ear carry
 		adc	#$E9		; A=A+&E9
 
 _BE99A:		stx	$F0		; store X
@@ -435,7 +435,7 @@ _BE99A:		stx	$F0		; store X
 ;*                                                                       *
 ;*************************************************************************
 
-		tay			; Y=A
+_LE99C:		tay			; Y=A
 		lda	$0190,Y		; i.e. A=&190 +osbyte call!
 		tax			; preserve this
 		and	$F1		; new value = OLD value AND Y EOR X!
@@ -465,7 +465,7 @@ _LE9AD:		.byte	$64		; % 01100100      75
 ;*                                                                       *
 ;*************************************************************************
 
-		lda	$0240		; read vertical sync counter
+_LE9B6:		lda	$0240		; read vertical sync counter
 _BE9B9:		cli			; allow interrupts briefly
 		sei			; bar interrupts
 		cmp	$0240		; has it changed?
@@ -493,7 +493,7 @@ _BE9B9:		cli			; allow interrupts briefly
 ;20-23 old graphics cursor in internal coordinates
 ;24 current text cursor in X and Y
 
-		ldy	$0301,X		; get VDU variable hi
+_LE9C0:		ldy	$0301,X		; get VDU variable hi
 		lda	$0300,X		; low
 		tax			; X=low byte
 		rts			; and exit
@@ -566,7 +566,7 @@ _LE9F8:		php			; push flags
 ;*                                                                       *
 ;*************************************************************************
 
-		txa			; osbyte entry! X transferred to A thence to
+_LE9FF:		txa			; osbyte entry! X transferred to A thence to
 
 ;*******Set Video ULA control register **entry from VDU routines **************
 		; called from &CBA6, &DD37
@@ -587,7 +587,7 @@ _LEA00:		php			; save flags
 ;*                                                                       *
 ;*************************************************************************
 ;entry X contains value to write
-		txa			; A=X
+_LEA10:		txa			; A=X
 _LEA11:		eor	#$07		; convert to palette format
 		php			; 
 		sei			; prevent interrupts

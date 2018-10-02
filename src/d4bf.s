@@ -169,7 +169,7 @@ _BD5BD:		pha			;
 ;*                                                                       *
 ;*************************************************************************
 		; 
-		lda	#$03		; A=3
+_LD5CE:		lda	#$03		; A=3
 		jsr	_LD5D5		; 
 		lda	#$07		; A=7
 _LD5D5:		pha			; Save A
@@ -247,7 +247,7 @@ _LD636:		lda	$0302,X		;
 ;*                                                                       *
 ;*************************************************************************
 
-		lda	$0318		; read current text cursor (X)
+_LD647:		lda	$0318		; read current text cursor (X)
 		sec			; set carry
 		sbc	$0308		; subtract left hand column of current text window
 		tax			; X=A
@@ -662,7 +662,7 @@ _LD918:		lda	#$BD		; zero bits 2 and 6 of VDU status
 ;*                                                                       *
 ;*************************************************************************
 
-		ldx	$0355		; Get current screen mode
+_LD923:		ldx	$0355		; Get current screen mode
 
 
 ;*************************************************************************
@@ -671,7 +671,7 @@ _LD918:		lda	#$BD		; zero bits 2 and 6 of VDU status
 ;*                                                                       *
 ;*************************************************************************
 
-		txa			; A=X
+_LD926:		txa			; A=X
 		and	#$07		; Ensure mode 0-7
 		tay			; Pass to Y into index into screen size table
 		ldx	_LC440,Y		; X=screen size type, 0-4

@@ -263,7 +263,7 @@ _LF03B:		.byte	$71,$33,$34,$35,$84,$38,$87,$2d,$5e,$8c
 ;*                                                                       *
 ;*************************************************************************
 
-		sty	$EC		; store Y as latest key pressed
+_LF045:		sty	$EC		; store Y as latest key pressed
 		stx	$ED		; store X as previous key pressed
 		rts			; and exit
 
@@ -312,7 +312,7 @@ _LF075:		.byte	$00,$ff,$01,$02,$09,$0a
 ;*                                                                       *
 ;*************************************************************************
 
-		ldy	$0244		; read current OSHWM
+_LF085:		ldy	$0244		; read current OSHWM
 		ldx	#$00		; 
 		rts			; 
 
@@ -344,7 +344,7 @@ _LF0A5:		jmp	($0220)		; goto eventV handling routine
 		; X=0 flush all buffers
 		; X>1 flush input buffer
 
-		bne	_BF095		; if X<>1 flush input buffer only
+_LF0A8:		bne	_BF095		; if X<>1 flush input buffer only
 _LF0AA:		ldx	#$08		; else load highest buffer number (8)
 _BF0AC:		cli			; allow interrupts
 		sei			; briefly!
@@ -386,7 +386,7 @@ _LF0B4:		cpx	#$09		; is X<9?
 ;*************************************************************************
 
 _LF0CC:		clc			; clear carry
-		ldx	#$10		; set X to 10
+_LF0CD:		ldx	#$10		; set X to 10
 
 
 ;*************************************************************************
@@ -395,7 +395,7 @@ _LF0CC:		clc			; clear carry
 ;*                                                                       *
 ;*************************************************************************
 
-		bcs	_LF068		; if carry set (by osbyte 121) F068
+_LF0CF:		bcs	_LF068		; if carry set (by osbyte 121) F068
 					; Jmps via KEYV and hence back to;
 
 

@@ -118,7 +118,7 @@ _LFFA6:		rts			; return and exit pulling original return address
 ;*       OSBYTE &9D    FAST BPUT                                         *
 ;*                                                                       *
 ;*************************************************************************
-		txa			; A=X
+_LFFA7:		txa			; A=X
 		bcs	_LFFD4		; carry always set, jump to BPUT
 
 
@@ -128,7 +128,7 @@ _LFFA6:		rts			; return and exit pulling original return address
 ;*                                                                       *
 ;*************************************************************************       ;
 
-		ldy	$fc00,X		; read a byte from FRED area
+_LFFAA:		ldy	$fc00,X		; read a byte from FRED area
 		rts			; return
 
 
@@ -138,7 +138,7 @@ _LFFA6:		rts			; return and exit pulling original return address
 ;*                                                                       *
 ;*************************************************************************       ;
 		; 
-		ldy	$fd00,X		; read a byte from JIM area
+_LFFAE:		ldy	$fd00,X		; read a byte from JIM area
 		rts			; return
 
 

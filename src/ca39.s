@@ -269,7 +269,7 @@ _LCBC1:		ldx	#$00		; X=0
 ;(&DE) points to address
 ;on exit byte YX+1 to YX+8 contain definition
 
-		jsr	_LD03E		; set up character definition pointers
+_LCBF3:		jsr	_LD03E		; set up character definition pointers
 		ldy	#$00		; Y=0
 _BCBF8:		lda	($DE),Y		; get first byte
 		iny			; Y=Y+1

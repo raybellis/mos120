@@ -155,8 +155,8 @@ _BE021:		ldy	$E6		; Restore pointer to start of command
 ; Pass to current filing system
 _LE031:		jmp	($021e)
 
-		asl	A
-		and	#$01
+_LE034:		asl	A
+_LE035:		and	#$01
 		bpl	_LE031
 
 ; Skip spaces
@@ -374,7 +374,7 @@ _LE17A:		ldy	#$9F		;
 ;*************************************************************************
 ;on entry
 
-		php			; push flags
+_LE17C:		php			; push flags
 		sei			; bar interrupts
 		tya			; A=Y
 		stx	$FA		; &FA=X
@@ -399,7 +399,7 @@ _BE191:		clc			; clear carry
 ;*                                                                       *
 ;*************************************************************************
 
-		ror	$02d2		; mark printer buffer empty for osbyte
+_LE197:		ror	$02d2		; mark printer buffer empty for osbyte
 _BE19A:		rts			; and exit
 
 _LE19B:		bit	$02d2		; if bit 7 is set buffer is empty
