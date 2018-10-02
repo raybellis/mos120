@@ -1,0 +1,671 @@
+*************************************************************************
+*************************************************************************
+**                                                                     **
+**      SYSTEM STARTUP                                                 **
+**                                                                     **
+*************************************************************************
+*************************************************************************
+
+* DEFAULT PAGE &02 SETTINGS (VECTORS, OSBYTE VARIABLES)
+* RESET CODE
+
+*************************************************************************
+*                                                                       *
+*       DEFAULT SYSTEM SETTINGS FOR PAGE &02                            *
+*                                                                       *
+*************************************************************************
+
+-------------------------------------------------------------------------
+|                                                                       |
+|       DEFAULT VECTOR TABLE                                            |
+|                                                                       |
+-------------------------------------------------------------------------
+
+D940	DW  &E310	; USERV				&200
+D942	DW  &DC54	; BRKV 				&202
+D944	DW  &DC93	; IRQ1V				&204
+D946	DW  &DE89	; IRQ2V				&206
+D948	DW  &DF89	; CLIV 				&208
+D94A	DW  &E772	; BYTEV				&20A
+D94C	DW  &E7EB	; WORDV				&20C
+D94E	DW  &E0A4	; WRCHV				&20E
+D950	DW  &DEC5	; RDCHV				&210
+D952	DW  &F27D	; FILEV				&212
+D954	DW  &F18E	; ARGSV				&214
+D956	DW  &F4C9	; BGETV				&216
+D958	DW  &F529	; BPUTV				&218
+D95A	DW  &FFA6	; GBPBV				&21A
+D95C	DW  &F3CA	; FINDV				&21C
+D95E	DW  &F1B1	; FSCV 				&21E
+D960	DW  &FFA6	; EVNTV				&220
+D962	DW  &FFA6	; UPTV 				&222
+D964	DW  &FFA6	; NETV 				&224
+D966	DW  &FFA6	; VDUV 				&226
+D968	DW  &EF02	; KEYV 				&228
+D96A	DW  &E4B3	; INSBV				&22A
+D96C	DW  &E464	; REMVB				&22C
+D96E	DW  &E1D1	; CNPV 				&22E
+D970	DW  &FFA6	; IND1V				&230
+D972	DW  &FFA6	; IND2V				&232
+D974	DW  &FFA6	; IND3V				&234
+
+-------------------------------------------------------------------------
+|                                                                       |
+|       DEFAULT MOS VARIABLES SETTINGS                                  |
+|                                                                       |
+-------------------------------------------------------------------------
+
+* Read/Written by OSBYTE &A6 to &FC
+
+D976	DW  &0190   ; OSBYTE variables base address          &236   *FX166/7
+		    ; (address to add to osbyte number)
+D978	DB  &0D9F   ; Address of extended vectors            &238   *FX168/9
+D97A	DB  &02A1   ; Address of ROM information table       &23A   *FX170/1
+D97C	DB  &F02B   ; Address of key translation table       &23C   *FX172/3
+D97E	DB  &0300   ; Address of VDU variables               &23E   *FX174/5
+
+D980	DB  &00     ; CFS/Vertical sync Timeout counter      &240   *FX176
+D981	DB  &00     ; Current input buffer number            &241   *FX177
+D982	DB  &FF     ; Keyboard interrupt processing flag     &242   *FX178
+D983	DB  &00     ; Primary OSHWM (default PAGE)           &243   *FX179
+D984	DB  &00     ; Current OSHWM (PAGE)                   &244   *FX180
+D985	DB  &01     ; RS423 input mode                       &245   *FX181
+D986	DB  &00     ; Character explosion state              &246   *FX182
+D987	DB  &00     ; CFS/RFS selection, CFS=0 ROM=2         &247   *FX183
+D988	DB  &00     ; Video ULA control register copy        &248   *FX184
+D989	DB  &00     ; Pallette setting copy                  &249   *FX185
+D98A	DB  &00     ; ROM number selected at last BRK        &24A   *FX186
+D98B	DB  &FF     ; BASIC ROM number                       &24B   *FX187
+D98C	DB  &04     ; Current ADC channel number             &24C   *FX188
+D98D	DB  &04     ; Maximum ADC channel number             &24D   *FX189
+D98E	DB  &00     ; ADC conversion 0/8bit/12bit            &24E   *FX190
+D98F	DB  &FF     ; RS423 busy flag (bit 7=0, busy)        &24F   *FX191
+
+D990	DB  &56     ; ACIA control register copy             &250   *FX192
+D991	DB  &19     ; Flash counter                          &251   *FX193
+D992	DB  &19     ; Flash mark period count                &252   *FX194
+D993	DB  &19     ; Flash space period count               &253   *FX195
+D994	DB  &32     ; Keyboard auto-repeat delay             &254   *FX196
+D995	DB  &08     ; Keyboard auto-repeat rate              &255   *FX197
+D996	DB  &00     ; *EXEC file handle                      &256   *FX198
+D997	DB  &00     ; *SPOOL file handle                     &257   *FX199
+D998	DB  &00     ; Break/Escape handing                   &258   *FX200
+D999	DB  &00     ; Econet keyboard disable flag           &259   *FX201
+D99A	DB  &20     ; Keyboard status                        &25A   *FX202
+		    ;  bit 3=1 shift pressed
+		    ;  bit 4=0 caps  lock
+		    ;  bit 5=0 shift lock
+		    ;  bit 6=1 control bit
+		    ;  bit 7=1 shift enabled
+D99B	DB  &09     ; Serial input buffer full threshold     &25B   *FX203
+D99C	DB  &00     ; Serial input suppression flag          &25C   *FX204
+D99D	DB  &00     ; Cassette/RS423 flag (0=CFS, &40=RS423) &25D   *FX205
+D99E	DB  &00     ; Econet OSBYTE/OSWORD interception flag &25E   *FX206
+D99F	DB  &00     ; Econet OSRDCH interception flag        &25F   *FX207
+
+D9A0	DB  &00     ; Econet OSWRCH interception flag        &260   *FX208
+D9A1	DB  &50     ; Speech enable/disable flag (&20/&50)   &261   *FX209
+D9A2	DB  &00     ; Sound output disable flag              &262   *FX210
+D9A3	DB  &03     ; BELL channel number                    &263   *FX211
+D9A4	DB  &90     ; BELL amplitude/Envelope number         &264   *FX212
+D9A5	DB  &64     ; BELL frequency                         &265   *FX213
+D9A6	DB  &06     ; BELL duration                          &266   *FX214
+D9A7	DB  &81     ; Startup message/!BOOT error status     &267   *FX215
+D9A8	DB  &00     ; Length of current soft key string      &268   *FX216
+D9A9	DB  &00     ; Lines printed since last paged halt    &269   *FX217
+D9AA	DB  &00     ; 0-(Number of items in VDU queue)       &26A   *FX218
+D9AB	DB  &09     ; TAB key value                          &26B   *FX219
+D9AC	DB  &1B     ; ESCAPE character                       &26C   *FX220
+
+	; The following are input buffer code interpretation variables for
+	; bytes entered into the input buffer with b7 set (is 128-255).
+	; The standard keyboard only enters characters &80-&BF with the
+	; function keys, but other characters can be entered, for instance
+	; via serial input of via other keyboard input systems.
+	; 0=ignore key
+	; 1=expand as soft key
+	; 2-FF add to base for ASCII code
+D9AD	DB  &01     ; C0-&CF                                 &26D   *FX221
+D9AE	DB  &D0     ; D0-&DF                                 &26E   *FX222
+D9AF	DB  &E0     ; E0-&EF                                 &26F   *FX223
+D9B0	DB  &F0     ; F0-&FF                                 &270   *FX224
+D9B1	DB  &01     ; 80-&8F function key                    &271   *FX225
+D9B2	DB  &80     ; 90-&9F Shift+function key              &272   *FX226
+D9B3	DB  &90     ; A0-&AF Ctrl+function key               &273   *FX227
+D9B4	DB  &00     ; B0-&BF Shift+Ctrl+function key         &274   *FX228
+
+D9B5	DB  &00     ; ESCAPE key status (0=ESC, 1=ASCII)     &275   *FX229
+D9B6	DB  &00     ; ESCAPE action                          &276   *FX230
+D9B7	DB  &FF     ; USER 6522 Bit IRQ mask                 &277   *FX231
+D9B8	DB  &FF     ; 6850 ACIA Bit IRQ bit mask             &278   *FX232
+D9B9	DB  &FF     ; System 6522 IRQ bit mask               &279   *FX233
+D9BA	DB  &00     ; Tube prescence flag                    &27A   *FX234
+D9BB	DB  &00     ; Speech processor prescence flag        &27B   *FX235
+D9BC	DB  &00     ; Character destination status           &27C   *FX236
+D9BD	DB  &00     ; Cursor editing status                  &27D   *FX237
+
+****************** Soft Reset high water mark ***************************
+
+D9BE	DB  &00     ; unused                                 &27E   *FX238
+D9BF	DB  &00     ; unused                                 &27F   *FX239
+D9C0	DB  &00     ; Country code                           &280   *FX240
+D9C1	DB  &00     ; User flag                              &281   *FX241
+D9C2	DB  &64     ; Serial ULA control register copy       &282   *FX242
+D9C3	DB  &05     ; Current system clock state             &283   *FX243
+D9C4	DB  &FF     ; Soft key consitancy flag               &284   *FX244
+D9C5	DB  &01     ; Printer destination                    &285   *FX245
+D9C6	DB  &0A     ; Printer ignore character               &286   *FX246
+   	
+****************** Hard Reset High water mark ***************************
+   	
+D9C7	DB  &00     ; Break Intercept Vector JMP opcode      &288   *FX247
+D9C8	DB  &00     ; Break Intercept Vector address low     &288   *FX248
+D9C9	DB  &00     ; Break Intercept Vector address high    &289   *FX249
+D9CA	DB  &00     ; unused (memory used for VDU)           &28A   *FX250
+D9CB	DB  &00     ; unused (memory used for display)       &28B   *FX251
+D9CC	DB  &FF     ; Current language ROM number            &28C   *FX252
+   	
+****************** Power-On Reset High Water mark ***********************
+
+
+**************************************************************************
+**************************************************************************
+**                                                                      **
+**      RESET (BREAK) ENTRY POINT                                       **
+**                                                                      **
+**      Power up Enter with nothing set, 6522 System VIA IER bits       **
+**      0 to 6 will be clear                                            **
+**                                                                      **
+**      BREAK IER bits 0 to 6 one or more will be set 6522 IER          **
+**      not reset by BREAK                                              **
+**                                                                      **
+**************************************************************************
+**************************************************************************
+
+D9CD	LDA #&40    ;set NMI first instruction to RTI
+D9CF	STA &0D00   ;NMI ram start
+
+D9D2	SEI         ;disable interrupts just in case
+D9D3	CLD         ;clear decimal flag
+D9D4	LDX #&FF    ;reset stack to where it should be
+D9D6	TXS         ;(&1FF)
+D9D7	LDA &FE4E   ;read interupt enable register of the system VIA
+D9DA	ASL         ;shift bit 7 into carry
+D9DB	PHA         ;save what's left
+D9DC	BEQ &D9E7   ;if Power up A=0 so D9E7
+D9DE	LDA &0258   ;else if BREAK pressed read BREAK Action flags (set by
+		    ;*FX200,n)
+D9E1	LSR         ;divide by 2
+D9E2	CMP #&01    ;if (bit 1 not set by *FX200)
+D9E4	BNE &DA03   ;then &DA03
+D9E6	LSR         ;divide A by 2 again (A=0 if *FX200,2/3 else A=n/4
+
+********** clear memory routine ******************************************
+
+D9E7	LDX #&04    ;get page to start clearance from (4)
+D9E9	STX &01     ;store it in ZP 01
+D9EB	STA &00     ;store A at 00
+
+D9ED	TAY         ;and in Y to set loop counter
+   	
+D9EE	STA (&00),Y ;clear store
+D9F0	CMP &01     ;until address &01 =0
+D9F2	BEQ &D9FD   ;
+D9F4	INY         ;increment pointer
+D9F5	BNE &D9EE   ;if not zero loop round again
+D9F7	INY         ;else increment again (Y=1) this avoids overwriting
+   		    ;RTI instruction at &D00
+D9F8	INX         ;increment X
+D9F9	INC &01     ;increment &01
+D9FB	BPL &D9EE   ;loop until A=&80 then exit
+   		    ;note that RAM addressing for 16k loops around so
+   		    ;&4000=&00 hence checking &01 for 00.  This avoids
+   		    ;overwriting zero page on BREAK
+
+
+D9FD	STX &028E   ;writes marker for available RAM 40 =16k,80=32
+DA00	STX &0284   ;write soft key consistency flag
+
+**+********** set up system VIA *****************************************
+
+DA03	LDX #&0F    ;set PORT B to output on bits 0-3 Input 4-7
+DA05	STX &FE42   ;
+
+
+*************************************************************************
+*                                                                       *
+*        set addressable latch IC 32 for peripherals via PORT B         *
+*                                                                       *
+*       ;bit 3 set sets addressed latch high adds 8 to VIA address      *
+*       ;bit 3 reset sets addressed latch low                           *
+*                                                                       *
+*       Peripheral              VIA bit 3=0             VIA bit 3=1     *
+*                                                                       *
+*       Sound chip              Enabled                 Disabled        *
+*       speech chip (RS)        Low                     High            *
+*       speech chip (WS)        Low                     High            *
+*       Keyboard Auto Scan      Disabled                Enabled         *
+*       C0 address modifier     Low                     High            *
+*       C1 address modifier     Low                     High            *
+*       Caps lock  LED          ON                      OFF             *
+*       Shift lock LED          ON                      OFF             *
+*                                                                       *
+*       C0 & C1 are involved with hardware scroll screen address        *
+*************************************************************************
+
+   	;X=&F on entry
+
+DA08	DEX         ;loop start
+DA09	STX &FE40   ;write latch IC32
+DA0C	CPX #&09    ;is it 9
+DA0E	BCS &DA08   ;if so go back and do it again
+   		    ;X=8 at this point
+   		    ;Caps lock On, SHIFT lock undetermined
+   		    ;Keyboard Autoscan on
+   		    ;sound disabled (may still sound)
+DA10	INX         ;X=9
+DA11	TXA         ;A=X
+DA12	JSR &F02A   ;interrogate keyboard
+DA15	CPX #&80    ;for keyboard links 9-2 and CTRL key (1)
+DA17	ROR &FC     ;rotate MSB into bit 7 of &FC
+
+DA19	TAX         ;get back value of X for loop
+DA1A	DEX         ;decrement it
+DA1B	BNE &DA11   ;and if >0 do loop again
+   		    ; on exit if Carry set link 3 made
+   		    ;link 2 = bit 0 of &FC and so on
+   		    ;if CTRL pressed bit 7 of &FC=1
+   		    ;X=0
+DA1D	STX &028D   ;clear last BREAK flag
+DA20	ROL &FC     ;CTRL is now in carry &FC is keyboard links
+DA22	JSR &EEEB   ;set LEDs carry on entry  bit 7 of A on exit
+DA25	ROR         ;get carry back into carry flag
+
+****** set up page 2 ****************************************************
+
+DA26	LDX #&9C    ;
+DA28	LDY #&8D    ;
+DA2A	PLA         ;get back A from &D9DB
+DA2B	BEQ &DA36   ;if A=0 power up reset so DA36 with X=&9C Y=&8D
+DA2D	LDY #&7E    ;else Y=&7E
+DA2F	BCC &DA42   ;and if not CTRL-BREAK DA42 WARM RESET
+DA31	LDY #&87    ;else Y=&87 COLD RESET
+DA33	INC &028D   ;&28D=1
+
+DA36	INC &028D   ;&28D=&28D+1
+DA39	LDA &FC     ;get keyboard links set
+DA3B	EOR #&FF    ;invert
+DA3D	STA &028F   ;and store at &28F
+DA40	LDX #&90    ;X=&90
+
+**********: set up page 2 *************************************************
+
+   	;on entry    &28D=0 Warm reset, X=&9C, Y=&7E
+   		    ;&28D=1 Power up  , X=&90, Y=&8D
+   		    ;&28D=2 Cold reset, X=&9C, Y=&87
+
+DA42	LDA #&00    ;A=0
+DA44	CPX #&CE    ;zero &200+X to &2CD
+DA46	BCC &DA4A   ;
+DA48	LDA #&FF    ;then set &2CE to &2FF to &FF
+DA4A	STA &0200,X ;
+DA4D	INX         ;
+DA4E	BNE &DA44   ;
+   		    ;A=&FF X=0
+DA50	STA &FE63   ;set port A of user via to all outputs (printer out)
+
+DA53	TXA         ;A=0
+DA54	LDX #&E2    ;X=&E2
+DA56	STA &00,X   ;zero zeropage &E2 to &FF
+DA58	INX         ;
+DA59	BNE &DA56   ;X=0
+
+DA5B	LDA &D93F,Y ;copy data from &D93F+Y
+DA5E	STA &01FF,Y ;to &1FF+Y
+DA61	DEY         ;until
+DA62	BNE &DA5B   ;1FF+Y=&200
+
+DA64	LDA #&62    ;A=&62
+DA66	STA &ED     ;store in &ED
+DA68	JSR &FB0A   ;set up ACIA
+   		    ;X=0
+
+************** clear interrupt and enable registers of Both VIAs ********
+
+DA6B	LDA #&7F    ;
+DA6D	INX         ;
+DA6E	STA &FE4D,X ;
+DA71	STA &FE6D,X ;
+DA74	DEX         ;
+DA75	BPL &DA6E   ;
+
+DA77	CLI         ;briefly allow interrupts to clear anything pending
+DA78	SEI         ;disallow again N.B. All VIA IRQs are disabled
+DA79	BIT &FC     ;if bit 6=1 then JSR &F055 (normally 0)
+DA7B	BVC &DA80   ;else DA80
+DA7D	JSR &F055   ;F055 JMP (&FDFE) probably causes a BRK unless
+   		    ;hardware there redirects it.
+   		    ;
+DA80	LDX #&F2    ;enable interrupts 1,4,5,6 of system VIA
+DA82	STX &FE4E   ;
+   		    ;0      Keyboard enabled as needed
+   		    ;1      Frame sync pulse
+   		    ;4      End of A/D conversion
+   		    ;5      T2 counter (for speech)
+   		    ;6      T1 counter (10 mSec intervals)
+   		    ;
+DA85	LDX #&04    ;set system VIA PCR
+DA87	STX &FE4C   ;
+   		    ;CA1 to interrupt on negative edge (Frame sync)
+   		    ;CA2 Handshake output for Keyboard
+   		    ;CB1 interrupt on negative edge (end of conversion)
+   		    ;CB2 Negative edge (Light pen strobe)
+   		    ;
+DA8A	LDA #&60    ;set system VIA ACR
+DA8C	STA &FE4B   ;
+   		    ;disable latching
+   		    ;disable shift register
+   		    ;T1 counter continuous interrupts
+   		    ;T2 counter timed interrupt
+
+DA8F	LDA #&0E    ;set system VIA T1 counter (Low)
+DA91	STA &FE46   ;
+   		    ;this becomes effective when T1 hi set
+
+DA94	STA &FE6C   ;set user VIA PCR
+   		    ;CA1 interrupt on -ve edge (Printer Acknowledge)
+   		    ;CA2 High output (printer strobe)
+   		    ;CB1 Interrupt on -ve edge (user port)
+   		    ;CB2 Negative edge (user port)
+
+DA97	STA &FEC0   ;set up A/D converter
+   		    ;Bits 0 & 1 determine channel selected
+   		    ;Bit 3=0 8 bit conversion bit 3=1 12 bit
+
+DA9A	CMP &FE6C   ;read user VIA IER if = &0E then DAA2 chip present
+DA9D	BEQ &DAA2   ;so goto DAA2
+DA9F	INC &0277   ;else increment user VIA mask to 0 to bar all
+   		    ;user VIA interrupts
+
+DAA2	LDA #&27    ;set T1 (hi) to &27 this sets T1 to &270E (9998 uS)
+DAA4	STA &FE47   ;or 10msec, interrupts occur every 10msec therefore
+DAA7	STA &FE45   ;
+
+DAAA	JSR &EC60   ;clear the sound channels
+
+DAAD	LDA &0282   ;read serial ULA control register
+DAB0	AND #&7F    ;zero bit 7
+DAB2	JSR &E6A7   ;and set up serial ULA
+
+DAB5	LDX &0284   ;get soft key status flag
+DAB8	BEQ &DABD   ;if 0 (keys OK) then DABD
+DABA	JSR &E9C8   ;else reset function keys
+
+
+*************************************************************************
+*                                                                       *
+*       Check sideways ROMs and make ROM list                           *
+*                                                                       *
+*************************************************************************
+
+   		    ;X=0
+DABD	JSR &DC16   ;set up ROM latch and RAM copy to X
+DAC0	LDX #&03    ;set X to point to offset in table
+DAC2	LDY &8007   ;get copyright offset from ROM
+
+   		    ; DF0C = ")C(",0
+DAC5	LDA &8000,Y ;get first byte
+DAC8	CMP &DF0C,X ;compare it with table byte
+DACB	BNE &DAFB   ;if not the same then goto DAFB
+DACD	INY         ;point to next byte
+DACE	DEX         ;(s)
+DACF	BPL &DAC5   ;and if still +ve go back to check next byte
+
+   		    ;this point is reached if 5 bytes indicate valid
+   		    ;ROM (offset +4 in (C) string)
+
+
+*************************************************************************
+* Check first 1K of each ROM against higher priority ROMs to ensure that*
+* there are no duplicates, if duplicate found ignore lower priority ROM *
+*************************************************************************
+
+DAD1	LDX &F4     ;get RAM copy of ROM No. in X
+DAD3	LDY &F4     ;and Y
+
+DAD5	INY         ;increment Y to check
+DAD6	CPY #&10    ;if ROM 15 is current ROM
+DAD8	BCS &DAFF   ;if equal or more than 16 goto &DAFF
+   		    ;to store catalogue byte
+DADA	TYA         ;else put Y in A
+DADB	EOR #&FF    ;invert it
+DADD	STA &FA     ;and store at &FA
+DADF	LDA #&7F    ;store &7F at
+DAE1	STA &FB     ;&FB to get address &7FFF-Y
+
+DAE3	STY &FE30   ;set new ROM
+DAE6	LDA (&FA),Y ;Get byte
+DAE8	STX &FE30   ;switch back to previous ROM
+DAEB	CMP (&FA),Y ;and compare with previous byte called
+DAED	BNE &DAD5   ;if not the same then go back and do it again
+   		    ;with next rom up
+DAEF	INC &FA     ;else increment &FA to point to new location
+DAF1	BNE &DAE3   ;if &FA<>0 then check next byte
+DAF3	INC &FB     ;else inc &FB
+DAF5	LDA &FB     ;and check that it doesn't exceed
+DAF7	CMP #&84    ;&84 (1k checked)
+DAF9	BCC &DAE3   ;then check next byte(s)
+
+DAFB	LDX &F4     ;X=(&F4)
+DAFD	BPL &DB0C   ;if +ve then &DB0C
+
+DAFF	LDA &8006   ;get rom type
+DB02	STA &02A1,X ;store it in catalogue
+DB05	AND #&8F    ;check for BASIC (bit 7 not set)
+DB07	BNE &DB0C   ;if not BASIC the DB0C
+DB09	STX &024B   ;else store X at BASIC pointer
+
+DB0C	INX         ;increment X to point to next ROM
+DB0D	CPX #&10    ;is it 15 or less
+DB0F	BCC &DABD   ;if so goto &DABD for next ROM
+
+OS SERIES V
+GEOFF COX
+*************************************************************************
+*                                                                       *
+*       Check SPEECH System                                             *
+*                                                                       *
+*************************************************************************
+
+    	            ;X=&10
+DB11	BIT &FE40   ;if bit 7 low then we have speech system fitted
+DB14	BMI &DB27   ;else goto DB27
+
+DB16	DEC &027B   ;(027B)=&FF to indicate speech present
+
+DB19	LDY #&FF    ;Y=&FF
+DB1B	JSR &EE7F   ;initialise speech generator
+DB1E	DEX         ;via this
+DB1F	BNE &DB19   ;loop
+    	            ;X=0
+DB21	STX &FE48   ;set T2 timer for speech
+DB24	STX &FE49   ;
+
+*********** SCREEN SET UP **********************************************
+    	            ;X=0
+DB27	LDA &028F   ;get back start up options (mode)
+DB2A	JSR &C300   ;then jump to screen initialisation
+
+DB2D	LDY #&CA    ;Y=&CA
+DB2F	JSR &E4F1   ;to enter this in keyboard buffer
+    	            ;this enables the *KEY 10 facility
+
+********* enter BREAK intercept with Carry Clear ************************
+
+DB32	JSR &EAD9   ;check to see if BOOT address is set up, if so
+    	            ;JMP to it
+
+DB35	JSR &F140   ;set up cassette options
+DB38	LDA #&81    ;test for tube to FIFO buffer 1
+DB3A	STA &FEE0   ;
+DB3D	LDA &FEE0   ;
+DB40	ROR         ;put bit 0 into carry
+DB41	BCC &DB4D   ;if no tube then DB4D
+DB43	LDX #&FF    ;else
+DB45	JSR &F168   ;issue ROM service call &FF
+    	            ;to initialise TUBE system
+DB48	BNE &DB4D   ;if not 0 on exit (Tube not initialised) DB4D
+DB4A	DEC &027A   ;else set tube flag to show it's active
+
+DB4D	LDY #&0E    ;set current value of PAGE
+DB4F	LDX #&01    ;issue claim absolute workspace call
+DB51	JSR &F168   ;via F168
+DB54	LDX #&02    ;send private workspace claim call
+DB56	JSR &F168   ;via F168
+DB59	STY &0243   ;set primary OSHWM
+DB5C	STY &0244   ;set current OSHWM
+DB5F	LDX #&FE    ;issue call for Tube to explode character set etc.
+DB61	LDY &027A   ;Y=FF if tube present else Y=0
+DB64	JSR &F168   ;and make call via F168
+
+DB67	AND &0267   ;if A=&FE and bit 7 of 0267 is set then continue
+DB6A	BPL &DB87   ;else ignore start up message
+DB6C	LDY #&02    ;output to screen
+DB6E	JSR &DEA9   ;'BBC Computer ' message
+DB71	LDA &028D   ;0=warm reset, anything else continue
+DB74	BEQ &DB82   ;
+DB76	LDY #&16    ;by checking length of RAM
+DB78	BIT &028E   ;
+DB7B	BMI &DB7F   ;and either
+DB7D	LDY #&11    ;
+DB7F	JSR &DEA9   ;finishing message with '16K' or '32K'
+DB82	LDY #&1B    ;and two newlines
+DB84	JSR &DEA9   ;
+
+*********: enter BREAK INTERCEPT ROUTINE WITH CARRY SET (call 1)
+
+DB87	SEC         ;
+DB88	JSR &EAD9   ;look for break intercept jump do *TV etc
+DB8B	JSR &E9D9   ;set up LEDs in accordance with keyboard status
+DB8E	PHP         ;save flags
+DB8F	PLA         ;and get back in A
+DB90	LSR         ;zero bits 4-7 and bits 0-2 bit 4 which was bit 7
+DB91	LSR         ;may be set
+DB92	LSR         ;
+DB93	LSR         ;
+DB94	EOR &028F   ;eor with start-up options which may or may not
+DB97	AND #&08    ;invert bit 4
+DB99	TAY         ;Y=A
+DB9A	LDX #&03    ;make fs initialisation call, passing boot option in Y
+DB9C	JSR &F168   ;Eg, RUN, EXEC or LOAD !BOOT file
+DB9F	BEQ &DBBE   ;if a ROM accepts this call then DBBE
+DBA1	TYA         ;else put Y in A
+DBA2	BNE &DBB8   ;if Y<>0 DBB8
+DBA4	LDA #&8D    ;else set up standard cassete baud rates
+DBA6	JSR &F135   ;via &F135
+
+DBA9	LDX #&D2    ;
+DBAB	LDY #&EA    ;
+DBAD	DEC &0267   ;decrement ignore start up message flag
+DBB0	JSR OSCLI   ;and execute */!BOOT
+DBB3	INC &0267   ;restore start up message flag
+DBB6	BNE &DBBE   ;if not zero then DBBE
+
+DBB8	LDA #&00    ;else A=0
+DBBA	TAX         ;X=0
+DBBB	JSR &F137   ;set tape speed
+
+******** Preserve current language on soft RESET ************************
+
+DBBE	LDA &028D   ;get last RESET Type
+DBC1	BNE &DBC8   ;if not soft reset DBC8
+
+DBC3	LDX &028C   ;else get current language ROM address
+DBC6	BPL &DBE6   ;if +ve (language available) then skip search routine
+
+
+*************************************************************************
+*                                                                       *
+*       SEARCH FOR LANGUAGE TO ENTER (Highest priority)                 *
+*                                                                       *
+*************************************************************************
+
+DBC8	LDX #&0F    ;set pointer to highest available rom
+
+DBCA	LDA &02A1,X ;get rom type from map
+DBCD	ROL         ;put hi-bit into carry, bit 6 into bit 7
+DBCE	BMI &DBE6   ;if bit 7 set then ROM has a language entry so DBE6
+
+DBD0	DEX         ;else search for language until X=&ff
+DBD1	BPL &DBCA   ;
+
+*************** check if tube present ***********************************
+
+DBD3	LDA #&00    ;if bit 7 of tube flag is set BMI succeeds
+DBD5	BIT &027A   ;and TUBE is connected else
+DBD8	BMI &DC08   ;make error
+
+********* no language error ***********************************************
+
+DBDA	BRK         ;
+DBDB	DB  &F9     ;error number
+DBDC	DB  'Language?'     ;message
+DBE5	BRK         ;
+
+DBE6	CLC         ;
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE 142 - ENTER LANGUAGE ROM AT &8000                        *
+*                                                                       *
+*       X=rom number C set if OSBYTE call clear if initialisation       *
+*                                                                       *
+*************************************************************************
+
+DBE7	PHP         ;save flags
+DBE8	STX &028C   ;put X in current ROM page
+DBEB	JSR &DC16   ;select that ROM
+DBEE	LDA #&80    ;A=128
+DBF0	LDY #&08    ;Y=8
+DBF2	JSR &DEAB   ;display text string held in ROM at &8008,Y
+DBF5	STY &FD     ;save Y on exit (end of language string)
+DBF7	JSR OSNEWL  ;two line feeds
+DBFA	JSR OSNEWL  ;are output
+DBFD	PLP         ;then get back flags
+DBFE	LDA #&01    ;A=1 required for language entry
+DC00	BIT &027A   ;check if tube exists
+DC03	BMI &DC08   ;and goto DC08 if it does
+DC05	JMP &8000   ;else enter language at &8000
+
+
+*************************************************************************
+*                                                                       *
+*       TUBE FOUND, ENTER TUBE SOFTWARE                                 *
+*                                                                       *
+*************************************************************************
+
+DC08	JMP &0400   ;enter tube environment
+
+
+*************************************************************************
+*                                                                       *
+*       OSRDRM entry point                                              *
+*                                                                       *
+*       get byte from PHROM or page ROM                                 *
+*       Y= rom number, address is in &F6/7                              *
+*************************************************************************
+
+DC0B	LDX &F4     ;get current ROM number into X
+DC0D	STY &F4     ;store new number in &F4
+DC0F	STY &FE30   ;switch in ROM
+DC12	LDY #&00    ;get current PHROM address
+DC14	LDA (&F6),Y ;and get byte
+
+******** Set up Sideways ROM latch and RAM copy *************************
+    	    ;on entry X=ROM number
+
+DC16	STX &F4     ;RAM copy of rom latch
+DC18	STX &FE30   ;write to rom latch
+DC1B	RTS         ;and return
+

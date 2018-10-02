@@ -1,0 +1,497 @@
+**** STRINGS ****
+
+DF0C	DB ')C(',0      ; Copyright string match
+
+**** COMMMANDS ****
+;				  Command    Address       Call goes to
+DF10	DB '.',E0,31,05		; *.        &E031, A=5     FSCV, XY=>String
+DF14	DB 'FX',E3,42,FF	; *FX       &E342, A=&FF   Number parameters
+DF19	DB 'BASIC',E0,18,00	; *BASIC    &E018, A=0     XY=>String
+DF21	DB 'CAT',E0,31,05	; *CAT      &E031, A=5     FSCV, XY=>String
+DF27	DB 'CODE',E3,48,88	; *CODE     &E348, A=&88   OSBYTE &88
+DF2E	DB 'EXEC',F6,8D,00	; *EXEC     &F68D, A=0     XY=>String
+DF35	DB 'HELP',F0,B9,FF	; *HELP     &F0B9, A=&FF   F2/3=>String
+DF3C	DB 'KEY',E3,27,FF	; *KEY      &E327, A=&FF   F2/3=>String
+DF42	DB 'LOAD',E2,3C,00	; *LOAD     &E23C, A=0     XY=>String
+DF49	DB 'LINE',E6,59,01	; *LINE     &E659, A=1     USERV, XY=>String
+DF50	DB 'MOTOR',E3,48,89	; *MOTOR    &E348, A=&89   OSBYTE
+DF58	DB 'OPT',E3,48,8B	; *OPT      &E348, A=&8B   OSBYTE
+DF5E	DB 'RUN',E0,31,04	; *RUN      &E031, A=4     FSCV, XY=>String
+DF64	DB 'ROM',E3,48,8D	; *ROM      &E348, A=&8D   OSBYTE
+DF6A	DB 'SAVE',E2,3E,00	; *SAVE     &E23E, A=0     XY=>String
+DF70	DB 'SPOOL',E2,81,00	; *SPOOL    &E281, A=0     XY=>String
+DF79	DB 'TAPE',E3,48,8C	; *TAPE     &E348, A=&8C   OSBYTE
+DF80	DB 'TV',E3,48,90	; *TV       &E348, A=&90   OSBYTE
+DF85	DB '',E0,31,03		; Unmatched &E031, A=3     FSCV, XY=>String
+DF88	DB 00			; Table end marker
+
+; Command routines are entered with XY=>command tail, A=table parameter,
+; &F2/3,&E6=>start of command string
+; If table parameter if <&80, F2/3,Y converted to XY before entering
+
+
+*************************************************************************
+*   CLI - COMMAND LINE INTERPRETER                                      *
+*                                                                       *
+*   ENTRY: XY=>Command line                                             *
+*   EXIT:  All registers corrupted                                      *
+*   [ A=13 - unterminated string ]                                      *
+*************************************************************************
+;
+DF89	STX &F2		; Store XY in &F2/3
+DF8B	STY &F3
+DF8D	LDA #&08
+DF8F	JSR &E031	; Inform filing system CLI being processed
+DF92	LDY #&00	; Check the line is correctly terminated
+DF94	LDA (&F2),Y
+DF96	CMP #&0D	; Loop until CR is found
+DF98	BEQ &DF9E
+DF9A	INY		; Move to next character
+DF9B	BNE &DF94	; Loop back if less than 256 bytes long
+DF9D	RTS		; Exit if string > 255 characters
+
+; String is terminated - skip prepended spaces and '*'s
+DF9E	LDY #&FF
+DFA0	JSR &E039	; Skip any spaces
+DFA3	BEQ &E017	; Exit if at CR
+DFA5	CMP #&2A	; Is this character '*'?
+DFA7	BEQ &DFA0	; Loop back to skip it, and check for spaces again
+
+DFA9	JSR &E03A	; Skip any more spaces
+DFAC	BEQ &E017	; Exit if at CR
+DFAE	CMP #&7C	; Is it '|' - a comment
+DFB0	BEQ &E017	; Exit if so
+DFB2	CMP #&2F	; Is it '/' - pass straight to filing system
+DFB4	BNE &DFBE	; Jump forward if not
+DFB6	INY		; Move past the '/'
+DFB7	JSR &E009	; Convert &F2/3,Y->XY, ignore returned A
+DFBA	LDA #&02	; 2=RunSlashCommand
+DFBC	BNE &E031	; Jump to pass to FSCV
+;
+; Look command up in command table
+DFBE	STY &E6		; Store offset to start of command
+DFC0	LDX #&00
+DFC2	BEQ &DFD7
+;   	
+DFC4	EOR &DF10,X
+DFC7	AND #&DF
+DFC9	BNE &DFE2
+DFCB	INY
+DFCC	CLC
+;   	
+DFCD	BCS &DFF4
+DFCF	INX
+DFD0	LDA (&F2),Y
+DFD2	JSR &E4E3
+DFD5	BCC &DFC4
+;   	
+DFD7	LDA &DF10,X
+DFDA	BMI &DFF2
+DFDC	LDA (&F2),Y
+DFDE	CMP #&2E
+DFE0	BEQ &DFE6
+DFE2	CLC
+DFE3	LDY &E6
+DFE5	DEY
+DFE6	INY
+DFE7	INX
+DFE8	INX
+DFE9	LDA &DF0E,X
+DFEC	BEQ &E021
+DFEE	BPL &DFE8
+DFF0	BMI &DFCD
+;   	
+DFF2	INX
+DFF3	INX
+;   	
+DFF4	DEX
+DFF5	DEX
+DFF6	PHA
+DFF7	LDA &DF11,X
+DFFA	PHA
+DFFB	JSR &E03A
+DFFE	CLC
+DFFF	PHP
+E000	JSR &E004
+E003	RTI		; Jump to routine
+
+E004	LDA &DF12,X	; Get table parameter
+E007	BMI &E017	; If >=&80, number follow
+;                      ; else string follows
+
+E009	TYA		; Pass Y line offset to A for later
+E00A	LDY &DF12,X	; Get looked-up parameter from table
+
+; Convert &F2/3,A to XY, put Y in A
+E00D	CLC
+E00E	ADC &F2
+E010	TAX
+E011	TYA		; Pass supplied Y into A
+E012	LDY &F3
+E014	BCC &E017
+E016	INY
+;   	
+E017	RTS
+
+
+; *BASIC
+; ======
+E018	LDX &024B	; Get BASIC ROM number
+E01B	BMI &E021       ; If none set, jump to pass command on
+E01D	SEC             ; Set Carry = not entering from RESET
+E01E	JMP &DBE7	; Enter language rom in X
+
+; Pass command on to other ROMs and to filing system
+E021	LDY &E6		; Restore pointer to start of command
+E023	LDX #&04	; 4=UnknownCommand
+E025	JSR &F168	; Pass to sideways ROMs
+E028	BEQ &E017	; If claimed, exit
+E02A	LDA &E6		; Restore pointer to start of command
+E02C	JSR &E00D	; Convert &F2/3,A to XY, ignore returned A
+E02F	LDA #&03	; 3=PassCommandToFilingSystem
+
+; Pass to current filing system
+E031	JMP (&021E)
+
+E034	ASL A
+E035	AND #&01
+E037	BPL &E031
+
+; Skip spaces
+E039	INY
+E03A	LDA (&F2),Y
+E03C	CMP #&20
+E03E	BEQ &E039
+E040	CMP #&0D
+E042	RTS
+    	
+E043	BCC &E03A
+E045	JSR &E03A
+E048	CMP #&2C
+E04A	BNE &E040
+E04C	INY
+E04D	RTS
+
+E04E	JSR &E03A
+E051	JSR &E07D
+E054	BCC &E08D
+E056	STA &E6
+E058	JSR &E07C
+E05B	BCC &E076
+E05D	TAX
+E05E	LDA &E6
+E060	ASL A
+E061	BCS &E08D
+E063	ASL A
+E064	BCS &E08D
+E066	ADC &E6
+E068	BCS &E08D
+E06A	ASL A
+E06B	BCS &E08D
+E06D	STA &E6
+E06F	TXA
+E070	ADC &E6
+E072	BCS &E08D
+E074	BCC &E056
+E076	LDX &E6
+E078	CMP #&0D
+E07A	SEC
+E07B	RTS
+    	
+E07C	INY
+E07D	LDA (&F2),Y
+E07F	CMP #&3A
+E081	BCS &E08D
+E083	CMP #&30
+E085	BCC &E08D
+E087	AND #&0F
+E089	RTS
+    	
+E08A	JSR &E045
+E08D	CLC
+E08E	RTS
+    	
+E08F	JSR &E07D
+E092	BCS &E0A2
+E094	AND #&DF
+E096	CMP #&47
+E098	BCS &E08A
+E09A	CMP #&41
+E09C	BCC &E08A
+E09E	PHP
+E09F	SBC #&37
+E0A1	PLP
+E0A2	INY
+E0A3	RTS
+
+; WRCH control routine
+; ====================
+E0A4	PHA          ; Save all registers
+E0A5	TXA
+E0A6	PHA
+E0A7	TYA
+E0A8	PHA
+E0A9	TSX
+E0AA	LDA &0103,X  ; Get A back from stack
+E0AD	PHA          ; Save A
+E0AE	BIT &0260    ; Check OSWRCH interception flag
+E0B1	BPL &E0BB    ; Not set, skip interception call
+E0B3	TAY          ; Pass character to Y
+E0B4	LDA #&04     ; A=4 for OSWRCH call
+E0B6	JSR &E57E    ; Call interception code
+E0B9	BCS &E10D    ; If claimed, jump past to exit
+
+E0BB	CLC          ; Prepare to not send this to printer
+E0BC	LDA #&02     ; Check output destination
+E0BE	BIT &027C    ; Is VDU driver disabled?
+E0C1	BNE &E0C8    ; Yes, skip past VDU driver
+E0C3	PLA          ; Get character back
+E0C4	PHA          ; Resave character
+E0C5	JSR &C4C0    ; Call VDU driver
+    	             ; On exit, C=1 if character to be sent to printer
+    	
+E0C8	LDA #&08     ; Check output destination
+E0CA	BIT &027C    ; Is printer seperately enabled?
+E0CD	BNE &E0D1    ; Yes, jump to call printer driver
+E0CF	BCC &E0D6    ; Carry clear, don't sent to printer
+E0D1	PLA          ; Get character back
+E0D2	PHA          ; Resave character
+E0D3	JSR &E114    ; Call printer driver
+
+E0D6	LDA &027C    ; Check output destination
+E0D9	ROR A        ; Is serial output enabled?
+E0DA	BCC &E0F7    ; No, skip past serial output
+E0DC	LDY &EA      ; Get serial timout counter
+E0DE	DEY          ; Decrease counter
+E0DF	BPL &E0F7    ; Timed out, skip past serial code
+E0E1	PLA          ; Get character back
+E0E2	PHA          ; Resave character
+E0E3	PHP          ; Save IRQs
+E0E4	SEI          ; Disable IRQs
+E0E5	LDX #&02     ; X=2 for serial output buffer
+E0E7	PHA          ; Save character
+E0E8	JSR &E45B    ; Examine serial output buffer
+E0EB	BCC &E0F0    ; Buffer not full, jump to send character
+E0ED	JSR &E170    ; Wait for buffer to empty a bit
+E0F0	PLA          ; Get character back
+E0F1	LDX #&02     ; X=2 for serial output buffer
+E0F3	JSR &E1F8    ; Send character to serial output buffer
+E0F6	PLP          ; Restore IRQs
+
+E0F7	LDA #&10     ; Check output destination
+E0F9	BIT &027C    ; Is SPOOL output disabled?
+E0FC	BNE &E10D    ; Yes, skip past SPOOL output
+E0FE	LDY &0257    ; Get SPOOL handle
+E101	BEQ &E10D    ; If not open, skip past SPOOL output
+E103	PLA          ; Get character back
+E104	PHA          ; Resave character
+E105	SEC
+E106	ROR &EB      ; Set RFS/CFS's 'spooling' flag
+E108	JSR &FFD4    ; Write character to SPOOL channel
+E10B	LSR &EB      ; Reset RFS/CFS's 'spooling' flag
+
+E10D	PLA          ; Restore all registers
+E10E	PLA
+E10F	TAY
+E110	PLA
+E111	TAX
+E112	PLA
+E113	RTS          ; Exit
+
+
+*************************************************************************
+*                                                                       *
+*       PRINTER DRIVER                                                  *
+*                                                                       *
+*************************************************************************
+
+;A=character to print
+
+E114	BIT &027C   ;if bit 6 of VDU byte =1 printer is disabled
+E117	BVS &E139   ;so E139
+
+E119	CMP &0286   ;compare with printer ignore character
+E11C	BEQ &E139   ;if the same E139
+
+E11E	PHP         ;else save flags
+E11F	SEI         ;bar interrupts
+E120	TAX         ;X=A
+E121	LDA #&04    ;A=4
+E123	BIT &027C   ;read bit 2 'disable printer driver'
+E126	BNE &E138   ;if set printer is disabled so exit E138
+E128	TXA         ;else A=X
+E129	LDX #&03    ;X=3
+E12B	JSR &E1F8   ;and put character in printer buffer
+E12E	BCS &E138   ;if carry set on return exit, buffer not full (empty?)
+
+E130	BIT &02D2   ;else check buffer busy flag if 0
+E133	BPL &E138   ;then E138 to exit
+E135	JSR &E13A   ;else E13A to open printer cahnnel
+
+E138	PLP         ;get back flags
+E139	RTS         ;and exit
+
+E13A	LDA &0285   ;check printer destination
+E13D	BEQ &E1AD   ;if 0 then E1AD clear printer buffer and exit
+E13F	CMP #&01    ;if parallel printer not selected
+E141	BNE &E164   ;E164
+E143	JSR &E460   ;else read a byte from the printer buffer
+E146	ROR &02D2   ;if carry is set then 2d2 is -ve
+E149	BMI &E190   ;so return via E190
+E14B	LDY #&82    ;else enable interrupt 1 of the external VIA
+E14D	STY &FE6E   ;
+E150	STA &FE61   ;pass code to centronics port
+E153	LDA &FE6C   ;pulse CA2 line to generate STROBE signal
+E156	AND #&F1    ;to advise printer that
+E158	ORA #&0C    ;valid data is
+E15A	STA &FE6C   ;waiting
+E15D	ORA #&0E    ;
+E15F	STA &FE6C   ;
+E162	BNE &E190   ;then exit
+
+*********:serial printer *********************************************
+
+E164	CMP #&02    ;is it Serial printer??
+E166	BNE &E191   ;if not E191
+E168	LDY &EA     ;else is RS423 in use by cassette??
+E16A	DEY         ;
+E16B	BPL &E1AD   ;if so E1AD to flush buffer
+
+E16D	LSR &02D2   ;else clear buffer busy flag
+E170	LSR &024F   ;and RS423 busy flag
+E173	JSR &E741   ;count buffer if C is clear on return
+E176	BCC &E190   ;no room in buffer so exit
+E178	LDX #&20    ;else
+E17A	LDY #&9F    ;
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE 156 update ACIA setting and RAM copy                     *
+*                                                                       *
+*************************************************************************
+;on entry
+
+E17C	PHP         ;push flags
+E17D	SEI         ;bar interrupts
+E17E	TYA         ;A=Y
+E17F	STX &FA     ;&FA=X
+E181	AND &0250   ;A=old value AND Y EOR X
+E184	EOR &FA     ;
+E186	LDX &0250   ;get old value in X
+E189	STA &0250   ;put new value in
+E18C	STA &FE08   ;and store to ACIA control register
+E18F	PLP         ;get back flags
+E190	RTS         ;and exit
+
+************ printer is neither serial or parallel so its user type *****
+
+E191	CLC         ;clear carry
+E192	LDA #&01    ;A=1
+E194	JSR &E1A2   ;
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE 123 Warn printer driver going dormant                    *
+*                                                                       *
+*************************************************************************
+
+E197	ROR &02D2   ;mark printer buffer empty for osbyte
+E19A	RTS         ;and exit
+
+E19B	BIT &02D2   ;if bit 7 is set buffer is empty
+E19E	BMI &E19A   ;so exit
+
+E1A0	LDA #&00    ;else A=0
+
+E1A2	LDX #&03    ;X=3
+E1A4	LDY &0285   ;Y=printer destination
+E1A7	JSR &E57E   ;to JMP (NETV)
+E1AA	JMP (&0222) ;jump to PRINT VECTOR for special routines
+
+*************** Buffer handling *****************************************
+    	            ;X=buffer number
+    	;Buffer number  Address         Flag    Out pointer     In pointer
+    	;0=Keyboard     3E0-3FF         2CF     2D8             2E1
+    	;1=RS423 Input  A00-AFF         2D0     2D9             2E2
+    	;2=RS423 output 900-9BF         2D1     2DA             2E3
+    	;3=printer      880-8BF         2D2     2DB             2E4
+    	;4=sound0       840-84F         2D3     2DC             2E5
+    	;5=sound1       850-85F         2D4     2DD             2E6
+    	;6=sound2       860-86F         2D5     2DE             2E7
+    	;7=sound3       870-87F         2D6     2DF             2E8
+    	;8=speech       8C0-8FF         2D7     2E0             2E9
+
+E1AD	CLC         ;clear carry
+E1AE	PHA         ;save A
+E1AF	PHP         ;save flags
+E1B0	SEI         ;set interrupts
+E1B1	BCS &E1BB   ;if carry set on entry then E1BB
+E1B3	LDA &E9AD,X ;else get byte from baud rate/sound data table
+E1B6	BPL &E1BB   ;if +ve the E1BB
+E1B8	JSR &ECA2   ;else clear sound data
+
+E1BB	SEC         ;set carry
+E1BC	ROR &02CF,X ;rotate buffer flag to show buffer empty
+E1BF	CPX #&02    ;if X>1 then its not an input buffer
+E1C1	BCS &E1CB   ;so E1CB
+
+E1C3	LDA #&00    ;else Input buffer so A=0
+E1C5	STA &0268   ;store as length of key string
+E1C8	STA &026A   ;and length of VDU queque
+E1CB	JSR &E73B   ;then enter via count purge vector any user routines
+E1CE	PLP         ;restore flags
+E1CF	PLA         ;restore A
+E1D0	RTS         ;and exit
+
+
+*************************************************************************
+*                                                                       *
+*       COUNT PURGE VECTOR      DEFAULT ENTRY                           *
+*                                                                       *
+*************************************************************************
+;on entry if V set clear buffer
+;   	  if C set get space left
+;   	  else get bytes used
+
+E1D1	BVC &E1DA   ;if bit 6 is set then E1DA
+E1D3	LDA &02D8,X ;else start of buffer=end of buffer
+E1D6	STA &02E1,X ;
+E1D9	RTS         ;and exit
+
+E1DA	PHP         ;push flags
+E1DB	SEI         ;bar interrupts
+E1DC	PHP         ;push flags
+E1DD	SEC         ;set carry
+E1DE	LDA &02E1,X ;get end of buffer
+E1E1	SBC &02D8,X ;subtract start of buffer
+E1E4	BCS &E1EA   ;if carry caused E1EA
+E1E6	SEC         ;set carry
+E1E7	SBC &E447,X ;subtract buffer start offset (i.e. add buffer length)
+E1EA	PLP         ;pull flags
+E1EB	BCC &E1F3   ;if carry clear E1F3 to exit
+E1ED	CLC         ;clear carry
+E1EE	ADC &E447,X ;adc to get bytes used
+E1F1	EOR #&FF    ;and invert to get space left
+E1F3	LDY #&00    ;Y=0
+E1F5	TAX         ;X=A
+E1F6	PLP         ;get back flags
+E1F7	RTS         ;and exit
+
+********** enter byte in buffer, wait and flash lights if full **********
+
+E1F8	SEI         ;prevent interrupts
+E1F9	JSR &E4B0   ;enter a byte in buffer X
+E1FC	BCC &E20D   ;if successful exit
+E1FE	JSR &E9EA   ;else switch on both keyboard lights
+E201	PHP         ;push p
+E202	PHA         ;push A
+E203	JSR &EEEB   ;switch off unselected LEDs
+E206	PLA         ;get back A
+E207	PLP         ;and flags
+E208	BMI &E20D   ;if return is -ve Escape pressed so exit
+E20A	CLI         ;else allow interrupts
+E20B	BCS &E1F8   ;if byte didn't enter buffer go and try it again
+E20D	RTS         ;then return
+

@@ -1,0 +1,562 @@
+*************************************************************************
+*                                                                       *
+*       VDU 24 - DEFINE GRAPHICS WINDOW                                 *
+*                                                                       *
+*       8 parameters                                                    *
+*                                                                       *
+*************************************************************************
+;&31C/D Left margin
+;&31E/F Bottom margin
+;&320/1 Right margin
+;&322/3 Top margin
+
+CA39	JSR &CA81   ;exchange 310/3 with 328/3
+CA3C	LDX #&1C    ;
+CA3E	LDY #&2C    ;
+CA40	JSR &D411   ;calculate width=right - left
+    	            ;          height = top-bottom
+CA43	ORA &032D   ;
+CA46	BMI &CA81   ;exchange 310/3 with 328/3 and exit
+CA48	LDX #&20    ;X=&20
+CA4A	JSR &D149   ;scale pointers to mode
+CA4D	LDX #&1C    ;X=&1C
+CA4F	JSR &D149   ;scale pointers to mode
+CA52	LDA &031F   ;check for negative margins
+CA55	ORA &031D   ;
+CA58	BMI &CA81   ;if found exchange 310/3 with 328/3 and exit
+CA5A	LDA &0323   ;
+CA5D	BNE &CA81   ;exchange 310/3 with 328/3 and exit
+CA5F	LDX &0355   ;screen mode
+CA62	LDA &0321   ;right margin hi
+CA65	STA &DA     ;store it
+CA67	LDA &0320   ;right margin lo
+CA6A	LSR &DA     ;/2
+CA6C	ROR         ;A=A/2
+CA6D	LSR &DA     ;/2
+CA6F	BNE &CA81   ;exchange 310/3 with 328/3
+CA71	ROR         ;A=A/2
+CA72	LSR         ;A=A/2
+CA73	CMP C3EF,X  ;text window right hand margin maximum
+CA76	BEQ &CA7A   ;if equal CA7A
+CA78	BPL &CA81   ;exchange 310/3 with 328/3
+
+CA7A	LDY #&00    ;Y=0
+CA7C	LDX #&1C    ;X=&1C
+CA7E	JSR &D47C   ;set(300/7+Y) from (300/7+X)
+
+***************** exchange 310/3 with 328/3 *****************************
+
+CA81	LDX #&10    ;X=10
+CA83	LDY #&28    ;Y=&28
+CA85	JMP &CDE6   ;exchange 300/3+Y and 300/3+X
+
+CA88	INY         ;Y=Y+1
+CA89	TYA         ;A=Y
+CA8A	LDY #&00    ;Y=0
+CA8C	STY &034D   ;text window width hi (bytes)
+CA8F	STA &034C   ;text window width lo (bytes)
+CA92	LDA &034F   ;bytes per character
+CA95	LSR         ;/2
+CA96	BEQ &CAA1   ;if 0 exit
+CA98	ASL &034C   ;text window width lo (bytes)
+CA9B	ROL &034D   ;text window width hi (bytes)
+CA9E	LSR         ;/2
+CA9F	BCC &CA98   ;
+CAA1	RTS         ;
+
+
+*************************************************************************
+*                                                                       *
+*       VDU 29 - SET GRAPHICS ORIGIN                                    *
+*                                                                       *
+*       4 parameters                                                    *
+*                                                                       *
+*************************************************************************
+;
+CAA2	LDX #&20    ;
+CAA4	LDY #&0C    ;
+CAA6	JSR &D48A   ;(&300/3+Y)=(&300/3+X)
+CAA9	JMP &D1B8   ;set up external coordinates for graphics
+
+
+*************************************************************************
+*                                                                       *
+*       VDU 127 (&7F) - DELETE (entry 32)                               *
+*                                                                       *
+*************************************************************************
+
+CAAC	JSR &C5C5   ;cursor left
+CAAF	JSR &C588   ;A=0 if text cursor A=&20 if graphics cursor
+CAB2	BNE &CAC7   ;if graphics then CAC7
+CAB4	LDX &0360   ;number of logical colours less 1
+CAB7	BEQ &CAC2   ;if mode 7 CAC2
+CAB9	STA &DE     ;else store A (always 0)
+CABB	LDA #&C0    ;A=&C0
+CABD	STA &DF     ;store in &DF (&DE) now points to C300 SPACE pattern
+CABF	JMP &CFBF   ;display a space
+
+CAC2	LDA #&20    ;A=&20
+CAC4	JMP &CFDC   ;and return to display a space
+
+CAC7	LDA #&7F    ;for graphics cursor
+CAC9	JSR &D03E   ;set up character definition pointers
+CACC	LDX &035A   ;Background graphics colour
+CACF	LDY #&00    ;Y=0
+CAD1	JMP &CF63   ;invert pattern data (to background colour)
+
+***** Add number of bytes in a line to X/A ******************************
+
+CAD4	PHA         ;store A
+CAD5	TXA         ;A=X
+CAD6	CLC         ;clear carry
+CAD7	ADC &0352   ;bytes per character row
+CADA	TAX         ;X=A
+CADB	PLA         ;get back A
+CADC	ADC &0353   ;bytes per character row
+CADF	RTS         ;and return
+;
+********* control scrolling in paged mode *******************************
+
+CAE0	JSR &CB14   ;zero paged mode line counter
+CAE3	JSR &E9D9   ;osbyte 118 check keyboard status; set LEDs
+CAE6	BCC &CAEA   ;if carry clear CAEA
+CAE8	BMI &CAE0   ;if M set CAE0 do it again
+
+CAEA	LDA &D0     ;VDU status byte
+CAEC	EOR #&04    ;invert bit 2 paged scrolling
+CAEE	AND #&46    ;and if 2 cursors, paged mode off, or scrolling
+CAF0	BNE &CB1C   ;barred then CB1C to exit
+
+CAF2	LDA &0269   ;paged mode counter
+CAF5	BMI &CB19   ;if negative then exit via CB19
+
+CAF7	LDA &0319   ;current text line
+CAFA	CMP &0309   ;bottom margin
+CAFD	BCC &CB19   ;increment line counter and exit
+
+CAFF	LSR         ;A=A/4
+CB00	LSR         ;
+CB01	SEC         ;set carry
+CB02	ADC &0269   ;paged mode counter
+CB05	ADC &030B   ;top of text window
+CB08	CMP &0309   ;bottom margin
+CB0B	BCC &CB19   ;increment line counter and exit
+
+CB0D	CLC         ;clear carry
+CB0E	JSR &E9D9   ;osbyte 118 check keyboard status; set LEDs
+CB11	SEC         ;set carry
+CB12	BPL &CB0E   ;if +ve result then loop till shift pressed
+
+**************** zero paged mode  counter *******************************
+
+CB14	LDA #&FF    ;
+CB16	STA &0269   ;paged mode counter
+CB19	INC &0269   ;paged mode counter
+CB1C	RTS         ;
+
+********* intitialise VDU driver with MODE in A *************************
+
+CB1D	PHA         ; Save MODE in A
+CB1E	LDX #&7F    ; Prepare X=&7F for reset loop
+CB20	LDA #&00    ; A=0
+CB22	STA &D0     ; Clear VDU status byte to set default conditions
+
+CB24	STA &02FF,X ; Zero VDU workspace at &300 to &37E
+CB27	DEX
+CB28	BNE &CB24
+
+CB2A	JSR &CD07   ; Implode character definitions
+CB2D	PLA         ; Get initial MODE back to A
+CB2E	LDX #&7F    ; X=&7F
+CB30	STX &0366   ; MODE 7 copy cursor character (could have set this at CB1E)
+
+********* enter here from VDU 22,n - MODE *******************************
+
+CB33	BIT &028E   ; Check available RAM
+CB36	BMI &CB3A   ; If 32K, use all MODEs
+CB38	ORA #&04    ; Only 16K available, force to use MODEs 4-7
+
+CB3A	AND #&07    ; X=A and 7 ensure legal mode
+CB3C	TAX         ; X=mode
+CB3D	STX &0355   ; Save current screen MODE
+CB40	LDA &C414,X ; Get number of colours -1 for this MODE
+CB43	STA &0360   ; Set current number of logical colours less 1
+CB46	LDA &C3FF,X ; Get bytes/character for this MODE
+CB49	STA &034F   ; Set bytes per character
+CB4C	LDA &C43A,X ; Get pixels/byte for this MODE
+CB4F	STA &0361   ; Set pixels per byte
+CB52	BNE &CB56   ; If non-zero, skip past
+CB54	LDA #&07    ; byte/pixel=0, this is MODE 7, prepare A=7 offset into mask table
+
+CB56	ASL         ;A=A*2
+CB57	TAY         ;Y=A
+
+CB58	LDA &C406,Y ;mask table
+CB5B	STA &0363   ;colour mask left
+CB5E	ASL         ;A=A*2
+CB5F	BPL &CB5E   ;If still +ve CB5E
+CB61	STA &0362   ;colour mask right
+CB64	LDY &C440,X ;screen display memory index table
+CB67	STY &0356   ;memory map type
+CB6A	LDA &C44F,Y ;VDU section control
+CB6D	JSR &E9F8   ;set hardware scrolling to VIA
+CB70	LDA &C44B,Y ;VDU section control
+CB73	JSR &E9F8   ;set hardware scrolling to VIA
+CB76	LDA &C459,Y ;Screen RAM size hi byte table
+CB79	STA &0354   ;screen RAM size hi byte
+CB7C	LDA &C45E,Y ;screen ram address hi byte
+CB7F	STA &034E   ;hi byte of screen RAM address
+CB82	TYA         ;Y=A
+CB83	ADC #&02    ;Add 2
+CB85	EOR #&07    ;
+CB87	LSR         ;/2
+CB88	TAX         ;X=A
+CB89	LDA &C466,X ;row multiplication table pointer
+CB8C	STA &E0     ;store it
+CB8E	LDA #&C3    ;A=&C3
+CB90	STA &E1     ;store it (&E0) now points to C3B5 or C375
+CB92	LDA &C463,X ;get nuber of bytes per row from table
+CB95	STA &0352   ;store as bytes per character row
+CB98	STX &0353   ;bytes per character row
+CB9B	LDA #&43    ;A=&43
+CB9D	JSR &C5A8   ;A=A and &D0:&D0=A
+CBA0	LDX &0355   ;screen mode
+CBA3	LDA &C3F7,X ;get video ULA control setting
+CBA6	JSR &EA00   ;set video ULA using osbyte 154 code
+CBA9	PHP         ;push flags
+CBAA	SEI         ;set interrupts
+CBAB	LDX &C469,Y ;get cursor end register data from table
+CBAE	LDY #&0B    ;Y=11
+
+CBB0	LDA &C46E,X ;get end of 6845 registers 0-11 table
+CBB3	JSR &C95E   ;set register Y
+CBB6	DEX         ;reduce pointers
+CBB7	DEY         ;
+CBB8	BPL &CBB0   ;and if still >0 do it again
+
+CBBA	PLP         ;pull flags
+CBBB	JSR &C839   ;set default colours
+CBBE	JSR &C9BD   ;set default windows
+
+CBC1	LDX #&00    ;X=0
+CBC3	LDA &034E   ;hi byte of screen RAM address
+CBC6	STX &0350   ;window area start address lo
+CBC9	STA &0351   ;window area start address hi
+CBCC	JSR &C9F6   ;use X and Y to set new cursor address
+CBCF	LDY #&0C    ;Y=12
+CBD1	JSR &CA2B   ;set registers 12 and 13 in CRTC
+CBD4	LDA &0358   ;background text colour
+CBD7	LDX &0356   ;memory map type
+CBDA	LDY &C454,X ;get section control number
+CBDD	STY &035D   ;set it in jump vector lo
+CBE0	LDY #&CC    ;Y=&CC
+CBE2	STY &035E   ;upper byte of link address
+CBE5	LDX #&00    ;X=0
+CBE7	STX &0269   ;paged mode counter
+CBEA	STX &0318   ;text column
+CBED	STX &0319   ;current text line
+CBF0	JMP (&035D) ;jump vector set up previously to clear screen memory
+
+
+*************************************************************************
+*                                                                       *
+*       OSWORD 10 - READ CHARACTER DEFINITION                           *
+*                                                                       *
+*************************************************************************
+;&EF=A:&F0=X:&F1=Y, on entry YX contains character number to be read
+;(&DE) points to address
+;on exit byte YX+1 to YX+8 contain definition
+
+CBF3	JSR &D03E   ;set up character definition pointers
+CBF6	LDY #&00    ;Y=0
+CBF8	LDA (&DE),Y ;get first byte
+CBFA	INY         ;Y=Y+1
+CBFB	STA (&F0),Y ;store it in YX
+CBFD	CPY #&08    ;until Y=8
+CBFF	BNE &CBF8   ;
+CC01	RTS         ;then exit
+
+
+*************************************************************************
+*                                                                       *
+*       MAIN SCREEN CLEARANCE ROUTINE                                   *
+*                                                                       *
+*************************************************************************
+;on entry A contains background colour which is set in every byte
+;of the screen
+
+************************ Mode 0,1,2 entry point *************************
+
+CC02	STA &3000,X ;
+CC05	STA &3100,X ;
+CC08	STA &3200,X ;
+CC0B	STA &3300,X ;
+CC0E	STA &3400,X ;
+CC11	STA &3500,X ;
+CC14	STA &3600,X ;
+CC17	STA &3700,X ;
+CC1A	STA &3800,X ;
+CC1D	STA &3900,X ;
+CC20	STA &3A00,X ;
+CC23	STA &3B00,X ;
+CC26	STA &3C00,X ;
+CC29	STA &3D00,X ;
+CC2C	STA &3E00,X ;
+CC2F	STA &3F00,X ;
+
+************************ Mode 3 entry point *****************************
+
+CC32	STA &4000,X ;
+CC35	STA &4100,X ;
+CC38	STA &4200,X ;
+CC3B	STA &4300,X ;
+CC3E	STA &4400,X ;
+CC41	STA &4500,X ;
+CC44	STA &4600,X ;
+CC47	STA &4700,X ;
+CC4A	STA &4800,X ;
+CC4D	STA &4900,X ;
+CC50	STA &4A00,X ;
+CC53	STA &4B00,X ;
+CC56	STA &4C00,X ;
+CC59	STA &4D00,X ;
+CC5C	STA &4E00,X ;
+CC5F	STA &4F00,X ;
+CC62	STA &5000,X ;
+CC65	STA &5100,X ;
+CC68	STA &5200,X ;
+CC6B	STA &5300,X ;
+CC6E	STA &5400,X ;
+CC71	STA &5500,X ;
+CC74	STA &5600,X ;
+CC77	STA &5700,X ;
+
+************************ Mode 4,5 entry point ***************************
+
+CC7A	STA &5800,X ;
+CC7D	STA &5900,X ;
+CC80	STA &5A00,X ;
+CC83	STA &5B00,X ;
+CC86	STA &5C00,X ;
+CC89	STA &5D00,X ;
+CC8C	STA &5E00,X ;
+CC8F	STA &5F00,X ;
+
+************************ Mode 6 entry point *****************************
+
+CC92	STA &6000,X ;
+CC95	STA &6100,X ;
+CC98	STA &6200,X ;
+CC9B	STA &6300,X ;
+CC9E	STA &6400,X ;
+CCA1	STA &6500,X ;
+CCA4	STA &6600,X ;
+CCA7	STA &6700,X ;
+CCAA	STA &6800,X ;
+CCAD	STA &6900,X ;
+CCB0	STA &6A00,X ;
+CCB3	STA &6B00,X ;
+CCB6	STA &6C00,X ;
+CCB9	STA &6D00,X ;
+CCBC	STA &6E00,X ;
+CCBF	STA &6F00,X ;
+CCC2	STA &7000,X ;
+CCC5	STA &7100,X ;
+CCC8	STA &7200,X ;
+CCCB	STA &7300,X ;
+CCCE	STA &7400,X ;
+CCD1	STA &7500,X ;
+CCD4	STA &7600,X ;
+CCD7	STA &7700,X ;
+CCDA	STA &7800,X ;
+CCDD	STA &7900,X ;
+CCE0	STA &7A00,X ;
+CCE3	STA &7B00,X ;
+
+************************ Mode 7 entry point *****************************
+
+CCE6	STA &7C00,X ;
+CCE9	STA &7D00,X ;
+CCEC	STA &7E00,X ;
+CCEF	STA &7F00,X ;
+CCF2	INX         ;
+CCF3	BEQ &CD65   ;exit
+
+****************** execute required function ****************************
+
+CCF5	JMP (&035D) ;jump vector set up previously
+
+********* subtract bytes per line from X/A ******************************
+
+CCF8	PHA         ;Push A
+CCF9	TXA         ;A=X
+CCFA	SEC         ;set carry for subtraction
+CCFB	SBC &0352   ;bytes per character row
+CCFE	TAX         ;restore X
+CCFF	PLA         ;and A
+CD00	SBC &0353   ;bytes per character row
+CD03	CMP &034E   ;hi byte of screen RAM address
+CD06	RTS         ;return
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE 20 - EXPLODE CHARACTERS                                  *
+*                                                                       *
+*************************************************************************
+;
+CD07	LDA #&0F    ;A=15
+CD09	STA &0367   ;font flag indicating that page &0C,&C0-&C2 are
+    	            ;used for user defined characters
+CD0C	LDA #&0C    ;A=&0C
+CD0E	LDY #&06    ;set loop counter
+
+CD10	STA &0368,Y ;set all font location bytes
+CD13	DEY         ;to page &0C to indicate only page available
+CD14	BPL &CD10   ;for user character definitions
+
+CD16	CPX #&07    ;is X= 7 or greater
+CD18	BCC &CD1C   ;if not CD1C
+CD1A	LDX #&06    ;else X=6
+CD1C	STX &0246   ;character definition explosion switch
+CD1F	LDA &0243   ;A=primary OSHWM
+CD22	LDX #&00    ;X=0
+
+CD24	CPX &0246   ;character definition explosion switch
+CD27	BCS &CD34   ;
+CD29	LDY &C4BA,X ;get soft character  RAM allocation
+CD2C	STA &0368,Y ;font location bytes
+CD2F	ADC #&01    ;Add 1
+CD31	INX         ;X=X+1
+CD32	BNE &CD24   ;if X<>0 then CD24
+
+CD34	STA &0244   ;current value of page (OSHWM)
+CD37	TAY         ;Y=A
+CD38	BEQ &CD06   ;return via CD06 (ERROR?)
+
+CD3A	LDX #&11    ;X=&11
+CD3C	JMP &F168   ;issue paged ROM service call &11
+    	            ;font implosion/explosion warning
+
+******** move text cursor to next line **********************************
+
+CD3F	LDA #&02    ;A=2 to check if scrolling disabled
+CD41	BIT &D0     ;VDU status byte
+CD43	BNE &CD47   ;if scrolling is barred CD47
+CD45	BVC &CD79   ;if cursor editing mode disabled RETURN
+
+CD47	LDA &0309   ;bottom margin
+CD4A	BCC &CD4F   ;if carry clear on entry CD4F
+CD4C	LDA &030B   ;else if carry set get top of text window
+CD4F	BVS &CD59   ;and if cursor editing enabled CD59
+CD51	STA &0319   ;get current text line
+CD54	PLA         ;pull return link from stack
+CD55	PLA         ;
+CD56	JMP &C6AF   ;set up cursor and display address
+
+CD59	PHP         ;push flags
+CD5A	CMP &0365   ;Y coordinate of text input cursor
+CD5D	BEQ &CD78   ;if A=line count of text input cursor CD78 to exit
+CD5F	PLP         ;get back flags
+CD60	BCC &CD66   ;
+CD62	DEC &0365   ;Y coordinate of text input cursor
+
+CD65	RTS         ;exit
+;
+CD66	INC &0365   ;Y coordinate of text input cursor
+CD69	RTS         ;exit
+
+*********************** set up write cursor ********************************
+
+CD6A	PHP         ;save flags
+CD6B	PHA         ;save A
+CD6C	LDY &034F   ;bytes per character
+CD6F	DEY         ;Y=Y-1
+CD70	BNE &CD8F   ;if Y=0 Mode 7 is in use
+
+CD72	LDA &0338   ;so get mode 7 write character cursor character &7F
+CD75	STA (&D8),Y ;store it at top scan line of current character
+CD77	PLA         ;pull A
+CD78	PLP         ;pull flags
+CD79	RTS         ;and exit
+;
+CD7A	PHP         ;push flags
+CD7B	PHA         ;push A
+CD7C	LDY &034F   ;bytes per character
+CD7F	DEY         ;
+CD80	BNE &CD8F   ;if not mode 7
+CD82	LDA (&D8),Y ;get cursor from top scan line
+CD84	STA &0338   ;store it
+CD87	LDA &0366   ;mode 7 write cursor character
+CD8A	STA (&D8),Y ;store it at scan line
+CD8C	JMP &CD77   ;and exit
+
+CD8F	LDA #&FF    ;A=&FF =cursor
+CD91	CPY #&1F    ;except in mode 2 (Y=&1F)
+CD93	BNE &CD97   ;if not CD97
+CD95	LDA #&3F    ;load cursor byte mask
+
+********** produce white block write cursor *****************************
+
+CD97	STA &DA     ;store it
+CD99	LDA (&D8),Y ;get scan line byte
+CD9B	EOR &DA     ;invert it
+CD9D	STA (&D8),Y ;store it on scan line
+CD9F	DEY         ;decrement scan line counter
+CDA0	BPL &CD99   ;do it again
+CDA2	BMI &CD77   ;then jump to &CD77
+
+CDA4	JSR &CE5B   ;exchange line and column cursors with workspace copies
+CDA7	LDA &0309   ;bottom margin
+CDAA	STA &0319   ;current text line
+CDAD	JSR &CF06   ;set up display address
+CDB0	JSR &CCF8   ;subtract bytes per character row from this
+CDB3	BCS &CDB8   ;wraparound if necessary
+CDB5	ADC &0354   ;screen RAM size hi byte
+CDB8	STA &DB     ;store A
+CDBA	STX &DA     ;X
+CDBC	STA &DC     ;A again
+CDBE	BCS &CDC6   ;if C set there was no wraparound so CDC6
+CDC0	JSR &CE73   ;copy line to new position
+    	            ;using (&DA) for read
+    	            ;and (&D8) for write
+CDC3	JMP &CDCE   ;
+
+CDC6	JSR &CCF8   ;subtract bytes per character row from X/A
+CDC9	BCC &CDC0   ;if a result is outside screen RAM CDC0
+CDCB	JSR &CE38   ;perform a copy
+
+CDCE	LDA &DC     ;set write pointer from read pointer
+CDD0	LDX &DA     ;
+CDD2	STA &D9     ;
+CDD4	STX &D8     ;
+CDD6	DEC &DE     ;decrement window height
+CDD8	BNE &CDB0   ;and if not zero CDB0
+CDDA	LDX #&28    ;point to workspace
+CDDC	LDY #&18    ;point to text column/line
+CDDE	LDA #&02    ;number of bytes to swap
+CDE0	BNE &CDE8   ;exchange (328/9)+Y with (318/9)+X
+CDE2	LDX #&24    ;point to graphics cursor
+CDE4	LDY #&14    ;point to last graphics cursor
+    	            ;A=4 to swap X and Y coordinates
+
+*************** exchange 300/3+Y with 300/3+X ***************************
+
+CDE6	LDA #&04    ;A =4
+
+************** exchange (300/300+A)+Y with (300/300+A)+X *****************
+
+CDE8	STA &DA     ;store it as loop counter
+
+CDEA	LDA &0300,X ;get byte
+CDED	PHA         ;store it
+CDEE	LDA &0300,Y ;get byte pointed to by Y
+CDF1	STA &0300,X ;put it in 300+X
+CDF4	PLA         ;get back A
+CDF5	STA &0300,Y ;put it in 300+Y
+CDF8	INX         ;increment pointers
+CDF9	INY         ;
+CDFA	DEC &DA     ;decrement loop counter
+CDFC	BNE &CDEA   ;and if not 0 do it again
+CDFE	RTS         ;and exit
+

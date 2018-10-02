@@ -1,0 +1,529 @@
+OS SERIES 9
+GEOFF COX
+*************************************************************************
+*                                                                       *
+*       OSBYTE 140  *TAPE                                               *
+*       selects TAPE filing system                                      *
+*                                                                       *
+*       OSBYTE 141  *ROM                                                *
+*       selects ROM filing system                                       *
+*                                                                       *
+*************************************************************************
+
+F135	EOR #&8C    ;if it's *TAPE A=0 *ROM A=1
+F137	ASL         ;double it
+F138	STA &0247   ;store it in filing system flag store
+F13B	CPX #&03    ;if X>=3 C set X=3 Z set
+F13D	JMP &F14B   ;
+
+******** set cassette options *******************************************
+    	;called after BREAK etc
+    	;lower nybble sets sequential access
+    	;upper sets load and save options
+    	
+    	;0000   Ignore errors,          no messages
+    	;0001   Abort if error,         no messages
+    	;0010   Retry after error,      no messages
+    	;1000   Ignore error            short messages
+    	;1001   Abort if error          short messages
+    	;1010   Retry after error       short messages
+    	;1100   Ignore error            long messages
+    	;1101   Abort if error          long messages
+    	;1110   Retry after error       long messages
+
+F140	PHP         ;save flags
+F141	LDA #&A1    ;set sequential access abort if error, no messages
+F143	STA &E3     ;set load/save retry if error, short messages
+F145	LDA #&19    ;set interblock gap
+F147	STA &03D1   ;and store it
+F14A	PLP         ;get back flags
+
+F14B	PHP         ;push flags
+F14C	LDA #&06    ;get close files command to FSCV
+F14E	JSR &E031   ;and gosub OSFSC
+F151	LDX #&06    ;
+F153	PLP         ;get back flags
+F154	BEQ &F157   ;if Z set earlier
+F156	DEX         ;do not decrement X
+F157	STX &C6     ;set current baud rate X=5 300 baud X=6 1200 baud
+
+********* reset FILEV,ARGSV,BGETV,BPUTV,GBPBV,FINDV,FSCV ******************
+**********   to F27D, F18E, F4C9, F529, FFA6, F3CA, F1B1 ******************
+
+F159	LDX #&0E    ;RESET VECTORS FOR FILE RELATED OPERATIONS
+F15B	LDA &D951,X ;
+F15E	STA &0211,X ;
+F161	DEX         ;
+F162	BNE &F15B   ;
+
+F164	STX &C2     ;&C2=0 PROGRESS FLAG
+F166	LDX #&0F    ;set X to make Rom service call &F claim vectors!
+
+
+*************************************************************************
+*                                                                       *
+*       OSBYTE 143                                                      *
+*       Pass service commands to sideways ROMs                          *
+*                                                                       *
+*************************************************************************
+    	    ; On entry X=service call number
+    	    ;          Y=any additional parameter
+    	    ; On entry X=0 if claimed, or preserved if unclaimed
+    	    ;          Y=any returned parameter
+    	    ;          When called internally, EQ set if call claimed
+
+F168	LDA &F4     ; Get current ROM number
+F16A	PHA         ; Save it
+F16B	TXA         ; Pass service call number to  A
+F16C	LDX #&0F    ; Start at ROM 15
+
+    	            ; Issue service call loop
+F16E	INC &02A1,X ; Read bit 7 on ROM type table (no ROM has type 254 &FE)
+F171	DEC &02A1,X ;
+F174	BPL &F183   ; If not set (+ve result), step to next ROM down
+F176	STX &F4     ; Otherwise, select this ROM, &F4 RAM copy
+F178	STX &FE30   ; Page in selected ROM
+F17B	JSR &8003   ; Call the ROM's service entry
+    	            ; X and P do not need to be preserved by the ROM
+F17E	TAX         ; On exit pass A to X to chech if claimed
+F17F	BEQ &F186   ; If 0, service call claimed, reselect ROM and exit
+F181	LDX &F4     ; Otherwise, get current ROM back
+F183	DEX         ; Step to next ROM down
+F184	BPL &F16E   ; Loop until done ROM 0
+
+F186	PLA         ; Get back original ROM number
+F187	STA &F4     ; Set ROM number RAM copy
+F189	STA &FE30   ; Page in the original ROM
+F18C	TXA         ; Pass X back to A to set zero flag
+F18D	RTS         ; And return
+
+
+*************************************************************************
+*                                                                       *
+*       CFS OSARGS entry point                                          *
+*
+*************************************************************************
+
+F18E	ORA #&00    ;is A=00
+F190	BNE &F1A2   ;if not return
+F192	CPY #&00    ;is Y=0
+F194	BNE &F1A2   ;if not return
+F196	LDA &C6     ;else get current baud rate and zero bit 2
+F198	AND #&FB    ;C6=5 becomes 1, 6 becomes 2
+F19A	ORA &0247   ;if cassette selected A=0 else A=2
+F19D	ASL         ;multiply by 2
+F19E	ORA &0247   ;Or it again
+F1A1	LSR         ;divide by 2
+F1A2	RTS         ;return cassette =0
+
+*************************************************************************
+*                                                                       *
+*       FSC     VECTOR  TABLE                                           *
+*                                                                       *
+*************************************************************************
+
+F1A3	DB  4C,F5   ; *OPT            (F54C)
+F1A5	DB  1D,F6   ; check EOF       (F61D)
+F1A7	DB  04,F3   ; */              (F304)
+F1A9	DB  0F,E3   ; unknown command (E30F)
+F1AB	DB  04,F3   ; *RUN            (F304)
+F1AD	DB  2A,F3   ; *CAT            (F32A)
+F1AF	DB  74,E2   ; osbyte 77       (E274)
+
+
+*************************************************************************
+*       Filing System control entry     OSFSC                           *
+*       Entry via 021E FSCV                                             *
+*       A= index 0 to 7                                                 *
+*************************************************************************
+    	;on entry A is reason code
+    	;A=0    A *OPT command has been used X & Y are the 2 parameters
+    	;A=1    EOF is being checked, on entry  X=File handle
+    	                          on Exit X=FF = EOF exists else 00
+    	;A=2    A */ command has been used *RUN the file
+    	;A=3    An unrecognised OS command has ben used X,Y point at command
+    	;A=4    A *RUN command has been used X,Y point at filename
+    	;A=5    A *CAT cammand has been issued X,Y point to rest of command
+    	;A=6    New filing system about to take over, close SPOOL & EXEC files
+    	;A=7    Return in X and Y lowest and highest file handle used
+    	;A=8    OS about to process *command
+
+F1B1	CMP #&07    ;if A>6
+F1B3	BCS &F1A2   ;goto F1A2 (RTS)
+F1B5	STX &BC     ;else save X
+F1B7	ASL         ;A=A*2
+F1B8	TAX         ;X=A to get offset
+F1B9	LDA &F1A4,X ;get hi byte of address
+F1BC	PHA         ;push it
+F1BD	LDA &F1A3,X ;get lo byte of address
+F1C0	PHA         ;push it
+F1C1	LDX &BC     ;get back X
+F1C3	RTS         ;this now jumps to the address got from the table +1
+    	            ;the next RTS takes us back to CLI
+
+
+*************************************************************************
+*                                                                       *
+*       LOAD FILE                                                       *
+*                                                                       *
+*************************************************************************
+    	
+F1C4	PHP         ;save flags on stack
+F1C5	PHA         ;save A on stack
+F1C6	JSR &FB27   ;Set cassette optionsinto (BB),set C7=6
+    	            ;claim serial system for cassette
+F1C9	LDA &03C2   ;execution address LO
+F1CC	PHA         ;save A on stack
+F1CD	JSR &F631   ;search for file
+F1D0	PLA         ;get back A
+F1D1	BEQ &F1ED   ;if A=0 F1ED
+F1D3	LDX #&03    ;else X=3
+F1D5	LDA #&FF    ;A=&FF
+F1D7	PHA         ;save A on stack
+F1D8	LDA &03BE,X ;get load address
+F1DB	STA &B0,X   ;store it as current load address
+F1DD	PLA         ;get back A
+F1DE	AND &B0,X   ;
+F1E0	DEX         ;X=X-1
+F1E1	BPL &F1D7   ;until all 4 bytes copied
+
+F1E3	CMP #&FF    ;if all bytes contain don't contain &FF
+F1E5	BNE &F1ED   ;continue
+F1E7	JSR &FAE8   ;else sound bell, reset ACIA & motor off
+F1EA	JMP &E267   ;'Bad Address' error
+
+F1ED	LDA &03CA   ;block flag
+F1F0	LSR         ;set carry from bit 0
+F1F1	PLA         ;get back A
+F1F2	BEQ &F202   ;if A=0 F202
+F1F4	BCC &F209   ;if carry clear F209
+
+*************** LOCKED FILE ROUTINE *************************************
+
+F1F6	JSR &FAF2   ;enable second processor and reset serial system
+
+F1F9	BRK         ;
+F1FA	DB  &E5     ;error number
+F1FC	'Locked'        ;
+F201	BRK         ;
+
+F202	BCC &F209   ;if carry clear F209
+F204	LDA #&03    ;else A=3
+F206	STA &0258   ;store to cause ESCAPE disable and memory
+    	            ;clear on break
+
+F209	LDA #&30    ;
+F20B	AND &BB     ;current OPTions
+F20D	BEQ &F213   ;if options and #&30 =0 ignore error condition is set
+F20F	LDA &C1     ;else get checksum result
+F211	BNE &F21D   ;and if not 0 F21D
+
+F213	TYA         ;A=Y
+F214	PHA         ;save A on stack
+F215	JSR &FBBB   ;read from second processor if present
+F218	PLA         ;get back A
+F219	TAY         ;Y=A
+F21A	JSR &F7D5   ;reset flags and check block length
+F21D	JSR &F9B4   ;load file from tape
+F220	BNE &F255   ;if not found return to search
+F222	JSR &FB69   ;increment current block number
+F225	BIT &03CA   ;block flag
+F228	BMI &F232   ;if bit 7=1 then this is last block so F232
+F22A	JSR &F96A   ;else increment current load address
+F22D	JSR &F77B   ;read block header
+F230	BNE &F209   ;and goto F209
+
+******** store data in OSFILE parameter block ***************************
+
+F232	LDY #&0A    ;Y=&0A
+F234	LDA &CC     ;file length counter lo
+F236	STA (&C8),Y ;OSFILE parameter  block
+F238	INY         ;Y=Y+1
+F239	LDA &CD     ;file length counter hi
+F23B	STA (&C8),Y ;OSFILE parameter  block
+F23D	LDA #&00    ;A=0
+F23F	INY         ;Y=Y+1
+F240	STA (&C8),Y ;OSFILE parameter  block
+F242	INY         ;Y=Y+1
+F243	STA (&C8),Y ;OSFILE parameter  block
+F245	PLP         ;get back flags
+F246	JSR &FAE8   ;bell, reset ACIA & motor
+F249	BIT &BA     ;current block flag
+F24B	BMI &F254   ;return
+F24D	PHP         ;save flags on stack
+F24E	JSR &FA46   ; print message following call (in this case NEWLINE!)
+F251	DB  &0D,&00 ;message
+F254	RTS         ;return
+    	;
+************RETRY AFTER A FAILURE ROUTINE *******************************
+
+F255	JSR &F637   ;search for a specified block
+F258	BNE &F209   ;goto F209
+
+*********** Read Filename using Command Line Interpreter ****************
+
+;filename pointed to by X and Y
+
+F25A	STX &F2     ;OS filename/command line pointer lo
+F25C	STY &F3     ;OS filename/command line pointer
+F25E	LDY #&00    ;Y=0
+F260	JSR &EA1D   ;initialise string
+F263	LDX #&00    ;X=0
+F265	JSR &EA2F   ;GSREAD call
+F268	BCS &F277   ;if end of character string F277
+F26A	BEQ &F274   ;if 0 found F274
+F26C	STA &03D2,X ;else store character in CFS filename area
+F26F	INX         ;X=X+1
+F270	CPX #&0B    ;if X<>11
+F272	BNE &F265   ;then read next
+F274	JMP &EA8F   ;else Bad String error
+
+************* terminate Filename ****************************************
+
+F277	LDA #&00    ;terminate filename with 0
+F279	STA &03D2,X ;
+F27C	RTS         ;return
+
+
+*************************************************************************
+*                                                                       *
+*       OSFILE ENTRY                                                    *
+*                                                                       *
+*       on entry A determines action                                    *
+*       A=0     save block of memory as a file                          *
+*       A=1     write catalogue info for existing file                  *
+*       A=2     write load address only for existing file               *
+*       A=3     write execution address only for existing file          *
+*       A=4     write attributes only for existing file                 *
+*       A=5     Read catalogue info, return file type in A              *
+*       A=6     Delete named file                                       *
+*       A=&FF   load the named file if lo byte of Exec address=0 use    *
+*               address in parameter block else files own load address  *
+*       X,Y     point to parameter block                                *
+*       bytes   0,1 filename address, 2-5 load,6-9 exec,A-D length or   *
+*               start of data for save, 0E End address /attributes      *
+*************************************************************************
+
+;parameter block located by XY
+;0/1	Address of Filename terminated by &0D
+;2/4	Load Address of File
+;6/9	Execution Address of File
+;A/D	Start address of data for write operations or length of file
+;   	for read operations
+;E/11   End address of Data; i.e. byte AFTER last byte to be written
+;   	or file attributes
+;
+;On Entry action is determined by value in A
+;
+;A=0	Save section of memory as named file, write catalogue information
+;A=1	Write catalogue information for named file
+;A=2	Write the LOAD       address (only) for the named File
+;A=3	Write the EXECUTION  address (only) for the named File
+;A=4	Write the ATTRIBUTES for the named File
+;A=5	Read the named files catalogue information Place file type in A
+;A=6	Delete the named file
+;A=&FF  Load the named file and read its catalogue information
+
+F27D	PHA         ;save A on stack
+F27E	STX &C8     ;osfile block pointer lo
+F280	STY &C9     ;osfile block pointer hi
+F282	LDY #&00    ;Y=0
+F284	LDA (&C8),Y ;OSFILE parameter  block
+F286	TAX         ;X=A
+F287	INY         ;Y=Y+1
+F288	LDA (&C8),Y ;OSFILE parameter  block
+F28A	TAY         ;Y=A
+F28B	JSR &F25A   ;get filename from BUFFER
+F28E	LDY #&02    ;Y=2
+
+F290	LDA (&C8),Y ;copy parameters to Cassette block at 3BE/C5
+F292	STA &03BC,Y ;from LOAD and EXEC address
+F295	STA &00AE,Y ;make second copy at B0-B8
+F298	INY         ;Y=Y+1
+F299	CPY #&0A    ;until Y=10
+F29B	BNE &F290   ;
+
+F29D	PLA         ;get back A
+F29E	BEQ &F2A7   ;if A=0 F2A7
+F2A0	CMP #&FF    ;else if A<>&FF
+F2A2	BNE &F254   ;RETURN as cassette has no other options
+F2A4	JMP &F1C4   ;load file
+
+************** Save a file **********************************************
+
+F2A7	STA &03C6   ;zero block number
+F2AA	STA &03C7   ;zero block number hi
+
+F2AD	LDA (&C8),Y ;OSFILE parameter  block
+F2AF	STA &00A6,Y ;store to Zero page copy (&B0 to &B7)
+F2B2	INY         ;data start and data end address
+F2B3	CPY #&12    ;until Y=18
+F2B5	BNE &F2AD   ;
+F2B7	TXA         ;A=X
+F2B8	BEQ &F274   ;if X=0 no filename found so B274 else BAD STRING error
+
+F2BA	JSR &FB27   ;Set cassette option sinto (BB),set C7=6
+    	            ;claim serial system for cassette
+F2BD	JSR &F934   ;prompt to start recording
+
+F2C0	LDA #&00    ;A=0
+F2C2	JSR &FBBD   ;enable 2nd proc. if present and set up osfile block
+F2C5	JSR &FBE2   ;set up CFS for write operation
+F2C8	SEC         ;set carry flag
+F2C9	LDX #&FD    ;X=&FD
+
+F2CB	LDA &FFB7,X ;set 03C8/A block length and block flag
+F2CE	SBC &FFB3,X ;to B4/6-B0/2 the number of pages (blocks) to be
+    	            ;saved
+F2D1	STA &02CB,X ;
+F2D4	INX         ;X=X+1
+F2D5	BNE &F2CB   ;
+
+F2D7	TAY         ;Y=A
+F2D8	BNE &F2E8   ;if last byte is non zero F2E8 else
+F2DA	CPX &03C8   ;compare X with block length
+F2DD	LDA #&01    ;A=1
+F2DF	SBC &03C9   ;subtract block length hi
+F2E2	BCC &F2E8   ;if carry clear F2E8
+
+F2E4	LDX #&80    ;X=&80
+F2E6	BNE &F2F0   ;jump F2F0
+
+F2E8	LDA #&01    ;A=1
+F2EA	STA &03C9   ;block length hi
+F2ED	STX &03C8   ;block length
+F2F0	STX &03CA   ;block flag
+F2F3	JSR &F7EC   ;write block to Tape
+F2F6	BMI &F341   ;return if negative
+F2F8	JSR &F96A   ;increment current load address
+F2FB	INC &03C6   ;block number
+F2FE	BNE &F2C8   ;if not 0 loop back again else
+F300	INC &03C7   ;block number hi
+F303	BNE &F2C8   ;and loop back again
+
+
+*************************************************************************
+*                                                                       *
+*       *RUN    ENTRY                                                   *
+*                                                                       *
+*************************************************************************
+
+F305	JSR &F25A   ;get filename from BUFFER
+F308	LDX #&FF    ;X=&FF
+F30A	STX &03C2   ;execution address
+F30D	JSR &F1C4   ;load file
+F310	BIT &027A   ;&FF if tube present
+F313	BPL &F31F   ;so if not present F31F else
+F315	LDA &03C4   ;execution address extend
+F318	AND &03C5   ;execution address extend
+F31B	CMP #&FF    ;if they are NOT both &FF i.e.for base processor
+F31D	BNE &F322   ;F322 else
+F31F	JMP (&03C2) ; RUN file
+
+F322	LDX #&C2    ;point to execution address
+F324	LDY #&03    ;(&03C2)
+F326	LDA #&04    ;Tube call 4
+F328	JMP &FBC7   ;and issue to Tube to run file
+
+
+*************************************************************************
+*                                                                       *
+*       *CAT    ENTRY                                                   *
+*                                                                       *
+*************************************************************************
+
+    	;CASSETTE OPTIONS in &E2
+
+    	;bit 0  input file open
+    	;bit 1  output file open
+    	;bit 2,4,5  not used
+    	;bit 3  current CATalogue status
+    	;bit 6  EOF reached
+    	;bit 7  EOF warning given
+
+F32B	LDA #&08    ;A=8
+F32D	JSR &F344   ;set status bits from A
+F330	JSR &FB27   ;Set cassette options into (BB),set C7=6
+    	            ;claim serial system for cassette
+F333	LDA #&00    ;A=0
+F335	JSR &F348   ;read data from CFS/RFS
+F338	JSR &FAFC   ;perform read
+F33B	LDA #&F7    ;A=&F7
+F33D	AND &E2     ;clear bit 3 of CFS status bit
+F33F	STA &E2     ;
+F341	RTS         ;return
+
+F342	LDA #&40    ;set bit 6 of E2 cassette options
+F344	ORA &E2     ;
+F346	BNE &F33F   ;and Jump F33F
+
+********** search routine ***********************************************
+
+F348	PHA         ;save A on stack
+F349	LDA &0247   ;filing system flag 0=CFS 2=RFS
+F34C	BEQ &F359   ;if CFS F359 else
+F34E	JSR &EE13   ;set current Filing System ROM/PHROM
+F351	JSR &EE18   ;get byte from data Romcheck type
+F354	BCC &F359   ;if carry clear F359 else
+F356	CLV         ;clear overflow flag
+F357	BVC &F39A   ;JUMP F39A
+
+*********** cassette routine********************************************
+
+F359	JSR &F77B   ;read block header
+F35C	LDA &03C6   ;block number
+F35F	STA &B4     ;current block no. lo
+F361	LDA &03C7   ;block number hi
+F364	STA &B5     ;current block no. hi
+F366	LDX #&FF    ;X=&FF
+F368	STX &03DF   ;copy of last read block flag
+F36B	INX         ;X=X+1
+F36C	STX &BA     ;current block flag
+F36E	BEQ &F376   ;if  0 F376
+
+F370	JSR &FB69   ;inc. current block no.
+F373	JSR &F77B   ;read block header
+F376	LDA &0247   ;get filing system flag 0=CFS 2=RFS
+F379	BEQ &F37D   ;if CFS F37D
+F37B	BVC &F39A   ;if V clear F39A
+F37D	PLA         ;get back A
+F37E	PHA         ;save A on stack
+F37F	BEQ &F3AE   ;if A=0 F3AE
+F381	JSR &FA72   ;else check filename header block matches searched Fn
+F384	BNE &F39C   ;if so F39C
+F386	LDA #&30    ;else A=30 to clear all but bits 4/5 of current OPTions
+
+F388	AND &BB     ;current OPTions
+F38A	BEQ &F39A   ;if 0 F39A else
+
+F38C	LDA &03C6   ;block number
+F38F	CMP &B6     ;next block no. lo
+F391	BNE &F39C   ;
+F393	LDA &03C7   ;block number hi
+F396	CMP &B7     ;next block no. hi
+F398	BNE &F39C   ;
+F39A	PLA         ;get back A
+F39B	RTS         ;return
+    	;
+F39C	LDA &0247   ;filing system flag 0=CFS 2=RFS
+F39F	BEQ &F3AE   ;if tape F3AE
+F3A1	JSR &EEAD   ;else set ROM displacement address
+
+F3A4	LDA #&FF    ;A=&FF
+F3A6	STA &03C6   ;block number
+F3A9	STA &03C7   ;block number hi
+F3AC	BNE &F370   ;jump F370
+
+F3AE	BVC &F3B5   ;if carry clear F3B5
+F3B0	LDA #&FF    ;A=&FF
+F3B2	JSR &F7D7   ;set flags
+F3B5	LDX #&00    ;X=0
+F3B7	JSR &F9D9   ;report 'DATA?'
+F3BA	LDA &0247   ;filing system flag 0=CFS 2=RFS
+F3BD	BEQ &F3C3   ;
+F3BF	BIT &BB     ;current OPTions
+F3C1	BVC &F3A1   ;long messages not required if BIT 6 =0
+F3C3	BIT &03CA   ;block flag
+F3C6	BMI &F3A4   ;if -ve F3A4
+F3C8	BPL &F370   ;else loop back and do it again
+
