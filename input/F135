@@ -122,13 +122,13 @@ F1A2	RTS         ;return cassette =0
 *                                                                       *
 *************************************************************************
 
-F1A3	DB  4C,F5   ; *OPT            (F54C)
-F1A5	DB  1D,F6   ; check EOF       (F61D)
-F1A7	DB  04,F3   ; */              (F304)
-F1A9	DB  0F,E3   ; unknown command (E30F)
-F1AB	DB  04,F3   ; *RUN            (F304)
-F1AD	DB  2A,F3   ; *CAT            (F32A)
-F1AF	DB  74,E2   ; osbyte 77       (E274)
+F1A3	DW  &F54D - 1   ; *OPT            (F54C)
+F1A5	DW  &F61E - 1   ; check EOF       (F61D)
+F1A7	DW  &F305 - 1   ; */              (F304)
+F1A9	DW  &E310 - 1   ; unknown command (E30F)
+F1AB	DW  &F305 - 1   ; *RUN            (F304)
+F1AD	DW  &F32B - 1   ; *CAT            (F32A)
+F1AF	DW  &E275 - 1   ; osbyte 77       (E274)
 
 
 *************************************************************************

@@ -36,7 +36,7 @@ CA6D	LSR &DA     ;/2
 CA6F	BNE &CA81   ;exchange 310/3 with 328/3
 CA71	ROR         ;A=A/2
 CA72	LSR         ;A=A/2
-CA73	CMP C3EF,X  ;text window right hand margin maximum
+CA73	CMP &C3EF,X ;text window right hand margin maximum
 CA76	BEQ &CA7A   ;if equal CA7A
 CA78	BPL &CA81   ;exchange 310/3 with 328/3
 

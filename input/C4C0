@@ -457,7 +457,7 @@ C70A	BCS &C758   ;else exit
 
 C70C	LDA &0322   ;get right margin
 C70F	TAY         ;put it in Y
-C710	CMP C3EF,X  ;text window right hand margin maximum
+C710	CMP &C3EF,X ;text window right hand margin maximum
 C713	BEQ &C717   ;if equal then OK
 C715	BCS &C758   ;if greater than maximum exit
 

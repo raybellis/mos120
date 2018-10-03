@@ -251,7 +251,7 @@ F03A	RTS         ;and return
 
 key data block 1
 
-F03B	DB  71,33,34,35,84,38,87,2D,5E,8C
+F03B	DB  &71,&33,&34,&35,&84,&38,&87,&2D,&5E,&8C
 	 ;       q ,3 ,4 ,5 ,f4,8 ,f7,- ,^ ,rt
 
 
@@ -269,7 +269,7 @@ key data block 2
 
 ;; missing NUL byte was here
 
-F04A	DB  0,80,77,65,74,37,69,39,30,5F,8E
+F04A	DB  &0,&80,&77,&65,&74,&37,&69,&39,&30,&5F,&8E
 	 ;       f0,w ,e ,t ,7 ,i ,9 ,0 ,_ ,lft
 
 F055	JMP (&FDFE) ;Jim paged entry vector
@@ -277,7 +277,7 @@ F058	JMP (&FA)   ;
 
 key data block 3
 
-F05A	DB  31,32,64,72,36,75,6F,70,5B,8F
+F05A	DB  &31,&32,&64,&72,&36,&75,&6F,&70,&5B,&8F
 	 ;       1 ,2 ,d ,r ,6 ,u ,o ,p ,[ ,dn
 
 
@@ -292,15 +292,15 @@ F068	JMP (&0228) ;i.e. KEYV
 
 key data block 4
 
-F06B	DB  01,61,78,66,79,6A,6B,40,3A,0D
+F06B	DB  &01,&61,&78,&66,&79,&6A,&6B,&40,&3A,&0D
 	 ;       CL,a ,x ,f ,y ,j ,k ,@ ,: ,RETN  N.B CL=CAPS LOCK
 
 speech routine data
-F075	DB  00,FF,01,02,09,0A
+F075	DB  &00,&FF,&01,&02,&09,&0A
 
 key data block 5
 
-F07B	DB  02,73,63,67,68,6E,6C,3B,5D,7F
+F07B	DB  &02,&73,&63,&67,&68,&6E,&6C,&3B,&5D,&7F
 	 ;       SL,s ,c ,g ,h ,n ,l ,; ,] ,DEL N.B. SL=SHIFT LOCK
 
 
@@ -316,8 +316,8 @@ F08A	RTS         ;
 
 key data block 6
 
-F08B	DB          00 ,7A,20   ,76,62,6D,2C,2E,2F,8B
-	 ;               TAB,Z ,SPACE,V ,b ,m ,, ,. ,/ ,copy
+F08B	DB          &00 ,&7A,&20   ,&76,&62,&6D,&2C,&2E,&2F,&8B
+	 ;            TAB,Z ,SPACE,V ,b ,m ,, ,. ,/ ,copy
 
 ***** set input buffer number and flush it *****************************
 
@@ -326,7 +326,7 @@ F098	JMP &E1AD   ;flush it
 
 key data block 7
 
-F09B	DB  1B,81,82,83,85,86,88,89,5C,8D
+F09B	DB  &1B,&81,&82,&83,&85,&86,&88,&89,&5C,&8D
 	 ;      ESC,f1,f2,f3,f5,f6,f8,f9,\ ,
 
 F0A5	JMP (&0220) ;goto eventV handling routine

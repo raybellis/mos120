@@ -538,7 +538,7 @@ C9C4	DEX         ;
 C9C5	BPL &C9C1   ;until X=&FF
 
 C9C7	LDX &0355   ;screen mode
-C9CA	LDY C3EF,X  ;text window right hand margin maximum
+C9CA	LDY &C3EF,X  ;text window right hand margin maximum
 C9CD	STY &030A   ;text window right
 C9D0	JSR &CA88   ;calculate number of bytes in a line
 C9D3	LDY &C3E7,X ;text window bottom margin maximum

@@ -152,9 +152,8 @@ FFB5	RTS         ;return
 
 *********** DEFAULT VECTOR TABLE ****************************************
 
-FFB6	DB  36      ;length of look up table in bytes
-FFB7	DB  40      ;low byte of address of this table
-FFB8	DB  D9      ;high byte of address of this table
+FFB6	DB  &36      ;length of look up table in bytes
+FFB7	DW  &D940   ;address of this table
 
 
 **************************************************************************

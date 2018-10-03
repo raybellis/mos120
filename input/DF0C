@@ -4,26 +4,26 @@ DF0C	DB ')C(',0      ; Copyright string match
 
 **** COMMMANDS ****
 ;				  Command    Address       Call goes to
-DF10	DB '.',E0,31,05		; *.        &E031, A=5     FSCV, XY=>String
-DF14	DB 'FX',E3,42,FF	; *FX       &E342, A=&FF   Number parameters
-DF19	DB 'BASIC',E0,18,00	; *BASIC    &E018, A=0     XY=>String
-DF21	DB 'CAT',E0,31,05	; *CAT      &E031, A=5     FSCV, XY=>String
-DF27	DB 'CODE',E3,48,88	; *CODE     &E348, A=&88   OSBYTE &88
-DF2E	DB 'EXEC',F6,8D,00	; *EXEC     &F68D, A=0     XY=>String
-DF35	DB 'HELP',F0,B9,FF	; *HELP     &F0B9, A=&FF   F2/3=>String
-DF3C	DB 'KEY',E3,27,FF	; *KEY      &E327, A=&FF   F2/3=>String
-DF42	DB 'LOAD',E2,3C,00	; *LOAD     &E23C, A=0     XY=>String
-DF49	DB 'LINE',E6,59,01	; *LINE     &E659, A=1     USERV, XY=>String
-DF50	DB 'MOTOR',E3,48,89	; *MOTOR    &E348, A=&89   OSBYTE
-DF58	DB 'OPT',E3,48,8B	; *OPT      &E348, A=&8B   OSBYTE
-DF5E	DB 'RUN',E0,31,04	; *RUN      &E031, A=4     FSCV, XY=>String
-DF64	DB 'ROM',E3,48,8D	; *ROM      &E348, A=&8D   OSBYTE
-DF6A	DB 'SAVE',E2,3E,00	; *SAVE     &E23E, A=0     XY=>String
-DF70	DB 'SPOOL',E2,81,00	; *SPOOL    &E281, A=0     XY=>String
-DF79	DB 'TAPE',E3,48,8C	; *TAPE     &E348, A=&8C   OSBYTE
-DF80	DB 'TV',E3,48,90	; *TV       &E348, A=&90   OSBYTE
-DF85	DB '',E0,31,03		; Unmatched &E031, A=3     FSCV, XY=>String
-DF88	DB 00			; Table end marker
+DF10	DB '.',&E0,&31,&05		; *.        &E031, A=5     FSCV, XY=>String
+DF14	DB 'FX',&E3,&42,&FF	; *FX       &E342, A=&FF   Number parameters
+DF19	DB 'BASIC',&E0,&18,&00	; *BASIC    &E018, A=0     XY=>String
+DF21	DB 'CAT',&E0,&31,&05	; *CAT      &E031, A=5     FSCV, XY=>String
+DF27	DB 'CODE',&E3,&48,&88	; *CODE     &E348, A=&88   OSBYTE &88
+DF2E	DB 'EXEC',&F6,&8D,&00	; *EXEC     &F68D, A=0     XY=>String
+DF35	DB 'HELP',&F0,&B9,&FF	; *HELP     &F0B9, A=&FF   F2/3=>String
+DF3C	DB 'KEY',&E3,&27,&FF	; *KEY      &E327, A=&FF   F2/3=>String
+DF42	DB 'LOAD',&E2,&3C,&00	; *LOAD     &E23C, A=0     XY=>String
+DF49	DB 'LINE',&E6,&59,&01	; *LINE     &E659, A=1     USERV, XY=>String
+DF50	DB 'MOTOR',&E3,&48,&89	; *MOTOR    &E348, A=&89   OSBYTE
+DF58	DB 'OPT',&E3,&48,&8B	; *OPT      &E348, A=&8B   OSBYTE
+DF5E	DB 'RUN',&E0,&31,&04	; *RUN      &E031, A=4     FSCV, XY=>String
+DF64	DB 'ROM',&E3,&48,&8D	; *ROM      &E348, A=&8D   OSBYTE
+DF6A	DB 'SAVE',&E2,&3E,&00	; *SAVE     &E23E, A=0     XY=>String
+DF70	DB 'SPOOL',&E2,&81,&00	; *SPOOL    &E281, A=0     XY=>String
+DF79	DB 'TAPE',&E3,&48,&8C	; *TAPE     &E348, A=&8C   OSBYTE
+DF80	DB 'TV',&E3,&48,&90	; *TV       &E348, A=&90   OSBYTE
+DF85	DB '',&E0,&31,&03	; Unmatched &E031, A=3     FSCV, XY=>String
+DF88	DB &00			; Table end marker
 
 ; Command routines are entered with XY=>command tail, A=table parameter,
 ; &F2/3,&E6=>start of command string
