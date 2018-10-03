@@ -16,6 +16,7 @@ my (%labels, %targets);
 open(IN, '<', 'targets.txt') || goto read_labels;
 while (<IN>) {
 	chomp;
+	next if /^\s*$/;
 	my ($addr, $label) = split(/\s+/, $_, 2);
 	$labels{hex($addr)} = $label;
 }
@@ -23,11 +24,23 @@ close(IN);
 
 read_labels:
 
-open(IN, '<', 'inc/labels.txt') || goto read_input;
+open(IN, '<', 'inc/labels.txt') || die;
 while (<IN>) {
 	chomp;
-	my ($addr, $label) = split(/\s+/, $_, 2);
-	$labels{hex($addr)} = $label;
+	if (/^(\w+)\s*=\s*\$([0-9a-f]{4})$/i) {
+		my ($label, $addr) = ($1, hex($2));
+		$labels{$addr} = $label;
+	}
+}
+close(IN);
+
+open(IN, '<', 'src/_exports.s') || die;
+while (<IN>) {
+	chomp;
+	if (/^\.export\s+(\w+)\s*=\s*\$([0-9a-f]{4})$/i) {
+		my ($label, $addr) = ($1, hex($2));
+		$labels{$addr} = $label;
+	}
 }
 close(IN);
 
@@ -43,14 +56,15 @@ while (<>) {
 	if (/^\s*\*/) {
 		printf ";%s\n",  $_;
 		$running = 0;
+	} elsif (/^;\s*$/) {
+		print "\n";
+		$running = 0;
 	} elsif (/^;/) {
 		print $_ . "\n";
 		$running = 0;
-	} elsif (/^(\s+);(.*)$/) {
-		if ($running) {
-			print "\t\t\t";
-		}
-		printf "\t\t; %s\n", $2;
+	} elsif (/^(\s+);(\s*)(.*)$/) {
+		my $comment = $3 ? " $3" : "";
+		printf("%*s;%s\n", ($running ? 56 : 24), "", $comment);
 	} elsif (/^\s*$/)  {
 		print "\n";
 		$running = 0;
@@ -60,7 +74,7 @@ while (<>) {
 
 		# output .org line for first address seen
 		if (!$addr) {
-			printf(".org\t\t\$%s\n\n", $a);
+			printf("%16s%-8s\$%s\n\n", "", ".org", $a);
 		}
 		$addr = hex($a);
 
@@ -74,19 +88,21 @@ while (<>) {
 
 		# generate label
 		my $label = $labels{$addr};
-		if ($label) {
-			$label = $label . ":";
+		if (defined $label) {
+			$label .= ':';
 		} else {
 			$label = "";
 		}
 
-		# output new text
-		printf "%s\t\t%s\t%s", $label, $op, $data;
+		# fixup comments
 		if (defined $comment) {
-			$comment =~ s/^;\s*(.*?)$/$1/;
-			printf "\t\t; %s", $comment;
+			$comment =~ s/^;\s*(.*)$/; $1/;
+		} else {
+			$comment = "";
 		}
-		print "\n";
+
+		# output new text
+		printf("%-15s %-7s %-32s%s\n", $label, $op, $data, $comment);
 		$running = 1;
 
 	} else {
@@ -108,7 +124,7 @@ close(OUT);
 
 sub split_data {
 	my ($loc, $op, $data) = @_;
-	return "\t" unless defined($data);
+	return unless defined($data);
 
 	if ($data =~ /,/) {
 		my @args = split(/\s*,\s*/, $data);
@@ -120,13 +136,11 @@ sub split_data {
 		} else {
 			$data =~ s/&/\$/g;
 
-			if ($data =~ /^([0-9A-F]{2})$/i) {
-				return sprintf("\$%02x", hex($1));
-			} elsif ($data =~ /(.*?)\$?([0-9A-F]{4})(.*)/i) {
+			if ($data =~ /(.*?)\$([0-9A-F]{4})(.*)?/i) {
 
 				my ($pre, $addr, $post) = ($1, hex($2), $3);
 
-				if ($loc >= 0xc400 && (($addr >= 0xc000 && $addr < 0xfc00) || ($addr >= 0xff00))) {
+				if ($loc >= 0xc3e7 && (($addr >= 0xc000 && $addr < 0xfc00) || ($addr >= 0xff00))) {
 					my $type = ($op =~ /^b/) ? "B" : "L";
 					$targets{$addr} = $type;
 					$labels{$addr} = $labels{$addr} || sprintf("_%s%04X", $type, $addr);
@@ -137,6 +151,13 @@ sub split_data {
 				} else {
 					return sprintf("%s\$%04x%s", ($pre || ""), $addr, ($post || ""));
 				}
+
+			} elsif ($data =~ /(.*?)\$([0-9A-F]{1,2})(.*)?/i) {
+
+				my ($pre, $addr, $post) = ($1, hex($2), $3);
+
+				return sprintf("%s\$%02x%s", ($pre || ""), $addr, ($post || ""));
+
 			}
 
 			return $data;
