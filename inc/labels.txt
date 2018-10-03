@@ -1,2 +1,60 @@
-DC1C		_IRQ
-D9CD		_RESET
+_IRQ		= $dc1c
+_VECTAB		= $d940
+_RESET		= $d9cd
+
+_OSRDRM		= $dc0b
+_VDUCHR		= $c4c0
+_OSEVEN		= $e494
+_GSINIT		= $ea1e
+_GSREAD		= $ea2f
+_NVRDCH		= $dec5
+_NVWRCH		= $e0a4
+
+_OSBYTE_00	= $e821
+_OSBYTE_01_06	= $e988
+_OSBYTE_02	= $e6d3
+_OSBYTE_03_04	= $e997
+_OSBYTE_05	= $e976
+_OSBYTE_07	= $e68b
+_OSBYTE_08	= $e689
+_OSBYTE_09	= $e6b0
+_OSBYTE_0a	= $e6b2
+_OSBYTE_0b	= $e995
+_OSBYTE_0c	= $e98c
+
+_OSBYTE_92	= $ffaa
+_OSBYTE_94	= $ffae
+_OSBYTE_96	= $ffb2
+_OSBYTE_9D	= $ffa7
+
+FRED		! $fc00
+JIM		! $fd00
+SHEILA		! $fe00
+
+ACIA_CSR	! $fe08
+ACIA_TXRX	! $fe09
+SULA		! $fe10
+VULA_CTRL	! $fe20
+VULA_PALETTE	! $fe21
+
+_EXTENDED	= $ff51
+
+OSRDRM		= $ffb9
+VDUCHR		= $ffbc
+OSEVEN		= $ffbf
+GSINIT		= $ffc2
+GSREAD		= $ffc5
+NVRDCH		= $ffc8
+NVWRCH		= $ffcb
+OSFIND		= $ffce
+OSBPUT		= $ffd4
+OSBGET		= $ffd7
+OSARGS		= $ffda
+OSFILE		= $ffdd
+OSRDCH		= $ffe0
+OSASCI		= $ffe3
+OSNEWL		= $ffe7
+OSWRCH		= $ffee
+OSWORD		= $fff1
+OSBYTE		= $fff4
+OSCLI		= $fff7
