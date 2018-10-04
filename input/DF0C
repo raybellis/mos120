@@ -120,7 +120,7 @@ E007	BMI &E017	; If >=&80, number follow
 ;                      ; else string follows
 
 E009	TYA		; Pass Y line offset to A for later
-E00A	LDY &DF10 + 6,X	; Get looked-up parameter from table
+E00A	LDY &DF10 + 2,X	; Get looked-up parameter from table
 
 ; Convert &F2/3,A to XY, put Y in A
 E00D	CLC
