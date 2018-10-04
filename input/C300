@@ -1,4 +1,4 @@
-; BBC Operation System OS 1.20		Startup Strings and Tables
+BBC Operation System OS 1.20		Startup Strings and Tables
 
 C300 JMP  &CB1D  ;Initialise screen with mode in A.
 

@@ -172,7 +172,6 @@ EFC1	LDX &025A   ;if shift enabled bit is clear
 EFC4	BPL &EFD1   ;goto EFD1
 EFC6	ROL &FA     ;else get shift bit into 7
 EFC8	BPL &EFD1   ;if not set goto EFD1
-;; duplicate line EFC8	BPL &EFD1   ;if not set goto EFD1
 EFCA	LDX &ED     ;get previous key press
 EFCC	BNE &EFA4   ;if not 0 reset repeat system etc. via EFA4
 EFCE	JSR &EA9C   ;else make code changes for SHIFT
@@ -267,8 +266,6 @@ F049	RTS         ;and exit
 
 key data block 2
 
-;; missing NUL byte was here
-
 F04A	DB  &0,&80,&77,&65,&74,&37,&69,&39,&30,&5F,&8E
 	 ;       f0,w ,e ,t ,7 ,i ,9 ,0 ,_ ,lft
 
@@ -296,7 +293,9 @@ F06B	DB  &01,&61,&78,&66,&79,&6A,&6B,&40,&3A,&0D
 	 ;       CL,a ,x ,f ,y ,j ,k ,@ ,: ,RETN  N.B CL=CAPS LOCK
 
 speech routine data
-F075	DB  &00,&FF,&01,&02,&09,&0A
+F075	DB  &00,&FF
+F077	DB  &01,&02
+F079	DB  &09,&0A
 
 key data block 5
 
@@ -317,7 +316,7 @@ F08A	RTS         ;
 key data block 6
 
 F08B	DB          &00 ,&7A,&20   ,&76,&62,&6D,&2C,&2E,&2F,&8B
-	 ;            TAB,Z ,SPACE,V ,b ,m ,, ,. ,/ ,copy
+	 ;               TAB,Z ,SPACE,V ,b ,m ,, ,. ,/ ,copy
 
 ***** set input buffer number and flush it *****************************
 

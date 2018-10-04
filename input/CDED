@@ -1,15 +1,3 @@
-;; code below shouldn't be here - duplicated from previous file
-; CDED	PHA         ;store it
-; CDEE	LDA &0300,Y ;get byte pointed to by Y
-; CDF1	STA &0300,X ;put it in 300+X
-; CDF4	PLA         ;get back A
-; CDF5	STA &0300,Y ;put it in 300+Y
-; CDF8	INX         ;increment pointers
-; CDF9	INY         ;
-; CDFA	DEC &DA     ;decrement loop counter
-; CDFC	BNE &CDEA   ;and if not 0 do it again
-; CDFE	RTS         ;and exit
-
 ******** execute upward scroll ******************************************
 ;
 CDFF	JSR &CE5B   ;exchange line and column cursors with workspace copies

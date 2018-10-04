@@ -1,14 +1,14 @@
-;BBC Operation System OS 1.20		VDU Main Routines
+BBC Operation System OS 1.20		VDU Main Routines
 
-;**************************************************************************
-;**************************************************************************
-;**                                                                      **
-;**      OSWRCH  MAIN ROUTINE  entry from E0C5                           **
-;**                                                                      **
-;**      output a byte via the VDU stream                                **
-;**                                                                      **
-;**************************************************************************
-;**************************************************************************
+**************************************************************************
+**************************************************************************
+**                                                                      **
+**      OSWRCH  MAIN ROUTINE  entry from E0C5                           **
+**                                                                      **
+**      output a byte via the VDU stream                                **
+**                                                                      **
+**************************************************************************
+**************************************************************************
 ;This routine takes up over 40% of the operating system ROM
 ;Entry points are variable, as are the results achieved.
 ;Tracing any particular path is relatively easy but generalising for

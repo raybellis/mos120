@@ -1,5 +1,5 @@
-;OS SERIES 9
-;GEOFF COX
+OS SERIES 9
+GEOFF COX
 *************************************************************************
 *                                                                       *
 *       OSBYTE 140  *TAPE                                               *
@@ -253,7 +253,7 @@ F24B	BMI &F254   ;return
 F24D	PHP         ;save flags on stack
 F24E	JSR &FA46   ; print message following call (in this case NEWLINE!)
 F251	DB  &0D,&00 ;message
-F253	PLP         ;; missing in original listing
+F253	PLP         ;restore flags
 F254	RTS         ;return
     	;
 ************RETRY AFTER A FAILURE ROUTINE *******************************

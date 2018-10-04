@@ -6,11 +6,11 @@
 *************************************************************************
 *************************************************************************
 
-;-------------------------------------------------------------------------
-;|                                                                       |
-;|       OSWORD  07 - Make a sound                                       |
-;|                                                                       |
-;-------------------------------------------------------------------------
+-------------------------------------------------------------------------
+|                                                                       |
+|       OSWORD  07 - Make a sound                                       |
+|                                                                       |
+-------------------------------------------------------------------------
 ; On entry, control block pointed to by &F0/1
 ;           Y=0 on entry
 ; XY +0  Channel - &hsfc for Hold, Sync, Flush, Channel
@@ -64,11 +64,11 @@ E86A	PLA         ; Drop stacked duration
 E86B	PLP         ; Restore flags
 		    ; And exit
 
-;-------------------------------------------------------------------------
-;|                                                                       |
-;|       OSBYTE  117 - Read VDU status                                   |
-;|                                                                       |
-;-------------------------------------------------------------------------
+-------------------------------------------------------------------------
+|                                                                       |
+|       OSBYTE  117 - Read VDU status                                   |
+|                                                                       |
+-------------------------------------------------------------------------
 
 E86C	LDX &D0     ;get VDU status byte in X
 E86E	RTS         ;and return
@@ -94,11 +94,11 @@ E887	SEC         ; Set carry
 E888	ROR &0800,X ; Set bit 7 of channel flags to indicate it's active
 E88B	BMI &E8A4   ; Jump forward to insert pitch and duration
 
-;-------------------------------------------------------------------------
-;|                                                                       |
-;|       SOUND &FFxx - Speech System                                     |
-;|                                                                       |
-;-------------------------------------------------------------------------
+-------------------------------------------------------------------------
+|                                                                       |
+|       SOUND &FFxx - Speech System                                     |
+|                                                                       |
+-------------------------------------------------------------------------
 ; On entry, control block pointed to by &F0/1
 ;           Y=1 on entry
 ; XY +0  Channel - &FFxx - xx=Speech command
@@ -221,7 +221,7 @@ E8E3	RTS         ;else exit
 *       write interval timer                                            *
 *                                                                       *
 *************************************************************************
-;F0/1 points to block to store data
+F0/1 points to block to store data
 
 E8E4	LDA #&0F    ;offset between clock and timer
 E8E6	BNE &E8EE   ;jump to E8EE ALWAYS!!
@@ -234,7 +234,7 @@ E8E6	BNE &E8EE   ;jump to E8EE ALWAYS!!
 *       write system clock                                              *
 *                                                                       *
 *************************************************************************
-;F0/1 points to block to store data
+F0/1 points to block to store data
 
 E8E8	LDA &0283   ;get current clock store pointer
 E8EB	EOR #&0F    ;and invert to get inactive timer

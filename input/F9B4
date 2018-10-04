@@ -1,6 +1,6 @@
-;OS SERIES 10
-;LAST PART
-;GEOFF COX
+OS SERIES 10
+LAST PART
+GEOFF COX
 ****************************** LOAD *************************************
 
 F9B4	TYA         ;A=Y
@@ -12,7 +12,7 @@ F9BB	DB  'Loading';
 F9C2	DB  &0D     ;
 F9C3	BRK         ;
 
-F9C4	STA &BA     ;current block flag		;; typo in address
+F9C4	STA &BA     ;current block flag
 F9C6	LDX #&FF    ;X=&FF
 F9C8	LDA &C1     ;Checksum result
 F9CA	BNE &F9D9   ;if not 0 F9D9
@@ -143,7 +143,7 @@ FA8D	RTS         ;return
     	;
 FA8E	BRK         ;
 FA8F	DB  &D8     ;error number
-FA90	DB  &0d,'Data?'  ;	;; fixed here
+FA90	DB  &0d,'Data?'  ;
 FA96	BRK         ;
 
 FA97	BNE &FAAE   ;

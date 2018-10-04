@@ -584,15 +584,6 @@ DEF9	ORA &02B2   ;
 DEFC	BNE &DEE6   ;and if not zero go round again
 DEFE	BCS &DF05   ;else exit
 
-;; duplicate code
-; DEF0	BCC &DF03
-; DEF2	BIT &E6
-; DEF4	BVC &DEE6
-; DEF6	LDA &02B1
-; DEF9	ORA &02B2
-; DEFC	BNE &DEE6
-; DEFE	BCS &DF05
-
 DF00	SEC
 DF01	LDA #&1B
 DF03	STA &E6

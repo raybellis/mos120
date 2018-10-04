@@ -87,7 +87,6 @@ F72C	BRK         ;
 
 **********: pick up a header ********************************************
 
-;; was missing immediate in original source
 F72D	LDY #&FF    ;get ESCAPE flag
 F72F	JSR &FB90   ;switch Motor on
 F732	LDA #&01    ;A=1
