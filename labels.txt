@@ -18,7 +18,9 @@ _COL4_MASK_TAB	! $c409
 _VECTOR_TABLE	= $d940
 _OSBYTE_TABLE	= $e5b3
 _BAUD_TABLE	= $e9ad
-_CRTC_SETUP_TAB	= $c46e
+_CRTC_REG_TAB	= $c46e
+_VDU_MEMSZ_TAB	= $c459
+_VDU_MEMLOC_TAB	= $c45e
 
 ; VDU entry points
 _VDU_0_6_27	= $c511
@@ -132,7 +134,9 @@ _OSWORD_6	= $e80b
 _OSWORD_7	= $e82d
 _OSWORD_8	= $e8ae
 _OSWORD_9	= $c735
+_OSWORD_10	= $cbf3
 _OSWORD_11	= $c748
+_OSWORD_12	= $c8e0
 
 _EXTENDED	= $ff51
 

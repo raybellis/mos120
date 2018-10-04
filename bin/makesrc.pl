@@ -24,7 +24,7 @@ close(IN);
 
 read_labels:
 
-open(IN, '<', 'inc/labels.txt') || die;
+open(IN, '<', 'labels.txt') || die;
 while (<IN>) {
 	chomp;
 	if (/^(\w+)\s*=\s*\$([0-9a-f]{4})$/i) {
