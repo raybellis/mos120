@@ -37,7 +37,7 @@ close(IN);
 open(IN, '<', 'src/_exports.s') || die;
 while (<IN>) {
 	chomp;
-	if (/^\.export\s+(\w+)\s*=\s*\$([0-9a-f]{4})$/i) {
+	if (/^\.export\s+(\w+)\s*:?=\s*\$([0-9a-f]+)$/i) {
 		my ($label, $addr) = ($1, hex($2));
 		$labels{$addr} = $label;
 	}
@@ -106,7 +106,7 @@ while (<>) {
 		$running = 1;
 
 	} else {
-		print "; ### $_\n";
+		print "; $_\n";
 		$running = 0;
 	}
 }
@@ -138,26 +138,27 @@ sub split_data {
 
 			if ($data =~ /(.*?)\$([0-9A-F]{4})(.*)?/i) {
 
-				my ($pre, $addr, $post) = ($1, hex($2), $3);
+				my ($pre, $addr, $post) = ($1 || "", hex($2), $3 || "");
+				my $rewrite;
 
 				if ($loc >= 0xc3e7 && (($addr >= 0xc000 && $addr < 0xfc00) || ($addr >= 0xff00))) {
 					my $type = ($op =~ /^b/) ? "B" : "L";
 					$targets{$addr} = $type;
 					$labels{$addr} = $labels{$addr} || sprintf("_%s%04X", $type, $addr);
+					$rewrite = 1;
 				}
 
-				if ($labels{$addr}) {
-					return sprintf("%s%s%s", ($pre || ""), $labels{$addr}, ($post || ""));
-				} else {
-					return sprintf("%s\$%04x%s", ($pre || ""), $addr, ($post || ""));
-				}
+				$addr = $rewrite ? $labels{$addr} : sprintf("\$%04x", $addr);
+				$data = join("", $pre, $addr, $post);
 
 			} elsif ($data =~ /(.*?)\$([0-9A-F]{1,2})(.*)?/i) {
 
-				my ($pre, $addr, $post) = ($1, hex($2), $3);
+				my ($pre, $addr, $post) = ($1 || "", hex($2), $3 || "");
 
-				return sprintf("%s\$%02x%s", ($pre || ""), $addr, ($post || ""));
+				my $rewrite = ($data !~ /#/ && $op =~ /^(ld|st)/ && $labels{$addr});
 
+				$addr = $rewrite ? $labels{$addr} : sprintf("\$%02x", $addr);
+				$data = join("", $pre, $addr, $post);
 			}
 
 			return $data;
