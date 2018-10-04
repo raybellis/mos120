@@ -64,7 +64,7 @@ while (<>) {
 		$running = 0;
 	} elsif (/^(\s+);(\s*)(.*)$/) {
 		my $comment = $3 ? " $3" : "";
-		printf("%*s;%s\n", ($running ? 56 : 24), "", $comment);
+		printf("%*s;%s\n", ($running ? 64 : 32), "", $comment);
 	} elsif (/^\s*$/)  {
 		print "\n";
 		$running = 0;
@@ -74,7 +74,7 @@ while (<>) {
 
 		# output .org line for first address seen
 		if (!$addr) {
-			printf("%16s%-8s\$%s\n\n", "", ".org", $a);
+			printf("%24s%-8s\$%s\n\n", "", ".org", $a);
 		}
 		$addr = hex($a);
 
@@ -102,7 +102,7 @@ while (<>) {
 		}
 
 		# output new text
-		printf("%-15s %-7s %-32s%s\n", $label, $op, $data, $comment);
+		printf("%-23s %-7s %-32s%s\n", $label, $op, $data, $comment);
 		$running = 1;
 
 	} else {
@@ -141,11 +141,13 @@ sub split_data {
 				my ($pre, $addr, $post) = ($1 || "", hex($2), $3 || "");
 				my $rewrite;
 
-				if ($loc >= 0xc3e7 && (($addr >= 0xc000 && $addr < 0xfc00) || ($addr >= 0xff00))) {
-					my $type = ($op =~ /^b/) ? "B" : "L";
-					$targets{$addr} = $type;
-					$labels{$addr} = $labels{$addr} || sprintf("_%s%04X", $type, $addr);
-					$rewrite = 1;
+				if ($loc >= 0xc3e7) {
+					if (($addr >= 0xc000 && $addr < 0xfc00) || ($addr >= 0xff00)) {
+						my $type = ($op =~ /^b/) ? "B" : "L";
+						$targets{$addr} = $type;
+						$labels{$addr} = $labels{$addr} || sprintf("_%s%04X", $type, $addr);
+					}
+					$rewrite = defined($labels{$addr});
 				}
 
 				$addr = $rewrite ? $labels{$addr} : sprintf("\$%04x", $addr);
@@ -155,7 +157,7 @@ sub split_data {
 
 				my ($pre, $addr, $post) = ($1 || "", hex($2), $3 || "");
 
-				my $rewrite = ($data !~ /#/ && $op =~ /^(ld|st)/ && $labels{$addr});
+				my $rewrite = ($data !~ /#/ && $op =~ /^(ld|st|inc)/ && $labels{$addr});
 
 				$addr = $rewrite ? $labels{$addr} : sprintf("\$%02x", $addr);
 				$data = join("", $pre, $addr, $post);
