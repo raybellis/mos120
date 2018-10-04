@@ -13,7 +13,7 @@ my %translate = (
 my $running = 0;
 my (%labels, %targets);
 
-open(IN, '<', 'targets.txt') || goto read_labels;
+open(IN, '<', 'src/_targets.txt') || goto read_labels;
 while (<IN>) {
 	chomp;
 	next if /^\s*$/;
@@ -24,7 +24,7 @@ close(IN);
 
 read_labels:
 
-open(IN, '<', 'labels.txt') || die;
+open(IN, '<', 'src/_labels.txt') || die;
 while (<IN>) {
 	chomp;
 	if (/^(\w+)\s*=\s*\$([0-9a-f]{4})$/i) {
@@ -111,7 +111,7 @@ while (<>) {
 	}
 }
 
-open(OUT, '>', 'targets.txt');
+open(OUT, '>', 'src/_targets.txt');
 foreach my $addr (sort { $a <=> $b } keys %targets) {
 	if (!$labels{$addr}) {
 		printf OUT "%04x\t_%s%04X\n", $addr, $targets{$addr}, $addr;
