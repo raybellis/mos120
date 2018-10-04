@@ -1,41 +1,138 @@
+STARTUP		= $c300
+
 _IRQ		= $dc1c
-_VECTAB		= $d940
 _RESET		= $d9cd
 
-_OSRDRM		= $dc0b
+_COL16_MASK_TAB	= $c31f
+_COL4_MASK_TAB	= $c32f
+_VDU_TABLE_LO	= $c333
+_VDU_TABLE_HI	= $c354
+_MUL640_TABLE	= $c375
+_MUL40_TABLE	= $c3b5
+_TEXT_ROW_TABLE	= $c3e7
+_TEXT_COL_TABLE	= $c3ef
+_ULA_SETTINGS	= $c3f7
+_TXT_BPC_TABLE	= $c3ff
+_COL2_MASK_TAB	= $c407
+_COL4_MASK_TAB	! $c409
+_VECTOR_TABLE	= $d940
+_OSBYTE_TABLE	= $e5b3
+_BAUD_TABLE	= $e9ad
+_CRTC_SETUP_TAB	= $c46e
+
+; VDU entry points
+_VDU_0_6_27	= $c511
+_VDU_1		= $c53b
+_VDU_2		= $c596
+_VDU_3		= $c5a1
+_VDU_4		= $c5ad
+_VDU_5		= $c5b9
+_VDU_7		= $e86f
+_VDU_8		= $c5c5
+_VDU_9		= $c664
+_VDU_10		= $c6f0
+_VDU_11		= $c65b
+_VDU_12		= $c759
+_VDU_13		= $c7af
+_VDU_14		= $c58d
+_VDU_15		= $c5a6
+_VDU_16		= $c7c0
+_VDU_17		= $c7f9
+_VDU_18		= $c7fd
+_VDU_19		= $c892
+_VDU_20		= $c839
+_VDU_21		= $c59b
+_VDU_22		= $c8eb
+_VDU_23		= $c8f1
+_VDU_24		= $ca39
+_VDU_25		= $c9ac
+_VDU_26		= $c9bd
+_VDU_28		= $c6fa
+_VDU_29		= $caa2
+_VDU_30		= $c779
+_VDU_31		= $c787
+_VDU_127	= $caac
+
+; registered vector entry points
 _VDUCHR		= $c4c0
+_OSRDRM		= $dc0b
+_BRKV		= $dc54
+_IRQ1V		= $dc93
+_IRQ2V		= $de89
+_NVRDCH		= $dec5
+_CLIV		= $df89
+_NVWRCH		= $e0a4
+_CNPV		= $e1d1
+_USERV		= $e310
+_REMVB		= $e464
 _OSEVEN		= $e494
+_INSBV		= $e4b3
+_BYTEV		= $e772
+_WORDV		= $e7eb
 _GSINIT		= $ea1e
 _GSREAD		= $ea2f
-_NVRDCH		= $dec5
-_NVWRCH		= $e0a4
+_KEYV		= $ef02
+_ARGSV		= $f18e
+_FSCV		= $f1b1
+_FILEV		= $f27d
+_FINDV		= $f3ca
+_BGETV		= $f4c9
+_BPUTV		= $f529
+_NOTIMPV	= $ffa6
 
-_OSBYTE_00	= $e821
-_OSBYTE_01_06	= $e988
-_OSBYTE_02	= $e6d3
-_OSBYTE_03_04	= $e997
-_OSBYTE_05	= $e976
-_OSBYTE_07	= $e68b
-_OSBYTE_08	= $e689
-_OSBYTE_09	= $e6b0
-_OSBYTE_0a	= $e6b2
-_OSBYTE_0b	= $e995
-_OSBYTE_0c	= $e98c
+; OSBYTE entry points
+_OSBYTE_0	= $e821
+_OSBYTE_1_6	= $e988
+_OSBYTE_2	= $e6d3
+_OSBYTE_3_4	= $e997
+_OSBYTE_5	= $e976
+_OSBYTE_7	= $e68b
+_OSBYTE_8	= $e689
+_OSBYTE_9	= $e6b0
+_OSBYTE_10	= $e6b2
+_OSBYTE_11	= $e995
+_OSBYTE_12	= $e98c
+_OSBYTE_13	= $e6f9
+_OSBYTE_14	= $e6fa
+_OSBYTE_15	= $f0a8
+_OSBYTE_16	= $e706
+_OSBYTE_17	= $de8c
+_OSBYTE_18	= $e9c8
+_OSBYTE_19	= $e9b6
+_OSBYTE_20	= $cd07
+_OSBYTE_21	= $f0b4
 
-_OSBYTE_92	= $ffaa
-_OSBYTE_94	= $ffae
-_OSBYTE_96	= $ffb2
-_OSBYTE_9D	= $ffa7
+_OSBYTE_117	= $e86c
+_OSBYTE_118	= $e9d9
+_OSBYTE_128	= $e74f
+_OSBYTE_129	= $e713
+_OSBYTE_142	= $dbe7
+_OSBYTE_144	= $eae3
+_OSBYTE_146	= $ffaa
+_OSBYTE_147	= $eaf4
+_OSBYTE_148	= $ffae
+_OSBYTE_149	= $eaf9
+_OSBYTE_150	= $ffb2
+_OSBYTE_151	= $eafe
+_OSBYTE_154	= $e9ff
+_OSBYTE_155	= $ea10
+_OSBYTE_157	= $ffa7
+_OSBYTE_160	- $e9c0
 
-FRED		! $fc00
-JIM		! $fd00
-SHEILA		! $fe00
+_OSBYTE_166_255	= $e99c
 
-ACIA_CSR	! $fe08
-ACIA_TXRX	! $fe09
-SULA		! $fe10
-VULA_CTRL	! $fe20
-VULA_PALETTE	! $fe21
+; OSWORD entry points
+_OSWORD_0	= $e902
+_OSWORD_1	= $e8d5
+_OSWORD_2	= $e8e8
+_OSWORD_3	= $e8d1
+_OSWORD_4	= $e8e4
+_OSWORD_5	= $e803
+_OSWORD_6	= $e80b
+_OSWORD_7	= $e82d
+_OSWORD_8	= $e8ae
+_OSWORD_9	= $c735
+_OSWORD_11	= $c748
 
 _EXTENDED	= $ff51
 
@@ -58,3 +155,8 @@ OSWRCH		= $ffee
 OSWORD		= $fff1
 OSBYTE		= $fff4
 OSCLI		= $fff7
+
+; miscellaneous identified code sections
+_BRK		= $dc27
+_SOUND_FF	= $e88d
+_SOUND_IRQ	= $eb47
