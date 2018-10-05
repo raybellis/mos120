@@ -376,7 +376,7 @@ F2C9	LDX #&FD    ;X=&FD
 F2CB	LDA &B4 + 65283,X ;set 03C8/A block length and block flag
 F2CE	SBC &B0 + 65283,X ;to B4/6-B0/2 the number of pages (blocks) to be
     	            ;saved
-F2D1	STA &02CB,X ;
+F2D1	STA &03C8 - &fd,X ;
 F2D4	INX         ;X=X+1
 F2D5	BNE &F2CB   ;
 

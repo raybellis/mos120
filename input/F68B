@@ -421,10 +421,9 @@ F947	JSR &FA46   ; print message following call
 F94A	DB  'RECORD then RETURN';
 F95C	BRK         ;
 
-F95D	JSR &F995   ;confirm CFS not operating, nor ESCAPE flag set
-
 ************ wait for RETURN key to be pressed **************************
 
+F95D	JSR &F995   ;confirm CFS not operating, nor ESCAPE flag set
 F960	JSR OSRDCH  ;wait for keypress
 F963	CMP #&0D    ;is it &0D (RETURN)
 F965	BNE &F95D   ;no then do it again
