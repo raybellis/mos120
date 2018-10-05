@@ -143,10 +143,20 @@ sub split_data {
 
 				if ($loc >= 0xc3e7) {
 					if (($addr >= 0xc000 && $addr < 0xfc00) || ($addr >= 0xff00)) {
+
 						my $type = ($op =~ /^b/) ? "B" : "L";
-						$targets{$addr} = $type;
-						$labels{$addr} = $labels{$addr} || sprintf("_%s%04X", $type, $addr);
+						my %tmp = (
+							"B" => sprintf("_B%04X", $addr),
+							"L" => sprintf("_L%04X", $addr),
+						);
+
+						# allow _L labels to overwrite _B labels
+						if (!$labels{$addr} || ($labels{$addr} eq $tmp{B})) {
+							$targets{$addr} = $type;
+							$labels{$addr} = $tmp{$type};
+						}
 					}
+
 					$rewrite = defined($labels{$addr});
 				}
 
@@ -157,7 +167,7 @@ sub split_data {
 
 				my ($pre, $addr, $post) = ($1 || "", hex($2), $3 || "");
 
-				my $rewrite = ($data !~ /#/ && $op =~ /^(ld|st|inc)/ && $labels{$addr});
+				my $rewrite = ($data !~ /#/ && $op ne ".byte" && $labels{$addr});
 
 				$addr = $rewrite ? $labels{$addr} : sprintf("\$%02x", $addr);
 				$data = join("", $pre, $addr, $post);
