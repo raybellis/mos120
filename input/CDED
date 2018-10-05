@@ -319,7 +319,7 @@ CFE8	RTS         ;and exit
 
 
 
-CFE9	LDA &C4B7,Y ;convert with teletext conversion table
+CFE9	LDA &C4B6+1,Y ;convert with teletext conversion table
 CFEC	BNE &CFE6   ;and write it
 
 

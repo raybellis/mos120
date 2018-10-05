@@ -445,7 +445,7 @@ D7C2	LDY &0360   ;get number of logical colours
 D7C5	BNE &D7DC   ;if Y<>0 mode <>7 so D7DC
 D7C7	LDA (&D8),Y ;get address of top scan line of current text chr
 D7C9	LDY #&02    ;Y=2
-D7CB	CMP &C4B7,Y ;compare with conversion table
+D7CB	CMP &C4B6+1,Y ;compare with conversion table
 D7CE	BNE &D7D4   ;if not equal D7d4
 D7D0	LDA &C4B6,Y ;else get next lower byte from table
 D7D3	DEY         ;Y=Y-1
