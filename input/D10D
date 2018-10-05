@@ -164,7 +164,7 @@ D21C	LDX #&02    ;else X=2
 D21E	STX &DE     ;store it
 D220	LDA &C4AA,X ;set up vector address
 D223	STA &035D   ;in 35D
-D226	LDA &C4AB,X ;
+D226	LDA &C4AA + 1,X ;
 D229	STA &035E   ;and 35E
 D22C	LDA &0329,X ;get hi byte of span
 D22F	BPL &D235   ;if +ve D235

@@ -498,10 +498,8 @@ C4A9  DB  &13  ;11 Cursor End Line      =19
 
 ************* VDU ROUTINE VECTOR ADDRESSES   ******************************
 
-C4AA  DB  &86  ;10000110
-C4AB  DB  &D3  ;11010011
-C4AC  DB  &7E  ;01111110
-C4AD  DB  &D3  ;11010011
+C4AA  DW  &D386
+C4AC  DW  &D37E
 
 
 ************ VDU ROUTINE BRANCH VECTOR ADDRESS LO ***********************
