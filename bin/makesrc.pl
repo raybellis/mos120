@@ -11,14 +11,24 @@ my %translate = (
 );
 
 my $running = 0;
-my (%labels, %targets);
+my (%suppress, %labels, %targets);
+
+open(IN, '<', 'src/_suppress.txt') || die;
+while (<IN>) {
+	chomp;
+	if (/^\$([0-9a-f]+)$/i) {
+		my ($addr) = hex($1);
+		$suppress{$addr} = 1;
+	}
+}
+close(IN);
 
 open(IN, '<', 'src/_targets.txt') || goto read_labels;
 while (<IN>) {
 	chomp;
 	next if /^\s*$/;
 	my ($addr, $label) = split(/\s+/, $_, 2);
-	$labels{hex($addr)} = $label;
+	$labels{hex($addr)} = $label unless defined($suppress{$addr});
 }
 close(IN);
 
@@ -88,7 +98,7 @@ while (<>) {
 
 		# generate label
 		my $label = $labels{$addr};
-		if (defined $label) {
+		if ($label && !$suppress{$addr}) {
 			$label .= ':';
 		} else {
 			$label = "";
@@ -157,7 +167,7 @@ sub split_data {
 						}
 					}
 
-					$rewrite = defined($labels{$addr});
+					$rewrite = $labels{$addr} && !$suppress{$addr};
 				}
 
 				$addr = $rewrite ? $labels{$addr} : sprintf("\$%04x", $addr);
@@ -167,7 +177,7 @@ sub split_data {
 
 				my ($pre, $addr, $post) = ($1 || "", hex($2), $3 || "");
 
-				my $rewrite = ($data !~ /#/ && $op ne ".byte" && $labels{$addr});
+				my $rewrite = ($data !~ /#/ && $op ne ".byte" && $labels{$addr} && !$suppress{$addr});
 
 				$addr = $rewrite ? $labels{$addr} : sprintf("\$%02x", $addr);
 				$data = join("", $pre, $addr, $post);
