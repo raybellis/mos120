@@ -72,7 +72,7 @@ C511	RTS         ;and exit
 ********** parameters are outstanding ***********************************
 X=&26A = 2 complement of number of parameters X=&FF for 1, FE for 2 etc.
 
-C512	STA &0224,X ;store parameter in queue
+C512	STA &0323 - 255,X ;store parameter in queue
 C515	INX         ;increment X
 C516	STX &026A   ;store it as VDU queue
 C519	BNE &C532   ;if not 0 C532 as more parameters are needed
