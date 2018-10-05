@@ -2,13 +2,37 @@
 ; Non-relocatable symbols
 ;
 
+.export FS_LOAD		:= $b0
+.export FS_EXEC		:= $b4
 .export MSG_PTR		:= $b8
 .export MSG_PTR_HI	:= $b9
+
+.export CFS_INTERBLOCK	:= $c7
+
+.export VDU_STATUS	:= $d0
+.export VDU_G_PIX_MASK	:= $d1
+.export VDU_T_OR_MASK	:= $d2
+.export VDU_T_EOR_MASK	:= $d3
+.export VDU_G_OR_MASK	:= $d4
+.export VDU_G_EOR_MASK	:= $d5
+.export VDU_G_MEM	:= $d6
+.export VDU_G_MEM_HI	:= $d7
+
+.export VDU_TMP1	:= $da
+.export VDU_TMP2	:= $db
+.export VDU_TMP3	:= $dc
+.export VDU_TMP4	:= $dd
+.export VDU_TMP5	:= $de
+.export VDU_TMP6	:= $df
+
 .export TEXT_PTR	:= $f2
 .export TEXT_PTR_HI	:= $f3
 .export ROM_SELECT	:= $f4
 
+.export VEC_USERV	:= $0200
+.export VEC_BRKV	:= $0202
 .export VEC_IRQ1V	:= $0204
+.export VEC_IRQ2V	:= $0206
 .export VEC_OSCLI	:= $0208
 .export VEC_OSBYTE	:= $020a
 .export VEC_OSWORD	:= $020c
@@ -33,21 +57,53 @@
 .export VEC_IND2V	:= $0232
 .export VEC_IND3V	:= $0234
 
+; OSBYTE variables
 .export OSB_BASE	:= $0236
 .export OSB_EXT_VEC	:= $0238
 .export OSB_ROM_TABLE	:= $023a
 .export OSB_KEY_TABLE	:= $023c
 .export OSB_VDU_TABLE	:= $023e
 
+.export OSB_CFS_TIMEOUT	:= $0240
+.export OSB_IN_STREAM	:= $0241
+.export OSB_KEY_SEM	:= $0242
 .export OSB_OSHWM_DEF	:= $0243
 .export OSB_OSHWM_CUR   := $0244
+.export OSB_RS423_MODE	:= $0245
+.export OSB_CHAR_EXPL	:= $0246
+.export OSB_CFSRFC_SW	:= $0247
+.export OSB_VIDPROC_CTL	:= $0248
+.export OSB_VIDPROC_PAL	:= $0249
+.export OSB_LAST_ROM	:= $024a
 .export OSB_BASIC_ROM	:= $024b
+.export OSB_ADC_CHAN	:= $024c
+.export OSB_ADC_MAX	:= $024d
+.export OSB_ADC_ACC	:= $024e
+.export OSB_RS423_USE	:= $024f
+.export OSB_RS423_CTL	:= $0250
+.export OSB_FLASH_TIME	:= $0251
+.export OSB_FLASH_SPC	:= $0252
+.export OSB_FLASH_MARK	:= $0253
+.export OSB_KEY_DELAY	:= $0254
+.export OSB_KEY_REPEAT	:= $0255
+.export OSB_EXEC_HND	:= $0256
+.export OSB_SPOOL_HND	:= $0257
+.export OSB_ESC_BRK	:= $0258
+.export OSB_KEY_DISABLE	:= $0259
+.export OSB_KEY_STATUS	:= $025a
+.export OSB_SER_BUF_EX	:= $025b
+.export OSB_SER_BUF_SUP	:= $025c
+.export OSB_SER_CAS_FLG	:= $025d
+.export OSB_ECONET_INT	:= $025e
 .export OSB_OSRDCH_INT	:= $025f
 .export OSB_OSWRCH_INT	:= $0260
+.export OSB_SPEECH_OFF	:= $0261
+.export OSB_SOUND_OFF	:= $0262
 .export OSB_BELL_CHAN	:= $0263
 .export OSB_BELL_ENV	:= $0264
 .export OSB_BELL_FREQ	:= $0265
 .export OSB_BELL_LEN	:= $0266
+.export OSB_VDU_QSIZE	:= $026a
 .export OSB_TAB		:= $026b
 .export OSB_ESCAPE	:= $026c
 
@@ -70,8 +126,35 @@
 .export VDU_QUEUE_1	:= $0322
 .export VDU_QUEUE	:= $0323
 
+.export VDU_G_WIN_L	:= $0300
+.export VDU_G_WIN_L_HI	:= $0301
+.export VDU_G_WIN_B	:= $0302
+.export VDU_G_WIN_B_HI	:= $0303
+.export VDU_G_WIN_R	:= $0304
+.export VDU_G_WIN_R_HI	:= $0305
+.export VDU_G_WIN_T	:= $0306
+.export VDU_G_WIN_T_HI	:= $0307
+
+.export VDU_T_WIN_L	:= $0308
+.export VDU_T_WIN_B	:= $0309
+.export VDU_T_WIN_R	:= $030a
+.export VDU_T_WIN_T	:= $030b
+
+.export VDU_MEM_PAGES	:= $0354
+.export VDU_MODE	:= $0355
+.export VDU_MAP_TYPE	:= $0356
+.export VDU_T_FG	:= $0357
+.export VDU_T_BG	:= $0358
+.export VDU_G_FG	:= $0359
+.export VDU_COL_MASK	:= $0360
+.export VDU_G_BG	:= $035a
+.export VDU_P_FG	:= $035b
+.export VDU_P_BG	:= $035c
+
 .export VDU_JUMPVEC	:= $035d
 .export VDU_JUMPVEC_HI	:= $035e
+
+.export CFS_BLOCK_LEN	:= $03c8
 
 .export NMI		:= $0d00
 
@@ -91,12 +174,12 @@
 .export ACIA_CSR	:= $fe08
 .export ACIA_TXRX	:= $fe09
 
-.export SULA		:= $fe10
+.export SERIAL_ULA	:= $fe10
 
 .export ADLC		:= $fe18
 
-.export VULA_CTRL	:= $fe20
-.export VULA_PALETTE	:= $fe21
+.export VID_ULA_CTRL	:= $fe20
+.export VID_ULA_PALETTE	:= $fe21
 
 .export ROM_LATCH	:= $fe30
 

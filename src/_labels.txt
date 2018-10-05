@@ -1,7 +1,7 @@
 STARTUP			= $c300
 
-_IRQ			= $dc1c
-_RESET			= $d9cd
+_IRQ_HANDLER		= $dc1c
+_RESET_HANDLER		= $d9cd
 
 _COL16_MASK_TAB		= $c31f
 _COL4_MASK_TAB		= $c32f
@@ -14,7 +14,8 @@ _TEXT_COL_TABLE		= $c3ef
 _ULA_SETTINGS		= $c3f7
 _TXT_BPC_TABLE		= $c3ff
 _COL2_MASK_TAB		= $c407
-_COL4_MASK_TAB	! $c409
+_COL4_MASK_TAB		! $c409
+_TELETEXT_CHAR_TAB	= $c4b6
 _VECTOR_TABLE		= $d940
 _OSBYTE_TABLE		= $e5b3
 _BAUD_TABLE		= $e9ad
@@ -209,8 +210,19 @@ _FSCV_RUN		= $f305
 _FSCV_CAT		= $f32b
 
 ; miscellaneous identified code sections
+_VDU_CLEAR		= $cc02
 _VDU_JUMP		= $ccf5
+_VDU_OUT_CHAR		= $cfb7
+_VDU_OUT_MODE7		= $cfdc
+_VDU_OUT_COL4		= $cfee
+_VDU_OUT_COL16		= $d01e
+_VDU_VAR_COPY		= $d48c
+_VDU_G_CLR_LINE		= $d6a6
 _BRK			= $dc27
+_POLL_ACIA		= $dca2
+_IRQ_UNKNOWN		= $dcf3
+_POLL_SYS_VIA		= $dd06
+_POLL_USER_VIA		= $dd47
 _MSG_COPYSYM		= $df0c
 _GET_TEXT_PTR		= $e00d
 _SKIP_SPACES_NXT	= $e039
@@ -219,11 +231,40 @@ _SKIP_COMMA		= $e045
 _CHECK_FOR_DIGIT_NXT	= $e07c
 _CHECK_FOR_DIGIT	= $e07d
 _CHECK_FOR_HEX		= $e08f
+_CFS_CHECK_BUSY		= $e7dc
 _SOUND_FF		= $e88d
 _CLEAR_OSFILE_CB	= $e20e
 _SOUND_IRQ		= $eb47
+_RFS_READ_ROM		= $ee51
+_RFS_READ_PHROM		= $ee62
+_CRFS_PRINT_NEWLINE	= $f24d
+_CRFS_READ		= $f588
+_CFS_DELAY_5_S		= $f892
+_CFS_DELAY_INTERBLOCK	= $f896
+_CFS_DELAY_100_MS	= $f898
+_CRFS_PRINT_FILENAME	= $f8b9
+_WAIT_FOR_RETURN	= $f95d
+_INC_LOAD_ADDRESS	= $f96a
+_PRINT_SPACE_HEX	= $f975
+_PRINT_HEX		= $f97a
+_PRINT_HEX_NYBBLE	= $f983
+_PRINT_SPACE		= $f991
+_CFS_READY		= $f995
+_CRFS_LOAD_FILE		= $f9b4
+_CRFS_PRINT_MSG		= $fa46
 _PRINT_MSG		= $fa4a
+_CFS_CLAIM_SERIAL	= $fb27
+_RESET_ACIA		= $fb46
+_SET_ACIA_CONTROL	= $fb4a
 
+__vdu_check_delete	= $c4d8
+__vdu_del_mode7		= $cac2
+__vdu_del_modeX		= $cac7
+__mode7_xlate_loop	= $cfde
+__mode7_out_char	= $cfe6
+__mode7_xlate_char	= $cfe9
+__vdu_var_copy_next	= $d48e
+__irq_acia		= $dca9
 __cliv_not_newline	= $df94
 __cliv_not_slash	= $dfbe
 __get_text_ptr_done	= $e017
@@ -233,4 +274,11 @@ __next_field		= $e08a
 __not_digit		= $e08d
 __check_hex_done	= $e0a2
 __no_intercept		= $e0bb
-
+__check_busy_cfs_done	= $e7ea
+__rfs_read_pagedrom	= $ee59
+__crfs_read_acia	= $f596
+__crfs_print_nextch	= $f8cd
+__crfs_print_ctrlch	= $f8da
+__crfs_print_filech	= $f8dc
+__print_hex_done	= $f98e
+__cfs_delay_loop	= $fb57
