@@ -2,9 +2,11 @@
 ; Non-relocatable symbols
 ;
 
-.export ROM_SELECT	= $f4
-
-.export NMI		:= $0d00
+.export MSG_PTR		:= $b8
+.export MSG_PTR_HI	:= $b9
+.export TEXT_PTR	:= $f2
+.export TEXT_PTR_HI	:= $f3
+.export ROM_SELECT	:= $f4
 
 .export VEC_IRQ1V	:= $0204
 .export VEC_OSCLI	:= $0208
@@ -18,6 +20,60 @@
 .export VEC_OSBPUT	:= $0218
 .export VEC_OSGBPB	:= $021a
 .export VEC_OSFIND	:= $021c
+.export VEC_FSCV	:= $021e
+.export VEC_EVNTV	:= $0220
+.export VEC_UPTV	:= $0222
+.export VEC_NETV	:= $0224
+.export VEC_VDUV	:= $0226
+.export VEC_KEYV	:= $0228
+.export VEC_INSV	:= $022a
+.export VEC_REMV	:= $022c
+.export VEC_CNPV	:= $022e
+.export VEC_IND1V	:= $0230
+.export VEC_IND2V	:= $0232
+.export VEC_IND3V	:= $0234
+
+.export OSB_BASE	:= $0236
+.export OSB_EXT_VEC	:= $0238
+.export OSB_ROM_TABLE	:= $023a
+.export OSB_KEY_TABLE	:= $023c
+.export OSB_VDU_TABLE	:= $023e
+
+.export OSB_OSHWM_DEF	:= $0243
+.export OSB_OSHWM_CUR   := $0244
+.export OSB_BASIC_ROM	:= $024b
+.export OSB_OSRDCH_INT	:= $025f
+.export OSB_OSWRCH_INT	:= $0260
+.export OSB_BELL_CHAN	:= $0263
+.export OSB_BELL_ENV	:= $0264
+.export OSB_BELL_FREQ	:= $0265
+.export OSB_BELL_LEN	:= $0266
+.export OSB_TAB		:= $026b
+.export OSB_ESCAPE	:= $026c
+
+.export OSB_UVIA_IRQ_M	:= $0277
+.export OSB_ACIA_IRQ_M	:= $0278
+.export OSB_SVIA_IRQ_M	:= $0279
+.export OSB_TUBE_FOUND	:= $027a
+.export OSB_SPCH_FOUND	:= $027b
+
+.export ROM_TABLE	:= $02a1
+
+.export OSFILE_CB	:= $02ee
+.export OSFILE_CB_1	:= $02ef
+.export OSFILE_CB_2	:= $02f0
+.export OSFILE_CB_3	:= $02f1
+
+.export VDU_QUEUE_4	:= $031f
+.export VDU_QUEUE_3	:= $0320
+.export VDU_QUEUE_2	:= $0321
+.export VDU_QUEUE_1	:= $0322
+.export VDU_QUEUE	:= $0323
+
+.export VDU_JUMPVEC	:= $035d
+.export VDU_JUMPVEC_HI	:= $035e
+
+.export NMI		:= $0d00
 
 .export ROM_LANGUAGE	:= $8000
 .export ROM_SERVICE	:= $8003
@@ -104,3 +160,5 @@
 
 .segment "STARTUP"
 .segment "CODE"
+
+
