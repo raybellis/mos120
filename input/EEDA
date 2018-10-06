@@ -263,10 +263,11 @@ F03B	DB  &71,&33,&34,&35,&84,&38,&87,&2D,&5E,&8C
 F045	STY &EC     ;store Y as latest key pressed
 F047	STX &ED     ;store X as previous key pressed
 F049	RTS         ;and exit
+F04A	BRK
 
 key data block 2
 
-F04A	DB  &0,&80,&77,&65,&74,&37,&69,&39,&30,&5F,&8E
+F04B	DB  &80,&77,&65,&74,&37,&69,&39,&30,&5F,&8E
 	 ;       f0,w ,e ,t ,7 ,i ,9 ,0 ,_ ,lft
 
 F055	JMP (&FDFE) ;Jim paged entry vector
@@ -274,7 +275,7 @@ F058	JMP (&FA)   ;
 
 key data block 3
 
-F05A	DB  &31,&32,&64,&72,&36,&75,&6F,&70,&5B,&8F
+F05B	DB  &31,&32,&64,&72,&36,&75,&6F,&70,&5B,&8F
 	 ;       1 ,2 ,d ,r ,6 ,u ,o ,p ,[ ,dn
 
 
