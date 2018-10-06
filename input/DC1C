@@ -25,12 +25,12 @@ DC24	JMP (&0204) ;else JMP (IRQ1V)
 DC27	TXA         ;save X on stack
 DC28	PHA         ;
 DC29	TSX         ;get status pointer
-DC2A	LDA &0103,X ;get Program Counter lo
+DC2A	LDA &0100+3,X ;get Program Counter lo
 DC2D	CLD         ;
 DC2E	SEC         ;set carry
 DC2F	SBC #&01    ;subtract 2 (1+carry)
 DC31	STA &FD     ;and store it in &FD
-DC33	LDA &0104,X ;get hi byte
+DC33	LDA &0100+4,X ;get hi byte
 DC36	SBC #&00    ;subtract 1 if necessary
 DC38	STA &FE     ;and store in &FE
 DC3A	LDA &F4     ;get currently active ROM

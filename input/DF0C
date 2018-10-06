@@ -232,7 +232,7 @@ E0A6	PHA
 E0A7	TYA
 E0A8	PHA
 E0A9	TSX
-E0AA	LDA &0103,X  ; Get A back from stack
+E0AA	LDA &0100+3,X  ; Get A back from stack
 E0AD	PHA          ; Save A
 E0AE	BIT &0260    ; Check OSWRCH interception flag
 E0B1	BPL &E0BB    ; Not set, skip interception call
