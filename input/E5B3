@@ -570,7 +570,7 @@ E801	BCC &E793   ;goto E793 ALWAYS!! (carry clear E7F8)
 ;   +4  on exit byte read
 
 E803	JSR &E815   ;set up address of data block
-E806	LDA (&F9,X) ;get byte
+E806	LDA (&FA-1,X) ;get byte
 E808	STA (&F0),Y ;store it
 E80A	RTS         ;exit
 
@@ -588,7 +588,7 @@ E80A	RTS         ;exit
 
 E80B	JSR &E815   ;set up address
 E80E	LDA (&F0),Y ;get byte
-E810	STA (&F9,X) ;store it
+E810	STA (&FA-1,X) ;store it
 E812	LDA #&00    ;a=0
 E814	RTS         ;exit
 

@@ -320,8 +320,8 @@ DA56	STA &00,X   ;zero zeropage &E2 to &FF
 DA58	INX         ;
 DA59	BNE &DA56   ;X=0
 
-DA5B	LDA &D93F,Y ;copy data from &D93F+Y
-DA5E	STA &01FF,Y ;to &1FF+Y
+DA5B	LDA &D940-1,Y ;copy data from &D93F+Y
+DA5E	STA &0200-1,Y ;to &1FF+Y
 DA61	DEY         ;until
 DA62	BNE &DA5B   ;1FF+Y=&200
 

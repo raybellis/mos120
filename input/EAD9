@@ -610,13 +610,13 @@ EE8D	STA &FE43   ;set DDRA of system VIA to give 8 bit input (Y=0)
 			 ;or 8 bit output (Y=1)
 EE90	PLA         ;get back A
 EE91	STA &FE4F   ;and send to speech chip
-EE94	LDA &F077,Y ;output Prt B of system VIA
+EE94	LDA &F075+2,Y ;output Prt B of system VIA
 EE97	STA &FE40   ;to select read or write (dependent on Y)
 EE9A	BIT &FE40   ;loop until
 EE9D	BMI &EE9A   ;speech proceessor reports ready (bit 7 Prt B=0)
 EE9F	LDA &FE4F   ;read speech processor data if  input selected
 EEA2	PHA         ;push A
-EEA3	LDA &F079,Y ;reset speech
+EEA3	LDA &F075+4,Y ;reset speech
 EEA6	STA &FE40   ;processor
 EEA9	PLA         ;get back A
 
