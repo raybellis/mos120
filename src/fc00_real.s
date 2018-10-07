@@ -53,6 +53,6 @@
 		.byte		"Adrian Warner,"
 		.byte		"Roger Wilson,"
 		.byte		"Alan Wright."
-		.byte		$cd, $d9
+		.word		_RESET_HANDLER
 
 
