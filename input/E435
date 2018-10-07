@@ -374,7 +374,7 @@ E57E	JMP (&0224) ;to the Econet vector
 E581	LDA &0268   ;get length of keystring
 E584	BEQ &E539   ;if 0 E539 get a character from the buffer
 E586	LDY &02C9   ;get soft key expansion pointer
-E589	LDA &0B01,Y ;get character from string
+E589	LDA &0B00+1,Y ;get character from string
 E58C	INC &02C9   ;increment pointer
 E58F	DEC &0268   ;decrement length
 

@@ -206,7 +206,7 @@ D5FE	LDX #&20    ;
 D600	LDY #&2A    ;
 D602	JSR &D411   ;calculate 032A/B-(324/5-320/1)
 D605	LDA &032B   ;and store
-D608	STA &0332   ;result
+D608	STA &0330+2   ;result
 
 D60B	LDX #&28    ;set pointers
 D60D	JSR &D459   ;
@@ -262,8 +262,8 @@ D658	PHP         ;store flags
 D659	LDX #&20    ;X=&20
 D65B	LDY #&35    ;Y=&35
 D65D	JSR &D411   ;335/6=(324/5+X-320/1)
-D660	LDA &0336   ;
-D663	STA &033D   ;
+D660	LDA &0330+6   ;
+D663	STA &0330+&D   ;
 D666	LDX #&33    ;
 D668	JSR &D459   ;set pointers
 

@@ -474,7 +474,7 @@ CD6C	LDY &034F   ;bytes per character
 CD6F	DEY         ;Y=Y-1
 CD70	BNE &CD8F   ;if Y=0 Mode 7 is in use
 
-CD72	LDA &0338   ;so get mode 7 write character cursor character &7F
+CD72	LDA &0330+8   ;so get mode 7 write character cursor character &7F
 CD75	STA (&D8),Y ;store it at top scan line of current character
 CD77	PLA         ;pull A
 CD78	PLP         ;pull flags
@@ -486,7 +486,7 @@ CD7C	LDY &034F   ;bytes per character
 CD7F	DEY         ;
 CD80	BNE &CD8F   ;if not mode 7
 CD82	LDA (&D8),Y ;get cursor from top scan line
-CD84	STA &0338   ;store it
+CD84	STA &0330+8   ;store it
 CD87	LDA &0366   ;mode 7 write cursor character
 CD8A	STA (&D8),Y ;store it at scan line
 CD8C	JMP &CD77   ;and exit

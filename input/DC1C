@@ -376,9 +376,9 @@ DDD7	PHA         ;store A
 DDD8	TAY         ;put A in Y
 
     	            ;Carry is always set at this point
-DDD9	LDA &0291,X ;get timer value
+DDD9	LDA &0292-1,X ;get timer value
 DDDC	ADC #&00    ;update it
-DDDE	STA &0291,Y ;store result in alternate
+DDDE	STA &0292-1,Y ;store result in alternate
 DDE1	DEX         ;decrement X
 DDE2	BEQ &DDE7   ;if 0 exit
 DDE4	DEY         ;else decrement Y
@@ -388,7 +388,7 @@ DDE7	PLA         ;get back A
 DDE8	STA &0283   ;and store back in clock pointer (i.e. inverse previous
     	            ;contents)
 DDEB	LDX #&05    ;set loop pointer for countdown timer
-DDED	INC &029B,X ;increment byte and if
+DDED	INC &029C-1,X ;increment byte and if
 DDF0	BNE &DDFA   ;not 0 then DDFA
 DDF2	DEX         ;else decrement pointer
 DDF3	BNE &DDED   ;and if not 0 do it again

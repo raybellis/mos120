@@ -48,7 +48,7 @@ F6D3	STA &B3     ;current load address high word
 F6D5	JSR &F7D5   ;reset flags
 F6D8	JSR &F9B4   ;load file from tape
 F6DB	BNE &F702   ;if return non zero F702 else
-F6DD	LDA &0AFF   ;get last character from input buffer
+F6DD	LDA &0A00+&FF   ;get last character from input buffer
 F6E0	STA &02ED   ;last character currently resident block
 F6E3	JSR &FB69   ;inc. current block no.
 F6E6	STX &03DD   ;expected BGET file block number lo

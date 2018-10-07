@@ -94,7 +94,7 @@ F445	BNE &F43E   ;until A=0 end of filename
 F447	LDA #&FF    ;A=&FF
 F449	LDX #&08    ;X=8
 
-F44B	STA &038B,X ;set 38C/93 to &FF
+F44B	STA &038C-1,X ;set 38C/93 to &FF
 F44E	DEX         ;X=X-1
 F44F	BNE &F44B   ;
 

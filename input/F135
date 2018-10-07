@@ -52,7 +52,7 @@ F157	STX &C6     ;set current baud rate X=5 300 baud X=6 1200 baud
 
 F159	LDX #&0E    ;RESET VECTORS FOR FILE RELATED OPERATIONS
 F15B	LDA &D940 + &11,X ;
-F15E	STA &0211,X ;
+F15E	STA &0200 + &11,X ;
 F161	DEX         ;
 F162	BNE &F15B   ;
 
@@ -338,8 +338,8 @@ F28B	JSR &F25A   ;get filename from BUFFER
 F28E	LDY #&02    ;Y=2
 
 F290	LDA (&C8),Y ;copy parameters to Cassette block at 3BE/C5
-F292	STA &03BC,Y ;from LOAD and EXEC address
-F295	STA &00AE,Y ;make second copy at B0-B8
+F292	STA &03BE-2,Y ;from LOAD and EXEC address
+F295	STA &00B0-2,Y ;make second copy at B0-B8
 F298	INY         ;Y=Y+1
 F299	CPY #&0A    ;until Y=10
 F29B	BNE &F290   ;

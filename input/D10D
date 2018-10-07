@@ -223,12 +223,12 @@ D28A	EOR &032B   ;
 D28D	BPL &D290   ;if signs are the same D290
 D28F	INX         ;else X=X+1
 D290	LDA &C4AE,X ;get vector addresses and store 332/3
-D293	STA &0332   ;
+D293	STA &0330+2   ;
 D296	LDA &C4B2,X ;
-D299	STA &0333   ;
+D299	STA &0330+3   ;
 
 D29C	LDA #&7F    ;A=&7F
-D29E	STA &0334   ;store it
+D29E	STA &0330+4   ;store it
 D2A1	BIT &DB     ;if bit 6 set
 D2A3	BVS &D2CE   ;the D2CE
 D2A5	LDA &C447,X ;get VDU section number
@@ -269,12 +269,12 @@ D2E2	DEX         ;X=X-1
 D2E3	LDA &DB     ;A=&3B
 D2E5	BEQ &D306   ;if 0 D306
 D2E7	BPL &D2F9   ;else if +ve D2F9
-D2E9	BIT &0334   ;
+D2E9	BIT &0330+4   ;
 D2EC	BPL &D2F3   ;if bit 7=0 D2F3
-D2EE	DEC &0334   ;else decrement
+D2EE	DEC &0330+4   ;else decrement
 D2F1	BNE &D316   ;and if not 0 D316
 
-D2F3	INC &0334   ;
+D2F3	INC &0330+4   ;
 D2F6	ASL         ;A=A*2
 D2F7	BPL &D306   ;if +ve D306
 D2F9	STX &DC     ;
@@ -292,23 +292,23 @@ D310	AND &D1     ;
 D312	EOR &DA     ;
 D314	STA (&D6),Y ;then store it inm current graphics line
 D316	SEC         ;set carry
-D317	LDA &0335   ;A=&335/6-&337/8
-D31A	SBC &0337   ;
-D31D	STA &0335   ;
-D320	LDA &0336   ;
-D323	SBC &0338   ;
+D317	LDA &0330+5   ;A=&335/6-&337/8
+D31A	SBC &0330+7   ;
+D31D	STA &0330+5   ;
+D320	LDA &0330+6   ;
+D323	SBC &0330+8   ;
 D326	BCS &D339   ;if carry set D339
 D328	STA &DA     ;
-D32A	LDA &0335   ;
-D32D	ADC &0339   ;
-D330	STA &0335   ;
+D32A	LDA &0330+5   ;
+D32D	ADC &0330+9   ;
+D330	STA &0330+5   ;
 D333	LDA &DA     ;
-D335	ADC &033A   ;
+D335	ADC &0330+&A   ;
 D338	CLC         ;
-D339	STA &0336   ;
+D339	STA &0330+6   ;
 D33C	PHP         ;
 D33D	BCS &D348   ;if carry clear jump to VDU routine else D348
-D33F	JMP (&0332) ;
+D33F	JMP (&0330+2) ;
 
 ****** vertical scan module 1******************************************
 
@@ -461,7 +461,7 @@ D43F	LDX &DE     ;X=&DE
 D441	LDA &0330   ;subtract 32C/D,X from 330/1
 D444	SBC &032C,X ;
 D447	TAY         ;partial answer in Y
-D448	LDA &0331   ;
+D448	LDA &0330+1   ;
 D44B	SBC &032D,X ;
 D44E	BMI &D453   ;if -ve D453
 D450	JSR &D49B   ;else negate Y/A
