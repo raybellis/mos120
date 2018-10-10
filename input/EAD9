@@ -274,7 +274,7 @@ EC7C	LDA #&00    ;else mark buffer not empty
 EC7E	STA &02CF,X ;an store it
 
 EC81	LDY #&04    ;loop counter
-EC83	STA &082B,Y ;zero sync bytes
+EC83	STA &082C-1,Y ;zero sync bytes
 EC86	DEY         ;
 EC87	BNE &EC83   ;until Y=0
 
