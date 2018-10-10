@@ -1949,8 +1949,8 @@ _CRTC_REG_TAB:		.byte	$7f				; 0 Horizontal Total	 =128
 
 ;************* VDU ROUTINE VECTOR ADDRESSES   ******************************
 
-_LC4AA:			.word	_LD386				
-			.word	_LD37E				
+_LC4AA:			.addr	_LD386
+			.addr	_LD37E
 
 
 ;************ VDU ROUTINE BRANCH VECTOR ADDRESS LO ***********************
@@ -5566,33 +5566,33 @@ _BD93E:			tay					; Pass high byte of address to Y
 
 			.org	$d940
 
-_VECTOR_TABLE:		.word	_USERV				; USERV				&200
-			.word	_BRKV				; BRKV				&202
-			.word	_IRQ1V				; IRQ1V				&204
-			.word	_IRQ2V				; IRQ2V				&206
-			.word	_CLIV				; CLIV				&208
-			.word	_BYTEV				; BYTEV				&20A
-			.word	_WORDV				; WORDV				&20C
-			.word	_NVWRCH				; WRCHV				&20E
-			.word	_NVRDCH				; RDCHV				&210
-			.word	_FILEV				; FILEV				&212
-			.word	_ARGSV				; ARGSV				&214
-			.word	_BGETV				; BGETV				&216
-			.word	_BPUTV				; BPUTV				&218
-			.word	_NOTIMPV			; GBPBV				&21A
-			.word	_FINDV				; FINDV				&21C
-			.word	_FSCV				; FSCV				&21E
-			.word	_NOTIMPV			; EVNTV				&220
-			.word	_NOTIMPV			; UPTV				&222
-			.word	_NOTIMPV			; NETV				&224
-			.word	_NOTIMPV			; VDUV				&226
-			.word	_KEYV				; KEYV				&228
-			.word	_INSBV				; INSBV				&22A
-			.word	_REMVB				; REMVB				&22C
-			.word	_CNPV				; CNPV				&22E
-			.word	_NOTIMPV			; IND1V				&230
-			.word	_NOTIMPV			; IND2V				&232
-			.word	_NOTIMPV			; IND3V				&234
+_VECTOR_TABLE:		.addr	_USERV				; USERV				&200
+			.addr	_BRKV				; BRKV				&202
+			.addr	_IRQ1V				; IRQ1V				&204
+			.addr	_IRQ2V				; IRQ2V				&206
+			.addr	_CLIV				; CLIV				&208
+			.addr	_BYTEV				; BYTEV				&20A
+			.addr	_WORDV				; WORDV				&20C
+			.addr	_NVWRCH				; WRCHV				&20E
+			.addr	_NVRDCH				; RDCHV				&210
+			.addr	_FILEV				; FILEV				&212
+			.addr	_ARGSV				; ARGSV				&214
+			.addr	_BGETV				; BGETV				&216
+			.addr	_BPUTV				; BPUTV				&218
+			.addr	_NOTIMPV			; GBPBV				&21A
+			.addr	_FINDV				; FINDV				&21C
+			.addr	_FSCV				; FSCV				&21E
+			.addr	_NOTIMPV			; EVNTV				&220
+			.addr	_NOTIMPV			; UPTV				&222
+			.addr	_NOTIMPV			; NETV				&224
+			.addr	_NOTIMPV			; VDUV				&226
+			.addr	_KEYV				; KEYV				&228
+			.addr	_INSBV				; INSBV				&22A
+			.addr	_REMVB				; REMVB				&22C
+			.addr	_CNPV				; CNPV				&22E
+			.addr	_NOTIMPV			; IND1V				&230
+			.addr	_NOTIMPV			; IND2V				&232
+			.addr	_NOTIMPV			; IND3V				&234
 
 ; -------------------------------------------------------------------------
 ; |									  |
@@ -5602,11 +5602,11 @@ _VECTOR_TABLE:		.word	_USERV				; USERV				&200
 
 ;* Read/Written by OSBYTE &A6 to &FC
 
-			.word	$0190				; OSBYTE variables base address		 &236	*FX166/7
+			.addr	$0190				; OSBYTE variables base address		 &236	*FX166/7
 								; (address to add to osbyte number)
-			.word	$0d9f				; Address of extended vectors		 &238	*FX168/9
-			.word	ROM_TABLE			; Address of ROM information table	 &23A	*FX170/1
-			.word	_KEY_TRANS_TABLE_1 - $10	; Address of key translation table	 &23C	*FX172/3
+			.addr	$0d9f				; Address of extended vectors		 &238	*FX168/9
+			.addr	ROM_TABLE			; Address of ROM information table	 &23A	*FX170/1
+			.addr	_KEY_TRANS_TABLE_1 - $10	; Address of key translation table	 &23C	*FX172/3
 			.word	VDU_G_WIN_L			; Address of VDU variables		 &23E	*FX174/5
 
 			.byte	$00				; CFS/Vertical sync Timeout counter	 &240	*FX176
@@ -8130,74 +8130,74 @@ _BE5A6:			txa					; A=X
 
 			.org	$e5b3
 
-_OSBYTE_TABLE:		.word	_OSBYTE_0			; OSBYTE   0  (&E821)
-			.word	_OSBYTE_1_6			; OSBYTE   1  (&E988)
-			.word	_OSBYTE_2			; OSBYTE   2  (&E6D3)
-			.word	_OSBYTE_3_4			; OSBYTE   3  (&E997)
-			.word	_OSBYTE_3_4			; OSBYTE   4  (&E997)
-			.word	_OSBYTE_5			; OSBYTE   5  (&E976)
-			.word	_OSBYTE_1_6			; OSBYTE   6  (&E988)
-			.word	_OSBYTE_7			; OSBYTE   7  (&E68B)
-			.word	_OSBYTE_8			; OSBYTE   8  (&E689)
-			.word	_OSBYTE_9			; OSBYTE   9  (&E6B0)
-			.word	_OSBYTE_10			; OSBYTE  10  (&E6B2)
-			.word	_OSBYTE_11			; OSBYTE  11  (&E995)
-			.word	_OSBYTE_12			; OSBYTE  12  (&E98C)
-			.word	_OSBYTE_13			; OSBYTE  13  (&E6F9)
-			.word	_OSBYTE_14			; OSBYTE  14  (&E6FA)
-			.word	_OSBYTE_15			; OSBYTE  15  (&F0A8)
-			.word	_OSBYTE_16			; OSBYTE  16  (&E706)
-			.word	_OSBYTE_17			; OSBYTE  17  (&DE8C)
-			.word	_OSBYTE_18			; OSBYTE  18  (&E9C8)
-			.word	_OSBYTE_19			; OSBYTE  19  (&E9B6)
-			.word	_OSBYTE_20			; OSBYTE  20  (&CD07)
-			.word	_OSBYTE_21			; OSBYTE  21  (&F0B4)
-			.word	_OSBYTE_117			; OSBYTE 117  (&E86C)
-			.word	_OSBYTE_118			; OSBYTE 118  (&E9D9)
-			.word	_OSBYTE_119			; OSBYTE 119  (&E275)
-			.word	_OSBYTE_120			; OSBYTE 120  (&F045)
-			.word	_OSBYTE_121			; OSBYTE 121  (&F0CF)
-			.word	_OSBYTE_122			; OSBYTE 122  (&F0CD)
-			.word	_OSBYTE_123			; OSBYTE 123  (&E197)
-			.word	_OSBYTE_124			; OSBYTE 124  (&E673)
-			.word	_OSBYTE_125			; OSBYTE 125  (&E674)
-			.word	_OSBYTE_126			; OSBYTE 126  (&E65C)
-			.word	_OSBYTE_127			; OSBYTE 127  (&E035)
-			.word	_OSBYTE_128			; OSBYTE 128  (&E74F)
-			.word	_OSBYTE_129			; OSBYTE 129  (&E713)
-			.word	_OSBYTE_130			; OSBYTE 130  (&E729)
-			.word	_OSBYTE_131			; OSBYTE 131  (&F085)
-			.word	_OSBYTE_132			; OSBYTE 132  (&D923)
-			.word	_OSBYTE_133			; OSBYTE 133  (&D926)
-			.word	_OSBYTE_134			; OSBYTE 134  (&D647)
-			.word	_OSBYTE_135			; OSBYTE 135  (&D7C2)
-			.word	_OSBYTE_136			; OSBYTE 136  (&E657)
-			.word	_OSBYTE_137			; OSBYTE 137  (&E67F)
-			.word	_OSBYTE_138			; OSBYTE 138  (&E4AF)
-			.word	_OSBYTE_139			; OSBYTE 139  (&E034)
-			.word	_OSBYTE_140_141			; OSBYTE 140  (&F135)
-			.word	_OSBYTE_140_141			; OSBYTE 141  (&F135)
-			.word	_OSBYTE_142			; OSBYTE 142  (&DBE7)
-			.word	_OSBYTE_143			; OSBYTE 143  (&F168)
-			.word	_OSBYTE_144			; OSBYTE 144  (&EAE3)
-			.word	_OSBYTE_145			; OSBYTE 145  (&E460)
-			.word	_OSBYTE_146			; OSBYTE 146  (&FFAA)
-			.word	_OSBYTE_147			; OSBYTE 147  (&EAF4)
-			.word	_OSBYTE_148			; OSBYTE 148  (&FFAE)
-			.word	_OSBYTE_149			; OSBYTE 149  (&EAF9)
-			.word	_OSBYTE_150			; OSBYTE 150  (&FFB2)
-			.word	_OSBYTE_151			; OSBYTE 151  (&EAFE)
-			.word	_OSBYTE_152			; OSBYTE 152  (&E45B)
-			.word	_OSBYTE_153			; OSBYTE 153  (&E4F3)
-			.word	_OSBYTE_154			; OSBYTE 154  (&E9FF)
-			.word	_OSBYTE_155			; OSBYTE 155  (&EA10)
-			.word	_OSBYTE_156			; OSBYTE 156  (&E17C)
-			.word	_OSBYTE_157			; OSBYTE 157  (&FFA7)
-			.word	_OSBYTE_158			; OSBYTE 158  (&EE6D)
-			.word	_OSBYTE_159			; OSBYTE 159  (&EE7F)
-			.word	_OSBYTE_160			; OSBYTE 160  (&E9C0)
-			.word	_OSBYTE_166_255			; OSBYTE 166+
-			.word	_OSCLI_USERV			; OSWORD &E0+
+_OSBYTE_TABLE:		.addr	_OSBYTE_0			; OSBYTE   0  (&E821)
+			.addr	_OSBYTE_1_6			; OSBYTE   1  (&E988)
+			.addr	_OSBYTE_2			; OSBYTE   2  (&E6D3)
+			.addr	_OSBYTE_3_4			; OSBYTE   3  (&E997)
+			.addr	_OSBYTE_3_4			; OSBYTE   4  (&E997)
+			.addr	_OSBYTE_5			; OSBYTE   5  (&E976)
+			.addr	_OSBYTE_1_6			; OSBYTE   6  (&E988)
+			.addr	_OSBYTE_7			; OSBYTE   7  (&E68B)
+			.addr	_OSBYTE_8			; OSBYTE   8  (&E689)
+			.addr	_OSBYTE_9			; OSBYTE   9  (&E6B0)
+			.addr	_OSBYTE_10			; OSBYTE  10  (&E6B2)
+			.addr	_OSBYTE_11			; OSBYTE  11  (&E995)
+			.addr	_OSBYTE_12			; OSBYTE  12  (&E98C)
+			.addr	_OSBYTE_13			; OSBYTE  13  (&E6F9)
+			.addr	_OSBYTE_14			; OSBYTE  14  (&E6FA)
+			.addr	_OSBYTE_15			; OSBYTE  15  (&F0A8)
+			.addr	_OSBYTE_16			; OSBYTE  16  (&E706)
+			.addr	_OSBYTE_17			; OSBYTE  17  (&DE8C)
+			.addr	_OSBYTE_18			; OSBYTE  18  (&E9C8)
+			.addr	_OSBYTE_19			; OSBYTE  19  (&E9B6)
+			.addr	_OSBYTE_20			; OSBYTE  20  (&CD07)
+			.addr	_OSBYTE_21			; OSBYTE  21  (&F0B4)
+			.addr	_OSBYTE_117			; OSBYTE 117  (&E86C)
+			.addr	_OSBYTE_118			; OSBYTE 118  (&E9D9)
+			.addr	_OSBYTE_119			; OSBYTE 119  (&E275)
+			.addr	_OSBYTE_120			; OSBYTE 120  (&F045)
+			.addr	_OSBYTE_121			; OSBYTE 121  (&F0CF)
+			.addr	_OSBYTE_122			; OSBYTE 122  (&F0CD)
+			.addr	_OSBYTE_123			; OSBYTE 123  (&E197)
+			.addr	_OSBYTE_124			; OSBYTE 124  (&E673)
+			.addr	_OSBYTE_125			; OSBYTE 125  (&E674)
+			.addr	_OSBYTE_126			; OSBYTE 126  (&E65C)
+			.addr	_OSBYTE_127			; OSBYTE 127  (&E035)
+			.addr	_OSBYTE_128			; OSBYTE 128  (&E74F)
+			.addr	_OSBYTE_129			; OSBYTE 129  (&E713)
+			.addr	_OSBYTE_130			; OSBYTE 130  (&E729)
+			.addr	_OSBYTE_131			; OSBYTE 131  (&F085)
+			.addr	_OSBYTE_132			; OSBYTE 132  (&D923)
+			.addr	_OSBYTE_133			; OSBYTE 133  (&D926)
+			.addr	_OSBYTE_134			; OSBYTE 134  (&D647)
+			.addr	_OSBYTE_135			; OSBYTE 135  (&D7C2)
+			.addr	_OSBYTE_136			; OSBYTE 136  (&E657)
+			.addr	_OSBYTE_137			; OSBYTE 137  (&E67F)
+			.addr	_OSBYTE_138			; OSBYTE 138  (&E4AF)
+			.addr	_OSBYTE_139			; OSBYTE 139  (&E034)
+			.addr	_OSBYTE_140_141			; OSBYTE 140  (&F135)
+			.addr	_OSBYTE_140_141			; OSBYTE 141  (&F135)
+			.addr	_OSBYTE_142			; OSBYTE 142  (&DBE7)
+			.addr	_OSBYTE_143			; OSBYTE 143  (&F168)
+			.addr	_OSBYTE_144			; OSBYTE 144  (&EAE3)
+			.addr	_OSBYTE_145			; OSBYTE 145  (&E460)
+			.addr	_OSBYTE_146			; OSBYTE 146  (&FFAA)
+			.addr	_OSBYTE_147			; OSBYTE 147  (&EAF4)
+			.addr	_OSBYTE_148			; OSBYTE 148  (&FFAE)
+			.addr	_OSBYTE_149			; OSBYTE 149  (&EAF9)
+			.addr	_OSBYTE_150			; OSBYTE 150  (&FFB2)
+			.addr	_OSBYTE_151			; OSBYTE 151  (&EAFE)
+			.addr	_OSBYTE_152			; OSBYTE 152  (&E45B)
+			.addr	_OSBYTE_153			; OSBYTE 153  (&E4F3)
+			.addr	_OSBYTE_154			; OSBYTE 154  (&E9FF)
+			.addr	_OSBYTE_155			; OSBYTE 155  (&EA10)
+			.addr	_OSBYTE_156			; OSBYTE 156  (&E17C)
+			.addr	_OSBYTE_157			; OSBYTE 157  (&FFA7)
+			.addr	_OSBYTE_158			; OSBYTE 158  (&EE6D)
+			.addr	_OSBYTE_159			; OSBYTE 159  (&EE7F)
+			.addr	_OSBYTE_160			; OSBYTE 160  (&E9C0)
+			.addr	_OSBYTE_166_255			; OSBYTE 166+
+			.addr	_OSCLI_USERV			; OSWORD &E0+
 
 
 ;*************************************************************************
@@ -8206,20 +8206,20 @@ _OSBYTE_TABLE:		.word	_OSBYTE_0			; OSBYTE   0  (&E821)
 ;*									 *
 ;*************************************************************************
 
-			.word	_OSWORD_0			; OSWORD   0  (&E902)
-			.word	_OSWORD_1			; OSWORD   1  (&E8D5)
-			.word	_OSWORD_2			; OSWORD   2  (&E8E8)
-			.word	_OSWORD_3			; OSWORD   3  (&E8D1)
-			.word	_OSWORD_4			; OSWORD   4  (&E8E4)
-			.word	_OSWORD_5			; OSWORD   5  (&E803)
-			.word	_OSWORD_6			; OSWORD   6  (&E80B)
-			.word	_OSWORD_7			; OSWORD   7  (&E82D)
-			.word	_OSWORD_8			; OSWORD   8  (&E8AE)
-			.word	_OSWORD_9			; OSWORD   9  (&C735)
-			.word	_OSWORD_10			; OSWORD  10  (&CBF3)
-			.word	_OSWORD_11			; OSWORD  11  (&C748)
-			.word	_OSWORD_12			; OSWORD  12  (&C8E0)
-			.word	_OSWORD_13			; OSWORD  13  (&D5CE)
+			.addr	_OSWORD_0			; OSWORD   0  (&E902)
+			.addr	_OSWORD_1			; OSWORD   1  (&E8D5)
+			.addr	_OSWORD_2			; OSWORD   2  (&E8E8)
+			.addr	_OSWORD_3			; OSWORD   3  (&E8D1)
+			.addr	_OSWORD_4			; OSWORD   4  (&E8E4)
+			.addr	_OSWORD_5			; OSWORD   5  (&E803)
+			.addr	_OSWORD_6			; OSWORD   6  (&E80B)
+			.addr	_OSWORD_7			; OSWORD   7  (&E82D)
+			.addr	_OSWORD_8			; OSWORD   8  (&E8AE)
+			.addr	_OSWORD_9			; OSWORD   9  (&C735)
+			.addr	_OSWORD_10			; OSWORD  10  (&CBF3)
+			.addr	_OSWORD_11			; OSWORD  11  (&C748)
+			.addr	_OSWORD_12			; OSWORD  12  (&C8E0)
+			.addr	_OSWORD_13			; OSWORD  13  (&D5CE)
 
 
 ;*************************************************************************
@@ -10727,13 +10727,13 @@ _BF1A2:			rts					; return cassette =0
 ;*									 *
 ;*************************************************************************
 
-_FSCV_TABLE:		.word	_FSCV_OPT - 1			; *OPT		  (F54C)
-			.word	_FSCV_EOF - 1			; check EOF	  (F61D)
-			.word	_FSCV_RUN - 1			; */		  (F304)
-			.word	_USERV - 1			; unknown command (E30F)
-			.word	_FSCV_RUN - 1			; *RUN		  (F304)
-			.word	_FSCV_CAT - 1			; *CAT		  (F32A)
-			.word	_OSBYTE_119 - 1			; osbyte 77	  (E274)
+_FSCV_TABLE:		.addr	_FSCV_OPT - 1			; *OPT		  (F54C)
+			.addr	_FSCV_EOF - 1			; check EOF	  (F61D)
+			.addr	_FSCV_RUN - 1			; */		  (F304)
+			.addr	_USERV - 1			; unknown command (E30F)
+			.addr	_FSCV_RUN - 1			; *RUN		  (F304)
+			.addr	_FSCV_CAT - 1			; *CAT		  (F32A)
+			.addr	_OSBYTE_119 - 1			; osbyte 77	  (E274)
 
 
 ;*************************************************************************
@@ -12313,7 +12313,7 @@ _BFAAE:			lda	CRFS_BLOCK_FLAG			; current block flag
 			.byte	$0d				; Carriage RETURN
 			.byte	$07				; BEEP
 			.byte	"Rewind tape"			; 
-			.word	$0d0d				; two more newlines
+			.byte	$0d, $0d			; two more newlines
 			brk					; 
 
 _BFAD2:			rts					; return
@@ -12899,7 +12899,7 @@ _BFBFE:			rts					; return
 		.byte		"Adrian Warner,"
 		.byte		"Roger Wilson,"
 		.byte		"Alan Wright."
-		.word		_RESET_HANDLER
+		.addr		_RESET_HANDLER
 
 
 ;********** EXTENDED VECTOR ENTRY POINTS**********************************
@@ -13059,7 +13059,7 @@ _OSBYTE_150:		ldy	CRTC_ADDRESS,X			; read a byte from SHEILA memory mapped I/O a
 ;*********** DEFAULT VECTOR TABLE ****************************************
 
 			.byte	$36				; length of look up table in bytes
-			.word	_VECTOR_TABLE			; address of this table
+			.addr	_VECTOR_TABLE			; address of this table
 
 
 ;**************************************************************************
@@ -13101,9 +13101,9 @@ OSCLI:			jmp	(VEC_OSCLI)			; OSCLI	 pass string to command line interpreter
 ;*									 *
 ;*************************************************************************
 
-			.word	NMI_HANDLER			; NMI	address
-			.word	_RESET_HANDLER			; RESET address
-			.word	_IRQ_HANDLER			; IRQ	address
+			.addr	NMI_HANDLER			; NMI	address
+			.addr	_RESET_HANDLER			; RESET address
+			.addr	_IRQ_HANDLER			; IRQ	address
 
 ; That's it the end of the series and the end of Micronet.
 
