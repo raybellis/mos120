@@ -1493,39 +1493,51 @@ _COL4_MASK_TAB:		.byte	$00				; 00000000
 
 ;****** VDU ENTRY POINT LO	 LOOK UP TABLE******
 
-_VDU_TABLE_LO:		.byte	$11				; 00010001
-			.byte	$3b				; 00111011
-			.byte	$96				; 10010110
-			.byte	$a1				; 10100001
-			.byte	$ad				; 10101101
-			.byte	$b9				; 10111001
-			.byte	$11				; 00010001
-			.byte	$6f				; 01101111
-			.byte	$c5				; 11000101
-			.byte	$64				; 01100100
-			.byte	$f0				; 11110000
-			.byte	$5b				; 01011011
-			.byte	$59				; 01011001
-			.byte	$af				; 10101111
-			.byte	$8d				; 10001101
-			.byte	$a6				; 10100110
-			.byte	$c0				; 11000000
-			.byte	$f9				; 11111001
-			.byte	$fd				; 11111101
-			.byte	$92				; 10010010
-			.byte	$39				; 00111001
-			.byte	$9b				; 10011011
-			.byte	$eb				; 11101011
-			.byte	$f1				; 11110001
-			.byte	$39				; 00111001
-			.byte	$8c				; 10001100
-			.byte	$bd				; 10111101
-			.byte	$11				; 00010001
-			.byte	$fa				; 11111010
-			.byte	$a2				; 10100010
-			.byte	$79				; 01111001
-			.byte	$87				; 10000111
-			.byte	$ac				; 10101100
+.macro vdu_lo		addr
+			.byte	<(addr)
+.endmacro
+
+.macro vdu_hi		addr, count
+	.ifblank	count
+			.byte	>(addr)
+	.else
+			.byte	(>(addr - $c300) << 4) + (16 - count)
+	.endif
+.endmacro
+
+_VDU_TABLE_LO:		vdu_lo	_VDU_0_6_27
+			vdu_lo	_VDU_1
+			vdu_lo	_VDU_2
+			vdu_lo	_VDU_3
+			vdu_lo	_VDU_4
+			vdu_lo	_VDU_5
+			vdu_lo	_VDU_0_6_27
+			vdu_lo	_VDU_7
+			vdu_lo	_VDU_8
+			vdu_lo	_VDU_9
+			vdu_lo	_VDU_10
+			vdu_lo	_VDU_11
+			vdu_lo	_VDU_12
+			vdu_lo	_VDU_13
+			vdu_lo	_VDU_14
+			vdu_lo	_VDU_15
+			vdu_lo	_VDU_16
+			vdu_lo	_VDU_17
+			vdu_lo	_VDU_18
+			vdu_lo	_VDU_19
+			vdu_lo	_VDU_20
+			vdu_lo	_VDU_21
+			vdu_lo	_VDU_22
+			vdu_lo	_VDU_23
+			vdu_lo	_VDU_24
+			vdu_lo	_VDU_25
+			vdu_lo	_VDU_26
+			vdu_lo	_VDU_0_6_27
+			vdu_lo	_VDU_28
+			vdu_lo	_VDU_29
+			vdu_lo	_VDU_30
+			vdu_lo	_VDU_31
+			vdu_lo	_VDU_127
 
 
 ;****** VDU ENTRY POINT HI PARAMETER LOOK UP TABLE******
@@ -1533,39 +1545,39 @@ _VDU_TABLE_LO:		.byte	$11				; 00010001
 ; 1xxxxxxx - no parameters, address high byte
 ; 0aaapppp - parameter count 16-p, address high byte &C3+a
 
-_VDU_TABLE_HI:		.byte	$c5				; 11000101  VDU 0   - &C511, no parameters
-			.byte	$2f				; 00101111  VDU 1   - &C53B, 1 parameter
-			.byte	$c5				; 11000101  VDU 2   - &C596, no parameters
-			.byte	$c5				; 11000101  VDU 3   - &C5A1, no parameters
-			.byte	$c5				; 11000101  VDU 4   - &C5AD, no parameters
-			.byte	$c5				; 11000101  VDU 5   - &C5B9, no parameters
-			.byte	$c5				; 11000101  VDU 6   - &C511, no parameters
-			.byte	$e8				; 11101000  VDU 7   - &E86F, no parameters
-			.byte	$c5				; 11000101  VDU 8   - &C5C5, no parameters
-			.byte	$c6				; 11000110  VDU 9   - &C664, no parameters
-			.byte	$c6				; 11000110  VDU 10  - &C6F0, no parameters
-			.byte	$c6				; 11000110  VDU 11  - &C65B, no parameters
-			.byte	$c7				; 11000111  VDU 12  - &C759, no parameters
-			.byte	$c7				; 11000111  VDU 13  - &C7AF, no parameters
-			.byte	$c5				; 11000101  VDU 14  - &C58D, no parameters
-			.byte	$c5				; 11000101  VDU 15  - &C5A6, no parameters
-			.byte	$c7				; 11000111  VDU 16  - &C7C0, no parameters
-			.byte	$4f				; 01001111  VDU 17  - &C7F9, 1 parameter
-			.byte	$4e				; 01001110  VDU 18  - &C7FD, 2 parameters
-			.byte	$5b				; 01011011  VDU 19  - &C892, 5 parameters
-			.byte	$c8				; 11001000  VDU 20  - &C839, no parameters
-			.byte	$c5				; 11000101  VDU 21  - &C59B, no parameters
-			.byte	$5f				; 01011111  VDU 22  - &C8EB, 1 parameter
-			.byte	$57				; 01010111  VDU 23  - &C8F1, 9 parameters
-			.byte	$78				; 01111000  VDU 24  - &CA39, 8 parameters
-			.byte	$6b				; 01101011  VDU 25  - &C9AC, 5 parameters
-			.byte	$c9				; 11001001  VDU 26  - &C9BD, no parameters
-			.byte	$c5				; 11000101  VDU 27  - &C511, no parameters
-			.byte	$3c				; 00111100  VDU 28  - &C6FA, 4 parameters
-			.byte	$7c				; 01111100  VDU 29  - &CAA2, 4 parameters
-			.byte	$c7				; 11000111  VDU 30  - &C779, no parameters
-			.byte	$4e				; 01001110  VDU 31  - &C787, 2 parameters
-			.byte	$ca				; 11001010  VDU 127 - &CAAC, no parameters
+_VDU_TABLE_HI:		vdu_hi	_VDU_0_6_27			; VDU  0   - &C511, no parameters
+			vdu_hi	_VDU_1, 1			; VDU  1   - &C53B, 1 parameter
+			vdu_hi	_VDU_2				; VDU  2   - &C596, no parameters
+			vdu_hi	_VDU_3				; VDU  3   - &C5A1, no parameters
+			vdu_hi	_VDU_4				; VDU  4   - &C5AD, no parameters
+			vdu_hi	_VDU_5				; VDU  5   - &C5B9, no parameters
+			vdu_hi	_VDU_0_6_27			; VDU  6   - &C511, no parameters
+			vdu_hi	_VDU_7				; VDU  7   - &E86F, no parameters
+			vdu_hi	_VDU_8				; VDU  8   - &C5C5, no parameters
+			vdu_hi	_VDU_9				; VDU  9   - &C664, no parameters
+			vdu_hi	_VDU_10				; VDU 10  - &C6F0, no parameters
+			vdu_hi	_VDU_11				; VDU 11  - &C65B, no parameters
+			vdu_hi	_VDU_12				; VDU 12  - &C759, no parameters
+			vdu_hi	_VDU_13				; VDU 13  - &C7AF, no parameters
+			vdu_hi	_VDU_14				; VDU 14  - &C58D, no parameters
+			vdu_hi	_VDU_15				; VDU 15  - &C5A6, no parameters
+			vdu_hi	_VDU_16				; VDU 16  - &C7C0, no parameters
+			vdu_hi	_VDU_17, 1			; VDU 17  - &C7F9, 1 parameter
+			vdu_hi	_VDU_18, 2			; VDU 18  - &C7FD, 2 parameters
+			vdu_hi	_VDU_19, 5			; VDU 19  - &C892, 5 parameters
+			vdu_hi	_VDU_20				; VDU 20  - &C839, no parameters
+			vdu_hi	_VDU_21				; VDU 21  - &C59B, no parameters
+			vdu_hi	_VDU_22, 1			; VDU 22  - &C8EB, 1 parameter
+			vdu_hi	_VDU_23, 9			; VDU 23  - &C8F1, 9 parameters
+			vdu_hi	_VDU_24, 8			; VDU 24  - &CA39, 8 parameters
+			vdu_hi	_VDU_25, 5			; VDU 25  - &C9AC, 5 parameters
+			vdu_hi	_VDU_26				; VDU 26  - &C9BD, no parameters
+			vdu_hi	_VDU_0_6_27			; VDU 27  - &C511, no parameters
+			vdu_hi	_VDU_28, 4			; VDU 28  - &C6FA, 4 parameters
+			vdu_hi	_VDU_29, 4			; VDU 29  - &CAA2, 4 parameters
+			vdu_hi	_VDU_30				; VDU 30  - &C779, no parameters
+			vdu_hi	_VDU_31, 2			; VDU 31  - &C787, 2 parameters
+			vdu_hi	_VDU_127			; VDU 127 - &CAAC, no parameters
 
 
 ;****** 640 MULTIPLICATION TABLE  40COL, 80COL MODES  HIBYTE, LOBYTE ******
@@ -3107,7 +3119,7 @@ _BC98B:			rts					; exit
 ;*									 *
 ;*************************************************************************
 
-			ldx	VDU_PIX_BYTE			; pixels per byte
+_VDU_25:		ldx	VDU_PIX_BYTE			; pixels per byte
 			beq	_LC938				; if no graphics available go to VDU Extension
 			jmp	_LD060				; else enter Plot routine at D060
 
