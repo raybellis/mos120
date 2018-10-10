@@ -1505,13 +1505,13 @@ _COL4_MASK_TAB:		.byte	$00				; 00000000
 	.endif
 .endmacro
 
-_VDU_TABLE_LO:		vdu_lo	_VDU_0_6_27
+_VDU_TABLE_LO:		vdu_lo	_VDU_0
 			vdu_lo	_VDU_1
 			vdu_lo	_VDU_2
 			vdu_lo	_VDU_3
 			vdu_lo	_VDU_4
 			vdu_lo	_VDU_5
-			vdu_lo	_VDU_0_6_27
+			vdu_lo	_VDU_6
 			vdu_lo	_VDU_7
 			vdu_lo	_VDU_8
 			vdu_lo	_VDU_9
@@ -1532,7 +1532,7 @@ _VDU_TABLE_LO:		vdu_lo	_VDU_0_6_27
 			vdu_lo	_VDU_24
 			vdu_lo	_VDU_25
 			vdu_lo	_VDU_26
-			vdu_lo	_VDU_0_6_27
+			vdu_lo	_VDU_27
 			vdu_lo	_VDU_28
 			vdu_lo	_VDU_29
 			vdu_lo	_VDU_30
@@ -1545,13 +1545,13 @@ _VDU_TABLE_LO:		vdu_lo	_VDU_0_6_27
 ; 1xxxxxxx - no parameters, address high byte
 ; 0aaapppp - parameter count 16-p, address high byte &C3+a
 
-_VDU_TABLE_HI:		vdu_hi	_VDU_0_6_27			; VDU  0   - &C511, no parameters
+_VDU_TABLE_HI:		vdu_hi	_VDU_0				; VDU  0   - &C511, no parameters
 			vdu_hi	_VDU_1, 1			; VDU  1   - &C53B, 1 parameter
 			vdu_hi	_VDU_2				; VDU  2   - &C596, no parameters
 			vdu_hi	_VDU_3				; VDU  3   - &C5A1, no parameters
 			vdu_hi	_VDU_4				; VDU  4   - &C5AD, no parameters
 			vdu_hi	_VDU_5				; VDU  5   - &C5B9, no parameters
-			vdu_hi	_VDU_0_6_27			; VDU  6   - &C511, no parameters
+			vdu_hi	_VDU_6				; VDU  6   - &C511, no parameters
 			vdu_hi	_VDU_7				; VDU  7   - &E86F, no parameters
 			vdu_hi	_VDU_8				; VDU  8   - &C5C5, no parameters
 			vdu_hi	_VDU_9				; VDU  9   - &C664, no parameters
@@ -1572,7 +1572,7 @@ _VDU_TABLE_HI:		vdu_hi	_VDU_0_6_27			; VDU  0   - &C511, no parameters
 			vdu_hi	_VDU_24, 8			; VDU 24  - &CA39, 8 parameters
 			vdu_hi	_VDU_25, 5			; VDU 25  - &C9AC, 5 parameters
 			vdu_hi	_VDU_26				; VDU 26  - &C9BD, no parameters
-			vdu_hi	_VDU_0_6_27			; VDU 27  - &C511, no parameters
+			vdu_hi	_VDU_27				; VDU 27  - &C511, no parameters
 			vdu_hi	_VDU_28, 4			; VDU 28  - &C6FA, 4 parameters
 			vdu_hi	_VDU_29, 4			; VDU 29  - &CAA2, 4 parameters
 			vdu_hi	_VDU_30				; VDU 30  - &C779, no parameters
@@ -2207,7 +2207,10 @@ _BC4EF:			tay					; Y=A
 			bit	VDU_STATUS			; check if cursor editing enabled
 			bvs	_BC52F				; if so re-exchange pointers
 			clc					; clear carry
-_VDU_0_6_27:		rts					; and exit
+_VDU_0_6_27:
+_VDU_0:
+_VDU_6:
+_VDU_27:		rts					; and exit
 
 ;return with carry clear indicates that printer action not required.
 
