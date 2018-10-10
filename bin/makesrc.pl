@@ -47,7 +47,7 @@ close(IN);
 open(IN, '<', 'src/_exports.s') || die;
 while (<IN>) {
 	chomp;
-	if (/^\.export\s+(\w+)\s*:?=\s*\$([0-9a-f]+)$/i) {
+	if (/^\.export(?:zp)?\s+(\w+)\s*:?=\s*\$([0-9a-f]+)$/i) {
 		my ($label, $addr) = ($1, hex($2));
 		$labels{$addr} = $label;
 	}
