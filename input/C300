@@ -106,7 +106,7 @@ C369  DB  &C5  ;11000101  VDU 21  - &C59B, no parameters
 C36A  DB  &5F  ;01011111  VDU 22  - &C8EB, 1 parameter
 C36B  DB  &57  ;01010111  VDU 23  - &C8F1, 9 parameters
 C36C  DB  &78  ;01111000  VDU 24  - &CA39, 8 parameters
-C36D  DB  &6B  ;01101011  VDU 25  - &C9AC, 5 parameters
+C36D  DB  &6B  ;01101011  VDU 25  - &C98C, 5 parameters
 C36E  DB  &C9  ;11001001  VDU 26  - &C9BD, no parameters
 C36F  DB  &C5  ;11000101  VDU 27  - &C511, no parameters
 C370  DB  &3C  ;00111100  VDU 28  - &C6FA, 4 parameters
