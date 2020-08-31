@@ -433,20 +433,25 @@
 .export TUBE_ENTRY_1		:= $0403
 .export TUBE_ENTRY_2		:= $0406
 
-.export SOUND_WORKSPACE		:= $0800
-.export SOUND_QUEUE		:= $0804
-.export SOUND_AMPLITUDE		:= $0808
-.export SOUND_AMP_PHASES	:= $080c
-.export SOUND_PITCH		:= $0810
-.export SOUND_PITCH_PHASES	:= $0814
-.export SOUND_STEPS		:= $0818
-.export SOUND_DURATION		:= $081c
-.export SOUND_INTERVAL_MUL	:= $0820
-.export SOUND_ENV_REPEAT	:= $0824
-.export SOUND_NOTE_REMAIN	:= $0828
-.export SOUND_SYNC_HOLD_PARAM	:= $082c
-.export SOUND_PITCH_SETTING	:= $0830
-.export SOUND_PITCH_DEV		:= $0834
+; note these addresses are all offset by 4 bytes due to the fact that the sound irq and buffer
+; code indexes these as 4..7 as opposed to 0..3 of the SOUND/OSWORD 7 commands
+;
+;.export SOUND_WORKSPACE	:= $0800
+.export SOUND_QUEUE_OCC		:= $0804-4
+.export SOUND_AMP_CUR		:= $0808-4			; current amplitude of the playing sound
+.export SOUND_AMP_PHASE_CUR	:= $080C-4			; current amplitude phase of envelope 0..3
+.export SOUND_AMP_BASE_PITCH	:= $0810-4
+.export SOUND_PITCH_PHASE_CUR	:= $0814-4
+.export SOUND_PITCH_PH_STEPS	:= $0818-4
+.export SOUND_DURATION		:= $081C-4			; duration from SOUND command
+.export SOUND_DURATION_SUB	:= $0820-4			; counts down from 5..0 to give 50ms per duration above
+.export SOUND_ENVELOPE_OFFS	:= $0824-4			; offset into envelope or -1 for no envelope
+.export SOUND_ENV_STEPREPEAT	:= $0828-4			; step length, b7=repeat flag
+.export SOUND_SYNC_FLAG		:= $082C-4
+.export SOUND_SYNC_HOLD_PARAM	:= $0830-4
+.export SOUND_PITCH_SETTING	:= $0834-4
+.export SOUND_PITCH_DEV		:= $0838-4
+
 .export SOUND_SYNC_CHANS	:= $0838
 .export SOUND_AMP_STEP		:= $0839
 .export SOUND_AMP_TARGET	:= $083a
@@ -523,7 +528,7 @@
 .export SYS_VIA_PCR		:= $fe4c
 .export SYS_VIA_IFR		:= $fe4d
 .export SYS_VIA_IER		:= $fe4e
-.export SYS_VIA_IORB_NH		:= $fe4f
+.export SYS_VIA_IORA_NH		:= $fe4f
 
 .export USR_VIA_IORB		:= $fe60
 .export USR_VIA_IORA		:= $fe61
@@ -540,7 +545,7 @@
 .export USR_VIA_PCR		:= $fe6c
 .export USR_VIA_IFR		:= $fe6d
 .export USR_VIA_IER		:= $fe6e
-.export USR_VIA_IORB_NH		:= $fe6f
+.export USR_VIA_IORA_NH		:= $fe6f
 
 .export FDC_CSR			:= $fe80
 .export FDC_PRR			:= $fe81
@@ -1454,11 +1459,11 @@
 
 STARTUP:		jmp	$cb1d				; Initialise screen with mode in A.
 
-			.byte	$0d,"BBC Computer ",0		
+			.byte	$0d,"BBC Computer ",0
 
-			.byte	"16K",7,0			
+			.byte	"16K",7,0
 
-			.byte	"32K",7,0			
+			.byte	"32K",7,0
 
 			.byte	$08,$0d,$0d			; Termination byte in next table
 
@@ -2178,7 +2183,7 @@ __vdu_check_delete:	cmp	#$7f				; is character DELETE ?
 			bmi	_BC4EA				; if screen disabled C4EA
 			jsr	_VDU_OUT_CHAR			; else display a character
 			jsr	_VDU_9				; and cursor right
-_BC4EA:			jmp	_LC55E				; 
+_BC4EA:			jmp	_LC55E				;
 
 ;********* read link addresses and number of parameters *****************
 
@@ -2198,12 +2203,12 @@ _BC4EF:			tay					; Y=A
 			sta	OSB_VDU_QSIZE			; store it as number of items in VDU queue
 			txa					; get back A
 			lsr					; A=A/16
-			lsr					; 
-			lsr					; 
-			lsr					; 
+			lsr					;
+			lsr					;
+			lsr					;
 			clc					; clear carry
 			adc	#$c3				; add &C3 to get hi byte of link address
-			sta	VDU_JUMPVEC_HI			; 
+			sta	VDU_JUMPVEC_HI			;
 			bit	VDU_STATUS			; check if cursor editing enabled
 			bvs	_BC52F				; if so re-exchange pointers
 			clc					; clear carry
@@ -2293,7 +2298,7 @@ _LC568:			php					; save flags and
 			eor	#$02				; invert bit 1 to allow or bar scrolling
 			sta	VDU_STATUS			; VDU status byte
 			pla					; restore flags and A
-			plp					; 
+			plp					;
 			rts					; and exit
 
 _BC580:			eor	#$06				; if A<>6
@@ -2521,22 +2526,22 @@ _BC68A:			clc					; clear carry
 			cpx	VDU_T_WIN_B			; bottom margin
 			bcs	_BC69B				; if X=>current bottom margin C69B
 			inc	VDU_T_CURS_Y			; else increment current text line
-			bcc	_LC6AF				; 
+			bcc	_LC6AF				;
 _BC69B:			jsr	_LCD3F				; check for window violations
 			lda	#$08				; check bit 3
 			bit	VDU_STATUS			; VDU status byte
 			bne	_BC6A9				; if software scrolling enabled C6A9
 			jsr	_LC9A4				; perform hardware scroll
-			bne	_LC6AC				; 
+			bne	_LC6AC				;
 _BC6A9:			jsr	_LCDFF				; execute upward scroll
 _LC6AC:			jsr	_LCEAC				; clear a line
 
 _LC6AF:			jsr	_LCF06				; set up display address
-			bcc	_BC732				; 
+			bcc	_BC732				;
 
 ;*********** graphic cursor right ****************************************
 
-_BC6B4:			ldx	#$00				; 
+_BC6B4:			ldx	#$00				;
 
 ;************** graphic cursor up  (X=2) **********************************
 
@@ -2547,7 +2552,7 @@ _BC6B6:			stx	VDU_TMP2			; store X
 			lda	VDU_G_CURS_H,X			; current graphics cursor X>1=vertical
 			adc	#$08				; Add 8 pixels
 			sta	VDU_G_CURS_H,X			; current graphics cursor X>1=vertical
-			bcc	_BC6CB				; 
+			bcc	_BC6CB				;
 			inc	VDU_G_CURS_H_HI,X		; current graphics cursor X<2=horizontal else vertical
 _BC6CB:			lda	VDU_TMP1			; A=0 no window violations 1 or 2 indicates violation
 			bne	_BC658				; if outside window C658
@@ -2643,7 +2648,7 @@ _BC737:			lda	(OSW_X),Y			; get it
 			sta	VDU_BITMAP_READ,Y		; store it
 			dey					; point to next byte
 			bpl	_BC737				; transfer till Y=&FF lo byte of X coordinate in &328
-			lda	#$28				; 
+			lda	#$28				;
 			jsr	_LD839				; check window boundaries
 			ldy	#$04				; Y=4
 			bne	_BC750				; jump to C750
@@ -2674,7 +2679,7 @@ _BC74F:			iny					; increment Y to point to byte 1
 _BC750:			sta	(OSW_X),Y			; store data
 			lda	#$00				; issue 0s
 			cpy	#$04				; to next bytes until Y=4
-			bne	_BC74F				; 
+			bne	_BC74F				;
 
 _BC758:			rts					; and exit
 
@@ -2713,7 +2718,7 @@ _VDU_30:		jsr	_LC588				; A=0 if text cursor A=&20 if graphics cursor
 			beq	_BC781				; if text cursor C781
 			jmp	_LCFA6				; home graphic cursor if graphic
 _BC781:			sta	VDU_QUEUE_8			; store 0 in last two parameters
-			sta	VDU_QUEUE_7			; 
+			sta	VDU_QUEUE_7			;
 
 
 ;*************************************************************************
@@ -2735,7 +2740,7 @@ _VDU_31:		jsr	_LC588				; A=0 if text cursor A=&20 if graphics cursor
 			adc	VDU_T_WIN_L			; add to text window left
 			sta	VDU_T_CURS_X			; store as text column
 			lda	VDU_QUEUE_8			; get Y coordinate
-			clc					; 
+			clc					;
 			adc	VDU_T_WIN_T			; add top of text window
 			sta	VDU_T_CURS_Y			; current text line
 			jsr	_LCEE8				; set up screen address
@@ -2782,13 +2787,13 @@ _VDU_16:		lda	VDU_PIX_BYTE			; pixels per byte
 			tay					; Y=difference
 			iny					; increment
 			sty	VDU_WORKSPACE			; and store in workspace (this is line count)
-_BC7E1:			ldx	#$2c				; 
-			ldy	#$28				; 
+_BC7E1:			ldx	#$2c				;
+			ldy	#$28				;
 			jsr	_VDU_G_CLR_LINE			; clear line
 			lda	VDU_BITMAP_RD_6			; decrement window height in pixels
-			bne	_BC7F0				; 
-			dec	VDU_BITMAP_RD_7			; 
-_BC7F0:			dec	VDU_BITMAP_RD_6			; 
+			bne	_BC7F0				;
+			dec	VDU_BITMAP_RD_7			;
+_BC7F0:			dec	VDU_BITMAP_RD_6			;
 			dec	VDU_WORKSPACE			; decrement line count
 			bne	_BC7E1				; if <>0 then do it again
 _BC7F8:			rts					; exit
@@ -2847,9 +2852,9 @@ _BC82C:			lda	VDU_QUEUE_7			; get first parameter
 			sta	VDU_G_FG,Y			; text colour Y=0=foreground 1=background etc.
 			rts					; exit
 
-_BC833:			lda	#$20				; 
+_BC833:			lda	#$20				;
 			sta	VDU_T_BG			; background text colour
-			rts					; 
+			rts					;
 
 
 ;*************************************************************************
@@ -2862,7 +2867,7 @@ _VDU_20:		ldx	#$05				; X=5
 
 			lda	#$00				; A=0
 _BC83D:			sta	VDU_T_FG,X			; zero all colours
-			dex					; 
+			dex					;
 			bpl	_BC83D				; until X=&FF
 			ldx	VDU_COL_MASK			; number of logical colours less 1
 			beq	_BC833				; if none its MODE 7 so C833
@@ -2885,17 +2890,17 @@ _BC850:			sta	VDU_T_FG			; foreground text colour
 _BC868:			jsr	_VDU_19				; do VDU 19 etc
 			dec	VDU_QUEUE_5			; decrement first parameter
 			dec	VDU_QUEUE_4			; and last parameter
-			bpl	_BC868				; 
-			rts					; 
+			bpl	_BC868				;
+			rts					;
 
 ;********* 4 colour mode *************************************************
 
 _BC874:			ldx	#$07				; X=7
 			stx	VDU_QUEUE_5			; set first parameter
 _BC879:			jsr	_VDU_19				; and do VDU 19
-			lsr	VDU_QUEUE_5			; 
-			dec	VDU_QUEUE_4			; 
-			bpl	_BC879				; 
+			lsr	VDU_QUEUE_5			;
+			dec	VDU_QUEUE_4			;
+			bpl	_BC879				;
 			rts					; exit
 
 ;********* 2 colour mode ************************************************
@@ -2934,15 +2939,15 @@ _LC89E:			and	#$0f				; make legal
 			php					; save flags
 			txa					; A=X
 _BC8AD:			ror					; rotate A into &FA
-			ror	MOS_WS_0			; 
-			bcs	_BC8AD				; 
-			asl	MOS_WS_0			; 
+			ror	MOS_WS_0			;
+			bcs	_BC8AD				;
+			asl	MOS_WS_0			;
 			tya					; A=Y
-			ora	MOS_WS_0			; 
-			tax					; 
+			ora	MOS_WS_0			;
+			tax					;
 			ldy	#$00				; Y=0
 _BC8BA:			plp					; check flags
-			php					; 
+			php					;
 			bne	_BC8CC				; if A<>3 earlier C8CC
 			and	#$60				; else A=&60 to test bits 5 and 6
 			beq	_BC8CB				; if not set C8CB
@@ -2954,17 +2959,17 @@ _BC8BA:			plp					; check flags
 
 _BC8CB:			txa					; X=A
 _BC8CC:			jsr	_LEA11				; call Osbyte 155 pass data to pallette register
-			tya					; 
-			sec					; 
+			tya					;
+			sec					;
 			adc	VDU_COL_MASK			; number of logical colours less 1
-			tay					; 
-			txa					; 
-			adc	#$10				; 
-			tax					; 
+			tay					;
+			txa					;
+			adc	#$10				;
+			tax					;
 			cpy	#$10				; if Y<16 do it again
-			bcc	_BC8BA				; 
+			bcc	_BC8BA				;
 			plp					; pull flags twice
-			plp					; 
+			plp					;
 			rts					; and exit
 
 
@@ -3014,10 +3019,10 @@ _VDU_23:		lda	VDU_QUEUE			; get character to define
 			bcc	_VDU_23_CTRL			; if less then it is a control instruction, goto C93F
 _VDU_23_DEFINE_CHAR:	pha					; else save parameter
 			lsr					; A=A/32
-			lsr					; 
-			lsr					; 
-			lsr					; 
-			lsr					; 
+			lsr					;
+			lsr					;
+			lsr					;
+			lsr					;
 			tax					; X=A
 			lda	_LC40D,X			; get font flag mask from table (A=&80/2^X)
 			bit	VDU_FONT_FLAGS			; font flag
@@ -3032,12 +3037,12 @@ _VDU_23_DEFINE_CHAR:	pha					; else save parameter
 			lda	VDU_FONT_FLAGS,X		; get font location byte (normally &0C)
 			sta	VDU_TMP4			; store it
 			ldy	#$00				; Y=0 so (&DE) holds (&C000 -&C2FF)
-			sty	VDU_TMP3			; 
-			sty	VDU_TMP5			; 
+			sty	VDU_TMP3			;
+			sty	VDU_TMP5			;
 _BC920:			lda	(VDU_TMP5),Y			; transfer page to storage area
-			sta	(VDU_TMP3),Y			; 
-			dey					; 
-			bne	_BC920				; 
+			sta	(VDU_TMP3),Y			;
+			dey					;
+			bne	_BC920				;
 
 _BC927:			pla					; get back A
 			jsr	_LD03E				; set up character definition pointers
@@ -3045,8 +3050,8 @@ _BC927:			pla					; get back A
 			ldy	#$07				; Y=7
 _BC92D:			lda	VDU_QUEUE_1,Y			; transfer definition parameters
 			sta	(VDU_TMP5),Y			; to RAM definition
-			dey					; 
-			bpl	_BC92D				; 
+			dey					;
+			bpl	_BC92D				;
 			rts					; and exit
 
 			pla					; Pull A
@@ -3134,12 +3139,12 @@ _LC994:			ldx	VDU_MEM				; window area start address lo
 			bcs	_BC9B3				; if no wraparound needed C9B3
 
 			adc	VDU_MEM_PAGES			; screen RAM size hi byte to wrap around
-			bcc	_BC9B3				; 
+			bcc	_BC9B3				;
 
 _LC9A4:			ldx	VDU_MEM				; window area start address lo
 			lda	VDU_MEM_HI			; window area start address hi
 			jsr	_LCAD4				; add bytes per char. row
-			bpl	_BC9B3				; 
+			bpl	_BC9B3				;
 
 			sec					; wrap around i other direction
 			sbc	VDU_MEM_PAGES			; screen RAM size hi byte
@@ -3159,7 +3164,7 @@ _VDU_26:		lda	#$00				; A=0
 			ldx	#$2c				; X=&2C
 
 _BC9C1:			sta	VDU_G_WIN_L,X			; clear all windows
-			dex					; 
+			dex					;
 			bpl	_BC9C1				; until X=&FF
 
 			ldx	VDU_MODE			; screen mode
@@ -3172,23 +3177,23 @@ _BC9C1:			sta	VDU_G_WIN_L,X			; clear all windows
 			sty	VDU_QUEUE_8			; set as last parameter
 			iny					; increment Y
 			sty	VDU_QUEUE_6			; set parameters
-			dec	VDU_QUEUE_7			; 
-			dec	VDU_QUEUE_5			; 
+			dec	VDU_QUEUE_7			;
+			dec	VDU_QUEUE_5			;
 			jsr	_VDU_24				; and do VDU 24
-			lda	#$f7				; 
+			lda	#$f7				;
 			jsr	_LC5A8				; clear bit 3 of &D0
 			ldx	VDU_MEM				; window area start address lo
 			lda	VDU_MEM_HI			; window area start address hi
 _LC9F6:			stx	VDU_CRTC_CUR			; text cursor 6845 address
 			sta	VDU_CRTC_CUR_HI			; text cursor 6845 address
 			bpl	_LCA02				; set cursor position
-			sec					; 
+			sec					;
 			sbc	VDU_MEM_PAGES			; screen RAM size hi byte
 
 ;**************** set cursor position ************************************
 
 _LCA02:			stx	VDU_TOP_SCAN			; set &D8/9 from X/A
-			sta	VDU_TOP_SCAN_HI			; 
+			sta	VDU_TOP_SCAN_HI			;
 			ldx	VDU_CRTC_CUR			; text cursor 6845 address
 			lda	VDU_CRTC_CUR_HI			; text cursor 6845 address
 			ldy	#$0e				; Y=15
@@ -3199,12 +3204,12 @@ _BCA0E:			pha					; Push A
 			bcs	_BCA27				; if mode 7 selected CA27
 			stx	VDU_TMP1			; else store X
 			lsr					; divide X/A by 8
-			ror	VDU_TMP1			; 
-			lsr					; 
-			ror	VDU_TMP1			; 
-			lsr					; 
-			ror	VDU_TMP1			; 
-			ldx	VDU_TMP1			; 
+			ror	VDU_TMP1			;
+			lsr					;
+			ror	VDU_TMP1			;
+			lsr					;
+			ror	VDU_TMP1			;
+			ldx	VDU_TMP1			;
 			jmp	_LCA2B				; goto CA2B
 
 _BCA27:			sbc	#$74				; mode 7 subtract &74
@@ -3231,20 +3236,20 @@ _LCA2B:			sty	CRTC_ADDRESS			; write to CRTC address file register
 			.org	$ca39
 
 _VDU_24:		jsr	_LCA81				; exchange 310/3 with 328/3
-			ldx	#$1c				; 
-			ldy	#$2c				; 
+			ldx	#$1c				;
+			ldy	#$2c				;
 			jsr	_LD411				; calculate width=right - left
 								; height = top-bottom
-			ora	VDU_BITMAP_RD_5			; 
+			ora	VDU_BITMAP_RD_5			;
 			bmi	_LCA81				; exchange 310/3 with 328/3 and exit
 			ldx	#$20				; X=&20
 			jsr	_LD149				; scale pointers to mode
 			ldx	#$1c				; X=&1C
 			jsr	_LD149				; scale pointers to mode
 			lda	VDU_QUEUE_4			; check for negative margins
-			ora	VDU_QUEUE_2			; 
+			ora	VDU_QUEUE_2			;
 			bmi	_LCA81				; if found exchange 310/3 with 328/3 and exit
-			lda	VDU_QUEUE_8			; 
+			lda	VDU_QUEUE_8			;
 			bne	_LCA81				; exchange 310/3 with 328/3 and exit
 			ldx	VDU_MODE			; screen mode
 			lda	VDU_QUEUE_6			; right margin hi
@@ -3281,8 +3286,8 @@ _LCA88:			iny					; Y=Y+1
 _BCA98:			asl	VDU_T_WIN_SZ			; text window width lo (bytes)
 			rol	VDU_T_WIN_SZ_HI			; text window width hi (bytes)
 			lsr					; /2
-			bcc	_BCA98				; 
-_BCAA1:			rts					; 
+			bcc	_BCA98				;
+_BCAA1:			rts					;
 
 
 ;*************************************************************************
@@ -3293,8 +3298,8 @@ _BCAA1:			rts					;
 ;*									 *
 ;*************************************************************************
 
-_VDU_29:		ldx	#$20				; 
-			ldy	#$0c				; 
+_VDU_29:		ldx	#$20				;
+			ldy	#$0c				;
 			jsr	_LD48A				; (&300/3+Y)=(&300/3+X)
 			jmp	_LD1B8				; set up external coordinates for graphics
 
@@ -3355,7 +3360,7 @@ _BCAEA:			lda	VDU_STATUS			; VDU status byte
 			bcc	_BCB19				; increment line counter and exit
 
 			lsr					; A=A/4
-			lsr					; 
+			lsr					;
 			sec					; set carry
 			adc	OSB_HALT_LINES			; paged mode counter
 			adc	VDU_T_WIN_T			; top of text window
@@ -3369,10 +3374,10 @@ _BCB0E:			jsr	_OSBYTE_118			; osbyte 118 check keyboard status; set LEDs
 
 ;**************** zero paged mode  counter *******************************
 
-_LCB14:			lda	#$ff				; 
+_LCB14:			lda	#$ff				;
 			sta	OSB_HALT_LINES			; paged mode counter
 _BCB19:			inc	OSB_HALT_LINES			; paged mode counter
-_BCB1C:			rts					; 
+_BCB1C:			rts					;
 
 ;********* intitialise VDU driver with MODE in A *************************
 
@@ -3382,8 +3387,8 @@ _VDU_INIT_MODE:		pha					; Save MODE in A
 			sta	VDU_STATUS			; Clear VDU status byte to set default conditions
 
 __vdu_mode_init_loop:	sta	OSFILE_CB_17,X			; Zero VDU workspace at &300 to &37E
-			dex					
-			bne	__vdu_mode_init_loop		
+			dex
+			bne	__vdu_mode_init_loop
 
 			jsr	_OSBYTE_20			; Implode character definitions
 			pla					; Get initial MODE back to A
@@ -3428,7 +3433,7 @@ _BCB5E:			asl					; A=A*2
 			sta	VDU_PAGE			; hi byte of screen RAM address
 			tya					; Y=A
 			adc	#$02				; Add 2
-			eor	#$07				; 
+			eor	#$07				;
 			lsr					; /2
 			tax					; X=A
 			lda	_LC466,X			; row multiplication table pointer
@@ -3451,7 +3456,7 @@ _BCB5E:			asl					; A=A*2
 _BCBB0:			lda	_CRTC_REG_TAB,X			; get end of 6845 registers 0-11 table
 			jsr	_LC95E				; set register Y
 			dex					; reduce pointers
-			dey					; 
+			dey					;
 			bpl	_BCBB0				; and if still >0 do it again
 
 			plp					; pull flags
@@ -3493,7 +3498,7 @@ _BCBF8:			lda	(VDU_TMP5),Y			; get first byte
 			iny					; Y=Y+1
 			sta	(OSW_X),Y			; store it in YX
 			cpy	#$08				; until Y=8
-			bne	_BCBF8				; 
+			bne	_BCBF8				;
 			rts					; then exit
 
 
@@ -3507,99 +3512,99 @@ _BCBF8:			lda	(VDU_TMP5),Y			; get first byte
 
 ;************************ Mode 0,1,2 entry point *************************
 
-_VDU_CLEAR:		sta	$3000,X				; 
-			sta	$3100,X				; 
-			sta	$3200,X				; 
-			sta	$3300,X				; 
-			sta	$3400,X				; 
-			sta	$3500,X				; 
-			sta	$3600,X				; 
-			sta	$3700,X				; 
-			sta	$3800,X				; 
-			sta	$3900,X				; 
-			sta	$3a00,X				; 
-			sta	$3b00,X				; 
-			sta	$3c00,X				; 
-			sta	$3d00,X				; 
-			sta	$3e00,X				; 
-			sta	$3f00,X				; 
+_VDU_CLEAR:		sta	$3000,X				;
+			sta	$3100,X				;
+			sta	$3200,X				;
+			sta	$3300,X				;
+			sta	$3400,X				;
+			sta	$3500,X				;
+			sta	$3600,X				;
+			sta	$3700,X				;
+			sta	$3800,X				;
+			sta	$3900,X				;
+			sta	$3a00,X				;
+			sta	$3b00,X				;
+			sta	$3c00,X				;
+			sta	$3d00,X				;
+			sta	$3e00,X				;
+			sta	$3f00,X				;
 
 ;************************ Mode 3 entry point *****************************
 
-			sta	$4000,X				; 
-			sta	$4100,X				; 
-			sta	$4200,X				; 
-			sta	$4300,X				; 
-			sta	$4400,X				; 
-			sta	$4500,X				; 
-			sta	$4600,X				; 
-			sta	$4700,X				; 
-			sta	$4800,X				; 
-			sta	$4900,X				; 
-			sta	$4a00,X				; 
-			sta	$4b00,X				; 
-			sta	$4c00,X				; 
-			sta	$4d00,X				; 
-			sta	$4e00,X				; 
-			sta	$4f00,X				; 
-			sta	$5000,X				; 
-			sta	$5100,X				; 
-			sta	$5200,X				; 
-			sta	$5300,X				; 
-			sta	$5400,X				; 
-			sta	$5500,X				; 
-			sta	$5600,X				; 
-			sta	$5700,X				; 
+			sta	$4000,X				;
+			sta	$4100,X				;
+			sta	$4200,X				;
+			sta	$4300,X				;
+			sta	$4400,X				;
+			sta	$4500,X				;
+			sta	$4600,X				;
+			sta	$4700,X				;
+			sta	$4800,X				;
+			sta	$4900,X				;
+			sta	$4a00,X				;
+			sta	$4b00,X				;
+			sta	$4c00,X				;
+			sta	$4d00,X				;
+			sta	$4e00,X				;
+			sta	$4f00,X				;
+			sta	$5000,X				;
+			sta	$5100,X				;
+			sta	$5200,X				;
+			sta	$5300,X				;
+			sta	$5400,X				;
+			sta	$5500,X				;
+			sta	$5600,X				;
+			sta	$5700,X				;
 
 ;************************ Mode 4,5 entry point ***************************
 
-			sta	$5800,X				; 
-			sta	$5900,X				; 
-			sta	$5a00,X				; 
-			sta	$5b00,X				; 
-			sta	$5c00,X				; 
-			sta	$5d00,X				; 
-			sta	$5e00,X				; 
-			sta	$5f00,X				; 
+			sta	$5800,X				;
+			sta	$5900,X				;
+			sta	$5a00,X				;
+			sta	$5b00,X				;
+			sta	$5c00,X				;
+			sta	$5d00,X				;
+			sta	$5e00,X				;
+			sta	$5f00,X				;
 
 ;************************ Mode 6 entry point *****************************
 
-			sta	$6000,X				; 
-			sta	$6100,X				; 
-			sta	$6200,X				; 
-			sta	$6300,X				; 
-			sta	$6400,X				; 
-			sta	$6500,X				; 
-			sta	$6600,X				; 
-			sta	$6700,X				; 
-			sta	$6800,X				; 
-			sta	$6900,X				; 
-			sta	$6a00,X				; 
-			sta	$6b00,X				; 
-			sta	$6c00,X				; 
-			sta	$6d00,X				; 
-			sta	$6e00,X				; 
-			sta	$6f00,X				; 
-			sta	$7000,X				; 
-			sta	$7100,X				; 
-			sta	$7200,X				; 
-			sta	$7300,X				; 
-			sta	$7400,X				; 
-			sta	$7500,X				; 
-			sta	$7600,X				; 
-			sta	$7700,X				; 
-			sta	$7800,X				; 
-			sta	$7900,X				; 
-			sta	$7a00,X				; 
-			sta	$7b00,X				; 
+			sta	$6000,X				;
+			sta	$6100,X				;
+			sta	$6200,X				;
+			sta	$6300,X				;
+			sta	$6400,X				;
+			sta	$6500,X				;
+			sta	$6600,X				;
+			sta	$6700,X				;
+			sta	$6800,X				;
+			sta	$6900,X				;
+			sta	$6a00,X				;
+			sta	$6b00,X				;
+			sta	$6c00,X				;
+			sta	$6d00,X				;
+			sta	$6e00,X				;
+			sta	$6f00,X				;
+			sta	$7000,X				;
+			sta	$7100,X				;
+			sta	$7200,X				;
+			sta	$7300,X				;
+			sta	$7400,X				;
+			sta	$7500,X				;
+			sta	$7600,X				;
+			sta	$7700,X				;
+			sta	$7800,X				;
+			sta	$7900,X				;
+			sta	$7a00,X				;
+			sta	$7b00,X				;
 
 ;************************ Mode 7 entry point *****************************
 
-			sta	$7c00,X				; 
-			sta	$7d00,X				; 
-			sta	$7e00,X				; 
-			sta	$7f00,X				; 
-			inx					; 
+			sta	$7c00,X				;
+			sta	$7d00,X				;
+			sta	$7e00,X				;
+			sta	$7f00,X				;
+			inx					;
 			beq	_BCD65				; exit
 
 ;****************** execute required function ****************************
@@ -3643,7 +3648,7 @@ _BCD1C:			stx	OSB_CHAR_EXPL			; character definition explosion switch
 			ldx	#$00				; X=0
 
 _BCD24:			cpx	OSB_CHAR_EXPL			; character definition explosion switch
-			bcs	_BCD34				; 
+			bcs	_BCD34				;
 			ldy	_LC4BA,X			; get soft character  RAM allocation
 			sta	VDU_FONTLOC_20,Y		; font location bytes
 			adc	#$01				; Add 1
@@ -3671,14 +3676,14 @@ _BCD47:			lda	VDU_T_WIN_B			; bottom margin
 _BCD4F:			bvs	_BCD59				; and if cursor editing enabled CD59
 			sta	VDU_T_CURS_Y			; get current text line
 			pla					; pull return link from stack
-			pla					; 
+			pla					;
 			jmp	_LC6AF				; set up cursor and display address
 
 _BCD59:			php					; push flags
 			cmp	VDU_TI_CURS_Y			; Y coordinate of text input cursor
 			beq	_BCD78				; if A=line count of text input cursor CD78 to exit
 			plp					; get back flags
-			bcc	_BCD66				; 
+			bcc	_BCD66				;
 			dec	VDU_TI_CURS_Y			; Y coordinate of text input cursor
 
 _BCD65:			rts					; exit
@@ -3703,7 +3708,7 @@ _BCD79:			rts					; and exit
 _LCD7A:			php					; push flags
 			pha					; push A
 			ldy	VDU_BPC				; bytes per character
-			dey					; 
+			dey					;
 			bne	_BCD8F				; if not mode 7
 			lda	(VDU_TOP_SCAN),Y		; get cursor from top scan line
 			sta	VDU_WORKSPACE+8			; store it
@@ -3740,16 +3745,16 @@ _BCDB8:			sta	VDU_TMP2			; store A
 _BCDC0:			jsr	_LCE73				; copy line to new position
 								; using (&DA) for read
 								; and (&D8) for write
-			jmp	_LCDCE				; 
+			jmp	_LCDCE				;
 
 _BCDC6:			jsr	_LCCF8				; subtract bytes per character row from X/A
 			bcc	_BCDC0				; if a result is outside screen RAM CDC0
 			jsr	_LCE38				; perform a copy
 
 _LCDCE:			lda	VDU_TMP3			; set write pointer from read pointer
-			ldx	VDU_TMP1			; 
-			sta	VDU_TOP_SCAN_HI			; 
-			stx	VDU_TOP_SCAN			; 
+			ldx	VDU_TMP1			;
+			sta	VDU_TOP_SCAN_HI			;
+			stx	VDU_TOP_SCAN			;
 			dec	VDU_TMP5			; decrement window height
 			bne	_BCDB0				; and if not zero CDB0
 _LCDDA:			ldx	#$28				; point to workspace
@@ -3775,7 +3780,7 @@ _BCDEA:			lda	VDU_G_WIN_L,X			; get byte
 			pla					; get back A
 			sta	VDU_G_WIN_L,Y			; put it in 300+Y
 			inx					; increment pointers
-			iny					; 
+			iny					;
 			dec	VDU_TMP1			; decrement loop counter
 			bne	_BCDEA				; and if not 0 do it again
 			rts					; and exit
@@ -3789,14 +3794,14 @@ _LCDFF:			jsr	_LCE5B				; exchange line and column cursors with workspace copies
 			sty	VDU_T_CURS_Y			; current text line
 			jsr	_LCF06				; set up display address
 _BCE0B:			jsr	_LCAD4				; add bytes per char. row
-			bpl	_BCE14				; 
-			sec					; 
+			bpl	_BCE14				;
+			sec					;
 			sbc	VDU_MEM_PAGES			; screen RAM size hi byte
 
 _BCE14:			sta	VDU_TMP2			; (&DA)=X/A
-			stx	VDU_TMP1			; 
+			stx	VDU_TMP1			;
 			sta	VDU_TMP3			; &DC=A
-			bcc	_BCE22				; 
+			bcc	_BCE22				;
 _BCE1C:			jsr	_LCE73				; copy line to new position
 								; using (&DA) for read
 								; and (&D8) for write
@@ -3806,10 +3811,10 @@ _BCE1C:			jsr	_LCE73				; copy line to new position
 _BCE22:			jsr	_LCAD4				; add bytes per char. row
 			bmi	_BCE1C				; if outside screen RAM CE1C
 			jsr	_LCE38				; perform a copy
-_LCE2A:			lda	VDU_TMP3			; 
-			ldx	VDU_TMP1			; 
-			sta	VDU_TOP_SCAN_HI			; 
-			stx	VDU_TOP_SCAN			; 
+_LCE2A:			lda	VDU_TMP3			;
+			ldx	VDU_TMP1			;
+			sta	VDU_TOP_SCAN_HI			;
+			stx	VDU_TOP_SCAN			;
 			dec	VDU_TMP5			; decrement window height
 			bne	_BCE0B				; CE0B if not 0
 			beq	_LCDDA				; exchange text column/linelse CDDA
@@ -3823,11 +3828,11 @@ _LCE38:			ldx	VDU_T_WIN_SZ_HI			; text window width hi (bytes)
 			ldy	#$00				; Y=0 to set loop counter
 
 _BCE3F:			lda	(VDU_TMP1),Y			; copy 256 bytes
-			sta	(VDU_TOP_SCAN),Y		; 
-			iny					; 
+			sta	(VDU_TOP_SCAN),Y		;
+			iny					;
 			bne	_BCE3F				; Till Y=0 again
 			inc	VDU_TOP_SCAN_HI			; increment hi bytes
-			inc	VDU_TMP2			; 
+			inc	VDU_TMP2			;
 			dex					; decrement window width
 			bne	_BCE3F				; if not 0 go back and do loop again
 
@@ -3836,7 +3841,7 @@ _BCE4D:			ldy	VDU_T_WIN_SZ			; text window width lo (bytes)
 
 _BCE52:			dey					; else Y=Y-1
 			lda	(VDU_TMP1),Y			; copy Y bytes
-			sta	(VDU_TOP_SCAN),Y		; 
+			sta	(VDU_TOP_SCAN),Y		;
 			tya					; A=Y
 			bne	_BCE52				; if not 0 CE52
 _BCE5A:			rts					; and exit
@@ -3849,7 +3854,7 @@ _LCE5B:			jsr	_LCDDA				; exchange text column/line with workspace
 			sta	VDU_TMP5			; store it
 			bne	_LCE6E				; set text column to left hand column
 			pla					; get back return address
-			pla					; 
+			pla					;
 			jmp	_LCDDA				; exchange text column/line with workspace
 
 _LCE6E:			lda	VDU_T_WIN_L			; text window left
@@ -3860,29 +3865,29 @@ _LCE73:			lda	VDU_TMP1			; get back A
 			sec					; set carry
 			lda	VDU_T_WIN_R			; text window right
 			sbc	VDU_T_WIN_L			; text window left
-			sta	VDU_TMP6			; 
+			sta	VDU_TMP6			;
 _BCE7F:			ldy	VDU_BPC				; bytes per character to set loop counter
 
 			dey					; copy loop
-_BCE83:			lda	(VDU_TMP1),Y			; 
-			sta	(VDU_TOP_SCAN),Y		; 
-			dey					; 
-			bpl	_BCE83				; 
+_BCE83:			lda	(VDU_TMP1),Y			;
+			sta	(VDU_TOP_SCAN),Y		;
+			dey					;
+			bpl	_BCE83				;
 
 			ldx	#$02				; X=2
 _BCE8C:			clc					; clear carry
-			lda	VDU_TOP_SCAN,X			; 
+			lda	VDU_TOP_SCAN,X			;
 			adc	VDU_BPC				; bytes per character
-			sta	VDU_TOP_SCAN,X			; 
-			lda	VDU_TOP_SCAN_HI,X		; 
-			adc	#$00				; 
+			sta	VDU_TOP_SCAN,X			;
+			lda	VDU_TOP_SCAN_HI,X		;
+			adc	#$00				;
 			bpl	_BCE9E				; if this remains in screen RAM OK
 
 			sec					; else wrap around screen
 			sbc	VDU_MEM_PAGES			; screen RAM size hi byte
-_BCE9E:			sta	VDU_TOP_SCAN_HI,X		; 
+_BCE9E:			sta	VDU_TOP_SCAN_HI,X		;
 			dex					; X=X-2
-			dex					; 
+			dex					;
 			beq	_BCE8C				; if X=0 adjust second set of pointers
 			dec	VDU_TMP6			; decrement window width
 			bpl	_BCE7F				; and if still +ve do it all again
@@ -3922,7 +3927,7 @@ _BCEC5:			dey					; Y=Y-1 decrementing loop counter
 
 
 _BCEDA:			stx	VDU_TOP_SCAN			; restore D8/9
-			sta	VDU_TOP_SCAN_HI			; 
+			sta	VDU_TOP_SCAN_HI			;
 			dec	VDU_TMP3			; decrement window width
 			bpl	_BCEBF				; ind if not 0 do it all again
 			pla					; get back A
@@ -3975,14 +3980,14 @@ _LCF06:			lda	VDU_T_CURS_Y			; current text line
 			php					; save flags
 			lda	(VDU_ROW_MULT),Y		; get CRTC multiplication table pointer
 			plp					; pull flags
-			beq	_BCF1E				; 
+			beq	_BCF1E				;
 			lsr	VDU_TOP_SCAN_HI			; &D9=&D9/2
 			ror					; A=A/2 +(128*carry)
 _BCF1E:			adc	VDU_MEM				; window area start address lo
 			sta	VDU_TOP_SCAN			; store it
-			lda	VDU_TOP_SCAN_HI			; 
+			lda	VDU_TOP_SCAN_HI			;
 			adc	VDU_MEM_HI			; window area start address hi
-			tay					; 
+			tay					;
 			lda	VDU_T_CURS_X			; text column
 			ldx	VDU_BPC				; bytes per character
 			dex					; X=X-1
@@ -3995,10 +4000,10 @@ _BCF1E:			adc	VDU_MEM				; window area start address lo
 _BCF39:			asl					; A=A*8 if entered here
 
 _BCF3A:			asl					; A=A*4 if entered here
-			asl					; 
+			asl					;
 			bcc	_BCF40				; if carry clear
 			iny					; Y=Y+2
-			iny					; 
+			iny					;
 _BCF40:			asl					; A=A*2
 			bcc	_BCF45				; if carry clear add to &D8
 			iny					; if not Y=Y+1
@@ -4035,7 +4040,7 @@ _BCF6B:			sty	VDU_TMP3			; &DC=Y
 _BCF75:			bpl	_BCF7A				; and if >0 CF7A
 			jsr	_LD0E3				; else display a pixel
 _BCF7A:			inc	VDU_G_CURS_H			; current horizontal graphics cursor
-			bne	_BCF82				; 
+			bne	_BCF82				;
 			inc	VDU_G_CURS_H_HI			; current horizontal graphics cursor
 
 _BCF82:			asl	VDU_TMP4			; &DD=&DD*2
@@ -4044,11 +4049,11 @@ _BCF86:			ldx	#$28				; point to workspace
 			ldy	#$24				; point to horizontal graphics cursor
 			jsr	_LD482				; 0300/1+Y=0300/1+X
 			ldy	VDU_G_CURS_V			; current vertical graphics cursor
-			bne	_BCF95				; 
+			bne	_BCF95				;
 			dec	VDU_G_CURS_V_HI			; current vertical graphics cursor
 _BCF95:			dec	VDU_G_CURS_V			; current vertical graphics cursor
-			ldy	VDU_TMP3			; 
-			iny					; 
+			ldy	VDU_TMP3			;
+			iny					;
 			cpy	#$08				; if Y<8 then do loop again
 			bne	_BCF6B				; else
 			ldx	#$28				; point to workspace
@@ -4112,9 +4117,9 @@ __mode7_xlate_char:	lda	_TELETEXT_CHAR_TAB+1,Y		; convert with teletext conversi
 _VDU_OUT_COL4:		lda	(VDU_TMP5),Y			; get pattern byte
 			pha					; save it
 			lsr					; move hi nybble to lo
-			lsr					; 
-			lsr					; 
-			lsr					; 
+			lsr					;
+			lsr					;
+			lsr					;
 			tax					; X=A
 			lda	_COL16_MASK_TAB,X		; 4 colour mode byte mask look up table
 			ora	VDU_T_OR_MASK			; text colour byte to be orred or EORed into memory
@@ -4141,7 +4146,7 @@ _BD017:			rts					; exit
 
 
 _BD018:			tya					; Y=Y-&21
-			sbc	#$21				; 
+			sbc	#$21				;
 			bmi	_BD017				; IF Y IS negative then RETURN
 			tay					; else A=Y
 
@@ -4159,12 +4164,12 @@ _BD023:			lda	#$00				; A=0
 			tax					; and store result in X
 			lda	_COL4_MASK_TAB,X		; multiply by &55 using look up table
 			ora	VDU_T_OR_MASK			; and set colour factors
-			eor	VDU_T_EOR_MASK			; 
+			eor	VDU_T_EOR_MASK			;
 			sta	(VDU_TOP_SCAN),Y		; and store result
 			clc					; clear carry
 			tya					; Y=Y+8 moving screen RAM pointer on 8 bytes
-			adc	#$08				; 
-			tay					; 
+			adc	#$08				;
+			tay					;
 			bcc	_BD023				; iloop to D023 to deal with next bit pair
 
 
@@ -4256,7 +4261,7 @@ _BD0A8:			jmp	_LD5EA				; to fill triangle routine
 _BD0AB:			jmp	_LC938				; VDU extension access entry
 
 _BD0AE:			sta	VDU_TMP3			; store A
-			jmp	_LD4BF				; 
+			jmp	_LD4BF				;
 
 ;*********:set colour masks **********************************************
 ;graphics mode in Y
@@ -4267,9 +4272,9 @@ _LD0B3:			txa					; A=X
 			eor	_LC41D,Y			; EOR with following byte
 			sta	VDU_G_OR_MASK			; and store it
 			txa					; A=X
-			ora	_LC41B,Y			; 
-			eor	_LC420,Y			; 
-			sta	VDU_G_EOR_MASK			; 
+			ora	_LC41B,Y			;
+			eor	_LC420,Y			;
+			sta	VDU_G_EOR_MASK			;
 			rts					; exit with masks in &D4/5
 
 
@@ -4278,12 +4283,12 @@ _LD0B3:			txa					; A=X
 _BD0C6:			asl					; shift left again
 			bmi	_BD0AB				; if -ve options are in range 32-63 not implemented
 			asl					; shift left twice more
-			asl					; 
+			asl					;
 			bpl	_BD0D0				; if still +ve type is 0-7 or 16-23 so D0D0
 			jsr	_LD0EB				; else display a point
 
 _BD0D0:			jsr	_LD1ED				; perform calculations
-			jmp	_LD0D9				; 
+			jmp	_LD0D9				;
 
 
 ;*************************************************************************
@@ -4299,7 +4304,7 @@ _LD0DE:			ldx	#$20				; X=&20
 			jmp	_LD48A				; copy parameters to 324/7 (300/3 +Y)
 
 
-_LD0E3:			ldx	#$24				; 
+_LD0E3:			ldx	#$24				;
 			jsr	_LD85F				; calculate position
 			beq	_LD0F0				; if result =0 then D0F0
 			rts					; else exit
@@ -4308,20 +4313,20 @@ _LD0EB:			jsr	_LD85D				; calculate position
 			bne	_BD103				; if A<>0 D103 and return
 _LD0F0:			ldy	VDU_G_CURS_SCAN			; else get current graphics scan line
 _LD0F3:			lda	VDU_G_PIX_MASK			; pick up and modify screen byte
-			and	VDU_G_OR_MASK			; 
-			ora	(VDU_G_MEM),Y			; 
-			sta	VDU_TMP1			; 
-			lda	VDU_G_EOR_MASK			; 
-			and	VDU_G_PIX_MASK			; 
-			eor	VDU_TMP1			; 
+			and	VDU_G_OR_MASK			;
+			ora	(VDU_G_MEM),Y			;
+			sta	VDU_TMP1			;
+			lda	VDU_G_EOR_MASK			;
+			and	VDU_G_PIX_MASK			;
+			eor	VDU_TMP1			;
 			sta	(VDU_G_MEM),Y			; put it back again
 _BD103:			rts					; and exit
 								;
 
 _LD104:			lda	(VDU_G_MEM),Y			; this is a more simplistic version of the above
-			ora	VDU_G_OR_MASK			; 
-			eor	VDU_G_EOR_MASK			; 
-			sta	(VDU_G_MEM),Y			; 
+			ora	VDU_G_OR_MASK			;
+			eor	VDU_G_EOR_MASK			;
+			sta	(VDU_G_MEM),Y			;
 			rts					; and exit
 
 
@@ -4339,12 +4344,12 @@ _LD10F:			ldy	#$00				; Y=0
 			asl	VDU_TMP1			; DATA is set in &DA bits 0 and 1 then shift left
 			asl	VDU_TMP1			; twice to make room for next pass
 			dex					; X=&22
-			dex					; 
+			dex					;
 			ldy	#$00				; Y=0
 			jsr	_LD128				; left and right margins 300/1, 304/5
 								; cursor horizontal position 324/5
 			inx					; X=X+2
-			inx					; 
+			inx					;
 			lda	VDU_TMP1			; A=&DA
 			rts					; exit
 
@@ -4353,13 +4358,13 @@ _LD10F:			ldy	#$00				; Y=0
 _LD128:			lda	VDU_G_WIN_B,X			; check for window violation
 			cmp	VDU_G_WIN_L,Y			; 300/1 +Y > 302/3+X
 			lda	VDU_G_WIN_B_HI,X		; then window fault
-			sbc	VDU_G_WIN_L_HI,Y		; 
+			sbc	VDU_G_WIN_L_HI,Y		;
 			bmi	_BD146				; so D146
 
 			lda	VDU_G_WIN_R,Y			; check other windows
-			cmp	VDU_G_WIN_B,X			; 
-			lda	VDU_G_WIN_R_HI,Y		; 
-			sbc	VDU_G_WIN_B_HI,X		; 
+			cmp	VDU_G_WIN_B,X			;
+			lda	VDU_G_WIN_R_HI,Y		;
+			sbc	VDU_G_WIN_B_HI,X		;
 			bpl	_BD148				; if no violation exit
 			inc	VDU_TMP1			; else DA=DA+1
 
@@ -4380,7 +4385,7 @@ _BD150:			sta	VDU_TMP1			; store in &DA
 								; this is why minimum vertical plot separation is 4
 			ldy	#$00				; Y=0
 			dex					; X=x-2
-			dex					; 
+			dex					;
 			jsr	_LD176				; set up horiz. coordinates/2 this is OK for mode0,4
 			ldy	VDU_PIX_BYTE			; get number of pixels/byte (-1)
 			cpy	#$03				; if Y=3 (modes 1 and 5)
@@ -4407,14 +4412,14 @@ _LD176:			clc					; clear carry
 			and	#$04				; if bit 2=0
 			beq	_BD186				; then D186 to calculate relative coordinates
 			lda	VDU_G_WIN_B,X			; else get coordinate
-			pha					; 
-			lda	VDU_G_WIN_B_HI,X		; 
+			pha					;
+			lda	VDU_G_WIN_B_HI,X		;
 			bcc	_BD194				; and goto D194
 
 _BD186:			lda	VDU_G_WIN_B,X			; get coordinate
 			adc	VDU_G_CUR_XX,Y			; add cursor position
 			pha					; save it
-			lda	VDU_G_WIN_B_HI,X		; 
+			lda	VDU_G_WIN_B_HI,X		;
 			adc	VDU_G_CUR_XX_HI,Y		; add cursor
 			clc					; clear carry
 
@@ -4430,9 +4435,9 @@ _BD194:			sta	VDU_G_CUR_XX_HI,Y		; save new cursor
 			inc	VDU_G_WIN_B_HI,X		; increment hi byte as you would expect!
 
 _LD1AD:			lda	VDU_G_WIN_B_HI,X		; get hi byte
-			asl					; 
+			asl					;
 			ror	VDU_G_WIN_B_HI,X		; divide by 2
-			ror	VDU_G_WIN_B,X			; 
+			ror	VDU_G_WIN_B,X			;
 			rts					; and exit
 
 ;***** calculate external coordinates from internal coordinates************
@@ -4451,14 +4456,14 @@ _BD1CB:			dey					; Y=Y-1
 			bne	_BD1CB				; if result not 0 D1CB
 			lda	VDU_MAP_TYPE			; else get screen display type
 			beq	_LD1D5				; and if 0 D1D5
-			iny					; 
+			iny					;
 
 _LD1D5:			asl	VDU_G_CUR_XX,X			; multiply coordinate by 2
-			rol	VDU_G_CUR_XX_HI,X		; 
+			rol	VDU_G_CUR_XX_HI,X		;
 			dey					; Y-Y-1
 			bne	_LD1D5				; and if Y<>0 do it again
 			sec					; set carry
-			jsr	_LD1E3				; 
+			jsr	_LD1E3				;
 			inx					; increment X
 
 _LD1E3:			lda	VDU_G_CUR_XX,X			; get current graphics position in external coordinates
@@ -4473,20 +4478,20 @@ _LD1ED:			jsr	_LD40D				; Set X and Y spans in workspace 328/9 32A/B
 			eor	VDU_BITMAP_RD_1			; if result -ve spans are different in sign so
 			bmi	_BD207				; goto D207
 			lda	VDU_BITMAP_RD_2			; else A=hi byte of difference in spans
-			cmp	VDU_BITMAP_READ			; 
-			lda	VDU_BITMAP_RD_3			; 
-			sbc	VDU_BITMAP_RD_1			; 
+			cmp	VDU_BITMAP_READ			;
+			lda	VDU_BITMAP_RD_3			;
+			sbc	VDU_BITMAP_RD_1			;
 			jmp	_LD214				; and goto D214
 
 _BD207:			lda	VDU_BITMAP_READ			; A = hi byte of SUM of spans
-			clc					; 
-			adc	VDU_BITMAP_RD_2			; 
-			lda	VDU_BITMAP_RD_1			; 
-			adc	VDU_BITMAP_RD_3			; 
+			clc					;
+			adc	VDU_BITMAP_RD_2			;
+			lda	VDU_BITMAP_RD_1			;
+			adc	VDU_BITMAP_RD_3			;
 
 _LD214:			ror					; A=A/2
 			ldx	#$00				; X=0
-			eor	VDU_BITMAP_RD_3			; 
+			eor	VDU_BITMAP_RD_3			;
 			bpl	_BD21E				; if positive result D21E
 
 			ldx	#$02				; else X=2
@@ -4494,7 +4499,7 @@ _LD214:			ror					; A=A/2
 _BD21E:			stx	VDU_TMP5			; store it
 			lda	_LC4AA,X			; set up vector address
 			sta	VDU_JUMPVEC			; in 35D
-			lda	_LC4AA + 1,X			; 
+			lda	_LC4AA + 1,X			;
 			sta	VDU_JUMPVEC_HI			; and 35E
 			lda	VDU_BITMAP_RD_1,X		; get hi byte of span
 			bpl	_BD235				; if +ve D235
@@ -4508,25 +4513,25 @@ _BD237:			stx	VDU_TMP6			; store it
 								; curent graphics cursor
 			lda	VDU_TMP6			; get back original X
 			eor	#$04				; covert &20 to &24 and vice versa
-			sta	VDU_TMP4			; 
-			ora	VDU_TMP5			; 
-			tax					; 
+			sta	VDU_TMP4			;
+			ora	VDU_TMP5			;
+			tax					;
 			jsr	_LD480				; copy 330/1 to 300/1+X
 			lda	VDU_QUEUE_4			; get plot type
 			and	#$10				; check bit 4
-			asl					; 
-			asl					; 
+			asl					;
+			asl					;
 			asl					; move to bit 7
 			sta	VDU_TMP2			; store it
 			ldx	#$2c				; X=&2C
 			jsr	_LD10F				; check for window violations
-			sta	VDU_TMP3			; 
+			sta	VDU_TMP3			;
 			beq	_BD263				; if none then D263
 			lda	#$40				; else set bit 6 of &DB
-			ora	VDU_TMP2			; 
-			sta	VDU_TMP2			; 
+			ora	VDU_TMP2			;
+			sta	VDU_TMP2			;
 
-_BD263:			ldx	VDU_TMP4			; 
+_BD263:			ldx	VDU_TMP4			;
 			jsr	_LD10F				; check window violations again
 			bit	VDU_TMP3			; if bit 7 of &DC NOT set
 			beq	_BD26D				; D26D
@@ -4545,17 +4550,17 @@ _BD273:			and	#$02				; clear all but bit 2
 			jsr	_LD480				; set 300/1+x to 330/1
 _BD27E:			jsr	_LD42C				; more calcualtions
 			lda	VDU_TMP5			; A=&DE EOR 2
-			eor	#$02				; 
+			eor	#$02				;
 			tax					; X=A
 			tay					; Y=A
 			lda	VDU_BITMAP_RD_1			; compare upper byte of spans
-			eor	VDU_BITMAP_RD_3			; 
+			eor	VDU_BITMAP_RD_3			;
 			bpl	_BD290				; if signs are the same D290
 			inx					; else X=X+1
 _BD290:			lda	_LC4AE,X			; get vector addresses and store 332/3
-			sta	VDU_WORKSPACE+2			; 
-			lda	_LC4B2,X			; 
-			sta	VDU_WORKSPACE+3			; 
+			sta	VDU_WORKSPACE+2			;
+			lda	_LC4B2,X			;
+			sta	VDU_WORKSPACE+3			;
 
 			lda	#$7f				; A=&7F
 			sta	VDU_WORKSPACE+4			; store it
@@ -4565,10 +4570,10 @@ _BD290:			lda	_LC4AE,X			; get vector addresses and store 332/3
 			tax					; X=A
 			sec					; set carry
 			lda	VDU_G_WIN_L,X			; subtract coordinates
-			sbc	VDU_BITMAP_RD_4,Y		; 
-			sta	VDU_TMP1			; 
-			lda	VDU_G_WIN_L_HI,X		; 
-			sbc	VDU_BITMAP_RD_5,Y		; 
+			sbc	VDU_BITMAP_RD_4,Y		;
+			sta	VDU_TMP1			;
+			lda	VDU_G_WIN_L_HI,X		;
+			sbc	VDU_BITMAP_RD_5,Y		;
 			ldy	VDU_TMP1			; Y=hi
 			tax					; X=lo=A
 			bpl	_BD2C0				; and if A+Ve D2C0
@@ -4576,7 +4581,7 @@ _BD290:			lda	_LC4AE,X			; get vector addresses and store 332/3
 
 _BD2C0:			tax					; X=A increment Y/A
 			iny					; Y=Y+1
-			bne	_BD2C5				; 
+			bne	_BD2C5				;
 			inx					; X=X+1
 _BD2C5:			txa					; A=X
 			beq	_BD2CA				; if A=0 D2CA
@@ -4586,59 +4591,59 @@ _BD2CA:			sty	VDU_TMP6			; &DF=Y
 			beq	_BD2D7				; if 0 then D2D7
 _BD2CE:			txa					; A=X
 			lsr					; A=A/4
-			ror					; 
+			ror					;
 			ora	#$02				; bit 1 set
-			eor	VDU_TMP5			; 
+			eor	VDU_TMP5			;
 			sta	VDU_TMP5			; and store
 _BD2D7:			ldx	#$2c				; X=&2C
-			jsr	_LD864				; 
-			ldx	VDU_TMP3			; 
-			bne	_BD2E2				; 
-			dec	VDU_TMP4			; 
+			jsr	_LD864				;
+			ldx	VDU_TMP3			;
+			bne	_BD2E2				;
+			dec	VDU_TMP4			;
 _BD2E2:			dex					; X=X-1
 _LD2E3:			lda	VDU_TMP2			; A=&3B
 			beq	_BD306				; if 0 D306
 			bpl	_BD2F9				; else if +ve D2F9
-			bit	VDU_WORKSPACE+4			; 
+			bit	VDU_WORKSPACE+4			;
 			bpl	_BD2F3				; if bit 7=0 D2F3
 			dec	VDU_WORKSPACE+4			; else decrement
 			bne	_BD316				; and if not 0 D316
 
-_BD2F3:			inc	VDU_WORKSPACE+4			; 
+_BD2F3:			inc	VDU_WORKSPACE+4			;
 			asl					; A=A*2
 			bpl	_BD306				; if +ve D306
-_BD2F9:			stx	VDU_TMP3			; 
-			ldx	#$2c				; 
+_BD2F9:			stx	VDU_TMP3			;
+			ldx	#$2c				;
 			jsr	_LD85F				; calcualte screen position
 			ldx	VDU_TMP3			; get back original X
-			ora	#$00				; 
-			bne	_BD316				; 
+			ora	#$00				;
+			bne	_BD316				;
 _BD306:			lda	VDU_G_PIX_MASK			; byte mask for current graphics point
 			and	VDU_G_OR_MASK			; and with graphics colour byte
 			ora	(VDU_G_MEM),Y			; or  with curent graphics cell line
 			sta	VDU_TMP1			; store result
 			lda	VDU_G_EOR_MASK			; same again with next byte (hi??)
-			and	VDU_G_PIX_MASK			; 
-			eor	VDU_TMP1			; 
+			and	VDU_G_PIX_MASK			;
+			eor	VDU_TMP1			;
 			sta	(VDU_G_MEM),Y			; then store it inm current graphics line
 _BD316:			sec					; set carry
 			lda	VDU_WORKSPACE+5			; A=&335/6-&337/8
-			sbc	VDU_WORKSPACE+7			; 
-			sta	VDU_WORKSPACE+5			; 
-			lda	VDU_WORKSPACE+6			; 
-			sbc	VDU_WORKSPACE+8			; 
+			sbc	VDU_WORKSPACE+7			;
+			sta	VDU_WORKSPACE+5			;
+			lda	VDU_WORKSPACE+6			;
+			sbc	VDU_WORKSPACE+8			;
 			bcs	_BD339				; if carry set D339
-			sta	VDU_TMP1			; 
-			lda	VDU_WORKSPACE+5			; 
-			adc	VDU_WORKSPACE+9			; 
-			sta	VDU_WORKSPACE+5			; 
-			lda	VDU_TMP1			; 
-			adc	VDU_WORKSPACE+$A		; 
-			clc					; 
-_BD339:			sta	VDU_WORKSPACE+6			; 
-			php					; 
+			sta	VDU_TMP1			;
+			lda	VDU_WORKSPACE+5			;
+			adc	VDU_WORKSPACE+9			;
+			sta	VDU_WORKSPACE+5			;
+			lda	VDU_TMP1			;
+			adc	VDU_WORKSPACE+$A		;
+			clc					;
+_BD339:			sta	VDU_WORKSPACE+6			;
+			php					;
 			bcs	_BD348				; if carry clear jump to VDU routine else D348
-			jmp	(VDU_WORKSPACE+2)		; 
+			jmp	(VDU_WORKSPACE+2)		;
 
 ;****** vertical scan module 1******************************************
 
@@ -4657,13 +4662,13 @@ _BD348:			jmp	(VDU_JUMPVEC)			; and JUMP (&35D)
 			adc	VDU_BPR				; add number of bytes/character row
 			sta	VDU_G_MEM			; store it
 			lda	VDU_G_MEM_HI			; do same for hibyte
-			adc	VDU_BPR_HI			; 
+			adc	VDU_BPR_HI			;
 			bpl	_BD363				; if result -ve then we are above screen RAM
 			sec					; so
 			sbc	VDU_MEM_PAGES			; subtract screen memory size hi
 _BD363:			sta	VDU_G_MEM_HI			; store it this wraps around point to screen RAM
 			ldy	#$00				; Y=0
-			jmp	(VDU_JUMPVEC)			; 
+			jmp	(VDU_JUMPVEC)			;
 
 ;****** horizontal scan module 1******************************************
 
@@ -4718,8 +4723,8 @@ _BD3C2:			txa					; A=X
 			eor	#$02				; invert bit 2
 			tax					; X=A
 			inc	VDU_BITMAP_RD_4,X		; Increment 32C/D
-			bne	_BD3CE				; 
-			inc	VDU_BITMAP_RD_5,X		; 
+			bne	_BD3CE				;
+			inc	VDU_BITMAP_RD_5,X		;
 _BD3CE:			ldx	VDU_TMP3			; X=&DC
 _BD3D0:			jmp	_LD2E3				; jump to D2E3
 
@@ -4727,9 +4732,9 @@ _BD3D0:			jmp	_LD2E3				; jump to D2E3
 _LD3D3:			sec					; SET CARRY
 			lda	VDU_G_MEM			; subtract number of bytes/line from address of
 			sbc	VDU_BPR				; top line of current graphics cell
-			sta	VDU_G_MEM			; 
-			lda	VDU_G_MEM_HI			; 
-			sbc	VDU_BPR_HI			; 
+			sta	VDU_G_MEM			;
+			lda	VDU_G_MEM_HI			;
+			sbc	VDU_BPR_HI			;
 			cmp	VDU_PAGE			; compare with bottom of screen memory
 			bcs	_BD3E8				; if outside screen RAM
 			adc	VDU_MEM_PAGES			; add screen memory size to wrap it around
@@ -4741,9 +4746,9 @@ _LD3ED:			lda	VDU_MASK_RIGHT			; get current left colour mask
 			sta	VDU_G_PIX_MASK			; store it
 			lda	VDU_G_MEM			; get current top line of graphics cell
 			adc	#$07				; ADD 7
-			sta	VDU_G_MEM			; 
-			bcc	_BD3FC				; 
-			inc	VDU_G_MEM_HI			; 
+			sta	VDU_G_MEM			;
+			bcc	_BD3FC				;
+			inc	VDU_G_MEM_HI			;
 _BD3FC:			rts					; and return
 
 _LD3FD:			lda	VDU_MASK_LEFT			; get right colour mask
@@ -4760,19 +4765,19 @@ _BD408:			sbc	#$08				; subtract 9 (8 + carry)
 
 _LD40D:			ldy	#$28				; X=&28
 			ldx	#$20				; Y=&20
-_LD411:			jsr	_LD418				; 
+_LD411:			jsr	_LD418				;
 			inx					; X=X+2
-			inx					; 
+			inx					;
 			iny					; Y=Y+2
-			iny					; 
+			iny					;
 
 _LD418:			sec					; set carry
 			lda	VDU_G_WIN_R,X			; subtract coordinates
-			sbc	VDU_G_WIN_L,X			; 
-			sta	VDU_G_WIN_L,Y			; 
-			lda	VDU_G_WIN_R_HI,X		; 
-			sbc	VDU_G_WIN_L_HI,X		; 
-			sta	VDU_G_WIN_L_HI,Y		; 
+			sbc	VDU_G_WIN_L,X			;
+			sta	VDU_G_WIN_L,Y			;
+			lda	VDU_G_WIN_R_HI,X		;
+			sbc	VDU_G_WIN_L_HI,X		;
+			sta	VDU_G_WIN_L_HI,Y		;
 			rts					; and return
 
 _LD42C:			lda	VDU_TMP5			; A=&DE
@@ -4789,10 +4794,10 @@ _BD437:			ldx	#$28				; X=&28
 			sec					; set carry
 			ldx	VDU_TMP5			; X=&DE
 			lda	VDU_WORKSPACE			; subtract 32C/D,X from 330/1
-			sbc	VDU_BITMAP_RD_4,X		; 
+			sbc	VDU_BITMAP_RD_4,X		;
 			tay					; partial answer in Y
-			lda	VDU_WORKSPACE+1			; 
-			sbc	VDU_BITMAP_RD_5,X		; 
+			lda	VDU_WORKSPACE+1			;
+			sbc	VDU_BITMAP_RD_5,X		;
 			bmi	_BD453				; if -ve D453
 			jsr	_LD49B				; else negate Y/A
 
@@ -4800,22 +4805,22 @@ _BD453:			sta	VDU_TMP4			; store A
 			sty	VDU_TMP3			; and Y
 			ldx	#$35				; X=&35
 _LD459:			jsr	_LD467				; get coordinates
-			lsr					; 
-			sta	VDU_G_WIN_L_HI,X		; 
-			tya					; 
-			ror					; 
-			sta	VDU_G_WIN_L,X			; 
-			dex					; 
-			dex					; 
+			lsr					;
+			sta	VDU_G_WIN_L_HI,X		;
+			tya					;
+			ror					;
+			sta	VDU_G_WIN_L,X			;
+			dex					;
+			dex					;
 
-_LD467:			ldy	VDU_G_WIN_R,X			; 
-			lda	VDU_G_WIN_R_HI,X		; 
+_LD467:			ldy	VDU_G_WIN_R,X			;
+			lda	VDU_G_WIN_R_HI,X		;
 			bpl	_BD47B				; if A is +ve RETURN
 			jsr	_LD49B				; else negate Y/A
 			sta	VDU_G_WIN_R_HI,X		; store back again
-			pha					; 
-			tya					; 
-			sta	VDU_G_WIN_R,X			; 
+			pha					;
+			tya					;
+			sta	VDU_G_WIN_R,X			;
 			pla					; get back A
 _BD47B:			rts					; and exit
 								;
@@ -4825,18 +4830,18 @@ _LD480:			ldy	#$30				; Y=&30
 _LD482:			lda	#$02				; A=2
 			bne	_VDU_VAR_COPY			; copy 2 bytes
 _LD486:			ldy	#$28				; copy 4 bytes from 324/7 to 328/B
-_LD488:			ldx	#$24				; 
-_LD48A:			lda	#$04				; 
+_LD488:			ldx	#$24				;
+_LD48A:			lda	#$04				;
 
 ;***********copy A bytes from 300,X to 300,Y ***************************
 
-_VDU_VAR_COPY:		sta	VDU_TMP1			; 
-__vdu_var_copy_next:	lda	VDU_G_WIN_L,X			; 
-			sta	VDU_G_WIN_L,Y			; 
-			inx					; 
-			iny					; 
-			dec	VDU_TMP1			; 
-			bne	__vdu_var_copy_next		; 
+_VDU_VAR_COPY:		sta	VDU_TMP1			;
+__vdu_var_copy_next:	lda	VDU_G_WIN_L,X			;
+			sta	VDU_G_WIN_L,Y			;
+			inx					;
+			iny					;
+			dec	VDU_TMP1			;
+			bne	__vdu_var_copy_next		;
 			rts					; and return
 
 ;************* negation routine ******************************************
@@ -4861,9 +4866,9 @@ _LD4AA:			jsr	_LD85D				; check window boundaries and set up screen pointer
 			rts					; and RETURN
 
 _BD4B7:			pla					; get back return link
-			pla					; 
+			pla					;
 _BD4B9:			inc	VDU_G_CURS_V			; increment current graphics cursor vertical lo
-			jmp	_LD545				; 
+			jmp	_LD545				;
 
 
 ; OS SERIES IV
@@ -4884,7 +4889,7 @@ _LD4BF:			jsr	_LD4AA				; check current screen state
 			jsr	_LD592				; update pointers
 			beq	_BD4FA				; if 0 then D4FA
 			ldy	VDU_G_CURS_SCAN			; else Y=graphics scan line
-			asl	VDU_G_PIX_MASK			; 
+			asl	VDU_G_PIX_MASK			;
 			bcs	_BD4D9				; if carry set D4D9
 			jsr	_LD574				; else D574
 			bcc	_BD4FA				; if carry clear D4FA
@@ -4905,27 +4910,27 @@ _BD4F0:			tax					; else X=A
 			sec					; set carry
 			bcs	_BD4D9				; goto D4D9
 
-_BD4F7:			jsr	_LD574				; 
+_BD4F7:			jsr	_LD574				;
 _BD4FA:			ldy	#$00				; Y=0
-			jsr	_LD5AC				; 
-			ldy	#$20				; 
-			ldx	#$24				; 
+			jsr	_LD5AC				;
+			ldy	#$20				;
+			ldx	#$24				;
 			jsr	_LCDE6				; exchange 300/3 +Y with 300/3+X
 _LD506:			jsr	_LD4AA				; check screen pixel
 			ldx	#$04				; Y=5
-			jsr	_LD592				; 
+			jsr	_LD592				;
 			txa					; A=x
 			bne	_BD513				; if A<>0 d513
 			dec	VDU_TMP2			; else	&DB=&dB-1
 
 _BD513:			dex					; X=X-1
-_BD514:			jsr	_LD54B				; 
-			bcc	_BD540				; 
+_BD514:			jsr	_LD54B				;
+			bcc	_BD540				;
 _BD519:			jsr	_LD3ED				; update pointers
 			lda	(VDU_G_MEM),Y			; get byte from graphics line
 			eor	VDU_G_BG			; EOR with background colour
 			sta	VDU_TMP1			; and store it
-			lda	VDU_TMP3			; 
+			lda	VDU_TMP3			;
 			bne	_BD514				; If A-0 back to D514
 			lda	VDU_TMP1			; else A=&DA
 			bne	_BD53D				; if A<>d53D
@@ -4940,24 +4945,24 @@ _BD536:			tax					; get back X
 			sec					; set carry
 			bcs	_BD519				; goto D519
 
-_BD53D:			jsr	_LD54B				; 
-_BD540:			ldy	#$04				; 
-			jsr	_LD5AC				; 
+_BD53D:			jsr	_LD54B				;
+_BD540:			ldy	#$04				;
+			jsr	_LD5AC				;
 
-_LD545:			jsr	_LD0D9				; 
+_LD545:			jsr	_LD0D9				;
 			jmp	_LD1B8				; scale pointers
 
 _LD54B:			lda	VDU_G_PIX_MASK			; get byte mask
 			pha					; save it
 			clc					; clear carry
-			bcc	_BD560				; 
+			bcc	_BD560				;
 
 _BD551:			pla					; get back A
 			inx					; X=X+1
 			bne	_BD559				; if not 0 D559
 			inc	VDU_TMP2			; else inc &DB
 			bpl	_BD56F				; if +ve D56F
-_BD559:			lsr	VDU_G_PIX_MASK			; 
+_BD559:			lsr	VDU_G_PIX_MASK			;
 			bcs	_BD56F				; if Bit 7 D1 set D56F
 			ora	VDU_G_PIX_MASK			; else or withA
 			pha					; save result
@@ -4967,11 +4972,11 @@ _BD560:			lda	VDU_G_PIX_MASK			; A=&D1
 			pla					; get into A
 			eor	VDU_TMP3			; EOR and DC
 			pha					; save A
-			plp					; 
-			beq	_BD551				; 
+			plp					;
+			beq	_BD551				;
 
 			pla					; A=A EOR &D1 (byte mask)
-			eor	VDU_G_PIX_MASK			; 
+			eor	VDU_G_PIX_MASK			;
 _BD56F:			sta	VDU_G_PIX_MASK			; store it
 			jmp	_LD0F0				; and display a pixel
 
@@ -4989,7 +4994,7 @@ _BD580:			asl					; A=A*2
 			bcs	_BD58E				; if C set D58E
 _BD583:			ora	VDU_G_PIX_MASK			; else A=A OR (&D1)
 			bit	VDU_TMP1			; set V and M from &DA b6 b7
-			beq	_BD579				; 
+			beq	_BD579				;
 			eor	VDU_G_PIX_MASK			; A=AEOR &D1
 			lsr					; /2
 			bcc	_BD56F				; if carry clear D56F
@@ -4998,17 +5003,17 @@ _BD58E:			ror					; *2
 			bcs	_BD56F				; to D56F
 
 _LD592:			lda	VDU_G_WIN_L,X			; Y/A=(&300/1 +X)-(&320/1)
-			sec					; 
-			sbc	VDU_QUEUE_5			; 
-			tay					; 
-			lda	VDU_G_WIN_L_HI,X		; 
-			sbc	VDU_QUEUE_6			; 
+			sec					;
+			sbc	VDU_QUEUE_5			;
+			tay					;
+			lda	VDU_G_WIN_L_HI,X		;
+			sbc	VDU_QUEUE_6			;
 			bmi	_BD5A5				; if result -ve D5A5
 			jsr	_LD49B				; or negate Y/A
 _BD5A5:			sta	VDU_TMP2			; store A
 			tya					; A=Y
 			tax					; X=A
-			ora	VDU_TMP2			; 
+			ora	VDU_TMP2			;
 			rts					; exit
 
 _LD5AC:			sty	VDU_TMP1			; Y=&DA
@@ -5020,14 +5025,14 @@ _LD5AC:			sty	VDU_TMP1			; Y=&DA
 _BD5B6:			ldx	VDU_TMP1			; X=&DA
 			bne	_BD5BD				; if <>0 D5BD
 			jsr	_LD49B				; negate
-_BD5BD:			pha					; 
-			clc					; 
-			tya					; 
+_BD5BD:			pha					;
+			clc					;
+			tya					;
 			adc	VDU_G_WIN_L,X			; Y/A+(&300/1 +X)=(&320/1)
-			sta	VDU_QUEUE_5			; 
-			pla					; 
-			adc	VDU_G_WIN_L_HI,X		; 
-			sta	VDU_QUEUE_6			; 
+			sta	VDU_QUEUE_5			;
+			pla					;
+			adc	VDU_G_WIN_L_HI,X		;
+			sta	VDU_QUEUE_6			;
 			rts					; return
 
 
@@ -5038,7 +5043,7 @@ _BD5BD:			pha					;
 ;*************************************************************************
 				;
 _OSWORD_13:		lda	#$03				; A=3
-			jsr	_LD5D5				; 
+			jsr	_LD5D5				;
 			lda	#$07				; A=7
 _LD5D5:			pha					; Save A
 			jsr	_LCDE2				; exchange last 2 graphics cursor coordinates with
@@ -5050,7 +5055,7 @@ _LD5D5:			pha					; Save A
 _BD5E0:			lda	VDU_G_CUR_XX,X			; get graphics coordinate
 			sta	(OSW_X),Y			; store it in OS buffer
 			dey					; decrement Y and X
-			dex					; 
+			dex					;
 			bpl	_BD5E0				; if +ve do it again
 			rts					; then Exit
 
@@ -5069,29 +5074,29 @@ _LD5EA:			ldx	#$20				; X=&20
 			jsr	_LD632				; exchange 320/3 with 324/7 if 316/7=<322/3
 			ldx	#$14				; X=&14
 			ldy	#$24				; Y=&24
-			jsr	_LD636				; 
-			jsr	_LD632				; 
+			jsr	_LD636				;
+			jsr	_LD632				;
 
-			ldx	#$20				; 
-			ldy	#$2a				; 
+			ldx	#$20				;
+			ldy	#$2a				;
 			jsr	_LD411				; calculate 032A/B-(324/5-320/1)
 			lda	VDU_BITMAP_RD_3			; and store
 			sta	VDU_WORKSPACE+2			; result
 
 			ldx	#$28				; set pointers
-			jsr	_LD459				; 
-			ldy	#$2e				; 
+			jsr	_LD459				;
+			ldy	#$2e				;
 
 			jsr	_LD0DE				; copy 320/3 32/31
 			jsr	_LCDE2				; exchange 314/7 with 324/7
-			clc					; 
+			clc					;
 			jsr	_LD658				; execute fill routine
 
-			jsr	_LCDE2				; 
-			ldx	#$20				; 
-			jsr	_LCDE4				; 
-			sec					; 
-			jsr	_LD658				; 
+			jsr	_LCDE2				;
+			ldx	#$20				;
+			jsr	_LCDE4				;
+			sec					;
+			jsr	_LD658				;
 
 			ldx	#$3e				; ;X=&3E
 			ldy	#$20				; ;Y=&20
@@ -5101,10 +5106,10 @@ _LD5EA:			ldx	#$20				; X=&20
 
 _LD632:			ldx	#$20				; X=&20
 			ldy	#$14				; Y=&14
-_LD636:			lda	VDU_G_WIN_B,X			; 
-			cmp	VDU_G_WIN_B,Y			; 
-			lda	VDU_G_WIN_B_HI,X		; 
-			sbc	VDU_G_WIN_B_HI,Y		; 
+_LD636:			lda	VDU_G_WIN_B,X			;
+			cmp	VDU_G_WIN_B,Y			;
+			lda	VDU_G_WIN_B_HI,X		;
+			sbc	VDU_G_WIN_B_HI,Y		;
 			bmi	_BD657				; if 302/3+Y>302/3+X return
 			jmp	_LCDE6				; else swap 302/3+X with 302/3+Y
 
@@ -5120,7 +5125,7 @@ _OSBYTE_134:		lda	VDU_T_CURS_X			; read current text cursor (X)
 			sbc	VDU_T_WIN_L			; subtract left hand column of current text window
 			tax					; X=A
 			lda	VDU_T_CURS_Y			; get current text cursor (Y)
-			sec					; 
+			sec					;
 			sbc	VDU_T_WIN_T			; suptract top row of current window
 			tay					; Y=A
 _BD657:			rts					; and exit
@@ -5132,27 +5137,27 @@ _LD658:			php					; store flags
 			ldx	#$20				; X=&20
 			ldy	#$35				; Y=&35
 			jsr	_LD411				; 335/6=(324/5+X-320/1)
-			lda	VDU_WORKSPACE+6			; 
-			sta	VDU_WORKSPACE+$D		; 
-			ldx	#$33				; 
+			lda	VDU_WORKSPACE+6			;
+			sta	VDU_WORKSPACE+$D		;
+			ldx	#$33				;
 			jsr	_LD459				; set pointers
 
 			ldy	#$39				; set 339/C=320/3
-			jsr	_LD0DE				; 
-			sec					; 
-			lda	VDU_QUEUE_7			; 
-			sbc	VDU_G_CURS_V			; 
-			sta	VDU_QUEUE			; 
-			lda	VDU_QUEUE_8			; 
-			sbc	VDU_G_CURS_V_HI			; 
-			sta	VDU_QUEUE_1			; 
+			jsr	_LD0DE				;
+			sec					;
+			lda	VDU_QUEUE_7			;
+			sbc	VDU_G_CURS_V			;
+			sta	VDU_QUEUE			;
+			lda	VDU_QUEUE_8			;
+			sbc	VDU_G_CURS_V_HI			;
+			sta	VDU_QUEUE_1			;
 			ora	VDU_QUEUE			; check VDU queque
-			beq	_BD69F				; 
+			beq	_BD69F				;
 
 _BD688:			jsr	_LD6A2				; display a line
-			ldx	#$33				; 
+			ldx	#$33				;
 			jsr	_LD774				; update pointers
-			ldx	#$28				; 
+			ldx	#$28				;
 			jsr	_LD774				; and again!
 			inc	VDU_QUEUE			; update VDU queque
 			bne	_BD688				; and if not empty do it again
@@ -5161,55 +5166,55 @@ _BD688:			jsr	_LD6A2				; display a line
 
 _BD69F:			plp					; pull flags
 			bcc	_BD657				; if carry clear exit
-_LD6A2:			ldx	#$39				; 
-			ldy	#$2e				; 
-_VDU_G_CLR_LINE:	stx	VDU_TMP5			; 
+_LD6A2:			ldx	#$39				;
+			ldy	#$2e				;
+_VDU_G_CLR_LINE:	stx	VDU_TMP5			;
 			lda	VDU_G_WIN_L,X			; is 300/1+x<300/1+Y
-			cmp	VDU_G_WIN_L,Y			; 
-			lda	VDU_G_WIN_L_HI,X		; 
-			sbc	VDU_G_WIN_L_HI,Y		; 
+			cmp	VDU_G_WIN_L,Y			;
+			lda	VDU_G_WIN_L_HI,X		;
+			sbc	VDU_G_WIN_L_HI,Y		;
 			bmi	_BD6BC				; if so D6BC
 			tya					; else A=Y
 			ldy	VDU_TMP5			; Y=&DE
 			tax					; X=A
 			stx	VDU_TMP5			; &DE=X
 _BD6BC:			sty	VDU_TMP6			; &DF=Y
-			lda	VDU_G_WIN_L,Y			; 
-			pha					; 
-			lda	VDU_G_WIN_L_HI,Y		; 
-			pha					; 
-			ldx	VDU_TMP6			; 
+			lda	VDU_G_WIN_L,Y			;
+			pha					;
+			lda	VDU_G_WIN_L_HI,Y		;
+			pha					;
+			ldx	VDU_TMP6			;
 			jsr	_LD10F				; check for window violations
-			beq	_BD6DA				; 
-			cmp	#$02				; 
-			bne	_LD70E				; 
-			ldx	#$04				; 
-			ldy	VDU_TMP6			; 
-			jsr	_LD482				; 
-			ldx	VDU_TMP6			; 
+			beq	_BD6DA				;
+			cmp	#$02				;
+			bne	_LD70E				;
+			ldx	#$04				;
+			ldy	VDU_TMP6			;
+			jsr	_LD482				;
+			ldx	VDU_TMP6			;
 _BD6DA:			jsr	_LD864				; set a screen address
 			ldx	VDU_TMP5			; X=&DE
 			jsr	_LD10F				; check for window violations
 			lsr					; A=A/2
 			bne	_LD70E				; if A<>0 then exit
 			bcc	_BD6E9				; else if C clear D6E9
-			ldx	#$00				; 
-_BD6E9:			ldy	VDU_TMP6			; 
-			sec					; 
-			lda	VDU_G_WIN_L,Y			; 
-			sbc	VDU_G_WIN_L,X			; 
-			sta	VDU_TMP3			; 
-			lda	VDU_G_WIN_L_HI,Y		; 
-			sbc	VDU_G_WIN_L_HI,X		; 
-			sta	VDU_TMP4			; 
-			lda	#$00				; 
-_BD6FE:			asl					; 
-			ora	VDU_G_PIX_MASK			; 
-			ldy	VDU_TMP3			; 
-			bne	_BD719				; 
-			dec	VDU_TMP4			; 
-			bpl	_BD719				; 
-			sta	VDU_G_PIX_MASK			; 
+			ldx	#$00				;
+_BD6E9:			ldy	VDU_TMP6			;
+			sec					;
+			lda	VDU_G_WIN_L,Y			;
+			sbc	VDU_G_WIN_L,X			;
+			sta	VDU_TMP3			;
+			lda	VDU_G_WIN_L_HI,Y		;
+			sbc	VDU_G_WIN_L_HI,X		;
+			sta	VDU_TMP4			;
+			lda	#$00				;
+_BD6FE:			asl					;
+			ora	VDU_G_PIX_MASK			;
+			ldy	VDU_TMP3			;
+			bne	_BD719				;
+			dec	VDU_TMP4			;
+			bpl	_BD719				;
+			sta	VDU_G_PIX_MASK			;
 			jsr	_LD0F0				; display a point
 _LD70E:			ldx	VDU_TMP6			; restore X
 			pla					; and A
@@ -5218,22 +5223,22 @@ _LD70E:			ldx	VDU_TMP6			; restore X
 			sta	VDU_G_WIN_L,X			; and store it
 			rts					; exit
 								;
-_BD719:			dec	VDU_TMP3			; 
-			tax					; 
-			bpl	_BD6FE				; 
-			sta	VDU_G_PIX_MASK			; 
+_BD719:			dec	VDU_TMP3			;
+			tax					;
+			bpl	_BD6FE				;
+			sta	VDU_G_PIX_MASK			;
 			jsr	_LD0F0				; display a point
-			ldx	VDU_TMP3			; 
-			inx					; 
-			bne	_BD72A				; 
-			inc	VDU_TMP4			; 
-_BD72A:			txa					; 
-			pha					; 
-			lsr	VDU_TMP4			; 
-			ror					; 
+			ldx	VDU_TMP3			;
+			inx					;
+			bne	_BD72A				;
+			inc	VDU_TMP4			;
+_BD72A:			txa					;
+			pha					;
+			lsr	VDU_TMP4			;
+			ror					;
 			ldy	VDU_PIX_BYTE			; number of pixels/byte
 			cpy	#$03				; if 3 mode = goto D73B
-			beq	_BD73B				; 
+			beq	_BD73B				;
 			bcc	_BD73E				; else if <3 mode 2 goto D73E
 			lsr	VDU_TMP4			; else rotate bottom bit of &DD
 			ror					; into Accumulator
@@ -5243,66 +5248,66 @@ _BD73B:			lsr	VDU_TMP4			; rotate bottom bit of &DD
 _BD73E:			ldy	VDU_G_CURS_SCAN			; Y=line in current graphics cell containing current
 								; point
 			tax					; X=A
-			beq	_BD753				; 
+			beq	_BD753				;
 _BD744:			tya					; Y=Y-8
-			sec					; 
-			sbc	#$08				; 
-			tay					; 
+			sec					;
+			sbc	#$08				;
+			tay					;
 
-			bcs	_BD74D				; 
+			bcs	_BD74D				;
 			dec	VDU_G_MEM_HI			; decrement byte of top line off current graphics cell
 _BD74D:			jsr	_LD104				; display a point
-			dex					; 
-			bne	_BD744				; 
-_BD753:			pla					; 
+			dex					;
+			bne	_BD744				;
+_BD753:			pla					;
 			and	VDU_PIX_BYTE			; pixels/byte
-			beq	_LD70E				; 
-			tax					; 
+			beq	_LD70E				;
+			tax					;
 			lda	#$00				; A=0
-_BD75C:			asl					; 
+_BD75C:			asl					;
 			ora	VDU_MASK_LEFT			; or with right colour mask
-			dex					; 
-			bne	_BD75C				; 
+			dex					;
+			bne	_BD75C				;
 			sta	VDU_G_PIX_MASK			; store as byte mask
 			tya					; Y=Y-8
-			sec					; 
-			sbc	#$08				; 
-			tay					; 
+			sec					;
+			sbc	#$08				;
+			tay					;
 			bcs	_BD76E				; if carry clear
 			dec	VDU_G_MEM_HI			; decrement byte of top line off current graphics cell
 _BD76E:			jsr	_LD0F3				; display a point
 			jmp	_LD70E				; and exit via D70E
 
-_LD774:			inc	VDU_T_WIN_L,X			; 
-			bne	_BD77C				; 
-			inc	VDU_T_WIN_B,X			; 
-_BD77C:			sec					; 
-			lda	VDU_G_WIN_L,X			; 
-			sbc	VDU_G_WIN_B,X			; 
-			sta	VDU_G_WIN_L,X			; 
-			lda	VDU_G_WIN_L_HI,X		; 
-			sbc	VDU_G_WIN_B_HI,X		; 
-			sta	VDU_G_WIN_L_HI,X		; 
-			bpl	_BD7C1				; 
-_BD791:			lda	VDU_T_WIN_R,X			; 
-			bmi	_BD7A1				; 
-			inc	VDU_G_WIN_T,X			; 
-			bne	_LD7AC				; 
-			inc	VDU_G_WIN_T_HI,X		; 
-			jmp	_LD7AC				; 
-_BD7A1:			lda	VDU_G_WIN_T,X			; 
-			bne	_BD7A9				; 
-			dec	VDU_G_WIN_T_HI,X		; 
-_BD7A9:			dec	VDU_G_WIN_T,X			; 
-_LD7AC:			clc					; 
-			lda	VDU_G_WIN_L,X			; 
-			adc	VDU_G_WIN_R,X			; 
-			sta	VDU_G_WIN_L,X			; 
-			lda	VDU_G_WIN_L_HI,X		; 
-			adc	VDU_G_WIN_R_HI,X		; 
-			sta	VDU_G_WIN_L_HI,X		; 
-			bmi	_BD791				; 
-_BD7C1:			rts					; 
+_LD774:			inc	VDU_T_WIN_L,X			;
+			bne	_BD77C				;
+			inc	VDU_T_WIN_B,X			;
+_BD77C:			sec					;
+			lda	VDU_G_WIN_L,X			;
+			sbc	VDU_G_WIN_B,X			;
+			sta	VDU_G_WIN_L,X			;
+			lda	VDU_G_WIN_L_HI,X		;
+			sbc	VDU_G_WIN_B_HI,X		;
+			sta	VDU_G_WIN_L_HI,X		;
+			bpl	_BD7C1				;
+_BD791:			lda	VDU_T_WIN_R,X			;
+			bmi	_BD7A1				;
+			inc	VDU_G_WIN_T,X			;
+			bne	_LD7AC				;
+			inc	VDU_G_WIN_T_HI,X		;
+			jmp	_LD7AC				;
+_BD7A1:			lda	VDU_G_WIN_T,X			;
+			bne	_BD7A9				;
+			dec	VDU_G_WIN_T_HI,X		;
+_BD7A9:			dec	VDU_G_WIN_T,X			;
+_LD7AC:			clc					;
+			lda	VDU_G_WIN_L,X			;
+			adc	VDU_G_WIN_R,X			;
+			sta	VDU_G_WIN_L,X			;
+			lda	VDU_G_WIN_L_HI,X		;
+			adc	VDU_G_WIN_R_HI,X		;
+			sta	VDU_G_WIN_L_HI,X		;
+			bmi	_BD791				;
+_BD7C1:			rts					;
 
 
 ;*************************************************************************
@@ -5323,7 +5328,7 @@ _BD7D4:			dey					; Y=Y-1
 			bpl	_BD7CB				; and if +ve do it again
 _BD7D7:			ldy	VDU_MODE			; Y=current screen mode
 			tax					; return with character in X
-			rts					; 
+			rts					;
 								;
 _BD7DC:			jsr	_LD808				; set up copy of the pattern bytes at text cursor
 			ldx	#$20				; X=&20
@@ -5374,9 +5379,9 @@ _BD820:			rol	VDU_TMP2			; &DB=&DB+Carry
 			tya					; A=Y
 			adc	#$07				; ADD ( (7+carry)
 			tay					; Y=A
-			bcc	_BD810				; 
+			bcc	_BD810				;
 _BD82E:			ldy	VDU_TMP1			; read modified values into Y and A
-			lda	VDU_TMP2			; 
+			lda	VDU_TMP2			;
 			sta	VDU_BITMAP_READ,Y		; store copy
 			dey					; and do it again
 			bpl	_BD80A				; until 8 bytes copied
@@ -5402,7 +5407,7 @@ _BD847:			asl					; A=A*2 C=bit 7
 _BD851:			plp					; pull flags
 			bne	_BD847				; if Z set D847
 			lda	VDU_TMP1			; else A=&DA AND number of colours in current mode -1
-			and	VDU_COL_MASK			; 
+			and	VDU_COL_MASK			;
 			rts					; then exit
 								;
 _BD85A:			lda	#$ff				; A=&FF
@@ -5411,12 +5416,12 @@ _BD85C:			rts					; exit
 ;********** check for window violations and set up screen address **********
 
 _LD85D:			ldx	#$20				; X=&20
-_LD85F:			jsr	_LD10F				; 
+_LD85F:			jsr	_LD10F				;
 			bne	_BD85C				; if A<>0 there is a window violation so D85C
 _LD864:			lda	VDU_G_WIN_B,X			; else set up graphics scan line variable
-			eor	#$ff				; 
-			tay					; 
-			and	#$07				; 
+			eor	#$ff				;
+			tay					;
+			and	#$07				;
 			sta	VDU_G_CURS_SCAN			; in 31A
 			tya					; A=Y
 			lsr					; A=A/2
@@ -5439,12 +5444,12 @@ _BD884:			adc	VDU_MEM				; add screen top left hand corner lo
 			lda	VDU_TMP1			; get high  byte
 			adc	VDU_MEM_HI			; add top left hi
 			sta	VDU_G_MEM_HI			; store it
-			lda	VDU_G_WIN_L_HI,X		; 
-			sta	VDU_TMP1			; 
-			lda	VDU_G_WIN_L,X			; 
-			pha					; 
+			lda	VDU_G_WIN_L_HI,X		;
+			sta	VDU_TMP1			;
+			lda	VDU_G_WIN_L,X			;
+			pha					;
 			and	VDU_PIX_BYTE			; and then Add pixels per byte-1
-			adc	VDU_PIX_BYTE			; 
+			adc	VDU_PIX_BYTE			;
 			tay					; Y=A
 			lda	_LC406,Y			; A=&80 /2^Y using look up table
 			sta	VDU_G_PIX_MASK			; store it
@@ -5454,18 +5459,18 @@ _BD884:			adc	VDU_MEM				; add screen top left hand corner lo
 			beq	_BD8B2				; goto D8B2
 			bcs	_BD8B5				; if mode =1 or 4 D8B5
 			asl					; A/&DA =A/&DA *2
-			rol	VDU_TMP1			; 
+			rol	VDU_TMP1			;
 
-_BD8B2:			asl					; 
-			rol	VDU_TMP1			; 
+_BD8B2:			asl					;
+			rol	VDU_TMP1			;
 
 _BD8B5:			and	#$f8				; clear bits 0-2
 			clc					; clear carry
 
 			adc	VDU_G_MEM			; add A/&DA to &D6/7
-			sta	VDU_G_MEM			; 
-			lda	VDU_TMP1			; 
-			adc	VDU_G_MEM_HI			; 
+			sta	VDU_G_MEM			;
+			lda	VDU_TMP1			;
+			adc	VDU_G_MEM_HI			;
 			bpl	_BD8C6				; if result +ve D8C6
 			sec					; else set carry
 			sbc	VDU_MEM_PAGES			; and subtract screen memory size making it wrap round
@@ -5506,7 +5511,7 @@ _BD8F5:			lda	#$bf				; A=&BF
 
 _LD905:			lda	#$20				; A=&20
 			bit	VDU_STATUS			; if bit 6 cursor editing is set
-			bvc	_BD8CB				; 
+			bvc	_BD8CB				;
 			bne	_BD8CB				; or bit 5 is set exit &D8CB
 			jsr	_OSBYTE_135			; read a character from the screen
 			beq	_BD917				; if A=0 on return exit via D917
@@ -5517,7 +5522,7 @@ _BD916:			pla					; restore A
 _BD917:			rts					; and exit
 								;
 _LD918:			lda	#$bd				; zero bits 2 and 6 of VDU status
-			jsr	_LC5A8				; 
+			jsr	_LC5A8				;
 			jsr	_LC951				; set normal cursor
 			lda	#$0d				; A=&0D
 			rts					; and return
@@ -5770,7 +5775,7 @@ _RESET_MEMCLR:		ldx	#$04				; get page to start clearance from (4)
 
 __reset_memclr_loop:	sta	($00),Y				; clear store
 			cmp	$01				; until address &01 =0
-			beq	__reset_memclr_done		; 
+			beq	__reset_memclr_done		;
 			iny					; increment pointer
 			bne	__reset_memclr_loop		; if not zero loop round again
 			iny					; else increment again (Y=1) this avoids overwriting
@@ -5789,7 +5794,7 @@ __reset_memclr_done:	stx	OSB_RAM_PAGES			; writes marker for available RAM 40 =1
 ;**+********** set up system VIA *****************************************
 
 __reset_setup_sys_via:	ldx	#$0f				; set PORT B to output on bits 0-3 Input 4-7
-			stx	SYS_VIA_DDRB			; 
+			stx	SYS_VIA_DDRB			;
 
 
 ;*************************************************************************
@@ -5843,8 +5848,8 @@ __reset_keyread_loop:	txa					; A=X
 
 ;****** set up page 2 ****************************************************
 
-			ldx	#$9c				; 
-			ldy	#$8d				; 
+			ldx	#$9c				;
+			ldy	#$8d				;
 			pla					; get back A from &D9DB
 			beq	_BDA36				; if A=0 power up reset so DA36 with X=&9C Y=&8D
 			ldy	#$7e				; else Y=&7E
@@ -5866,18 +5871,18 @@ _BDA36:			inc	OSB_LAST_BREAK			; &28D=&28D+1
 
 _BDA42:			lda	#$00				; A=0
 _BDA44:			cpx	#$ce				; zero &200+X to &2CD
-			bcc	_BDA4A				; 
+			bcc	_BDA4A				;
 			lda	#$ff				; then set &2CE to &2FF to &FF
-_BDA4A:			sta	VEC_USERV,X			; 
-			inx					; 
-			bne	_BDA44				; 
+_BDA4A:			sta	VEC_USERV,X			;
+			inx					;
+			bne	_BDA44				;
 								; A=&FF X=0
 			sta	USR_VIA_DDRA			; set port A of user via to all outputs (printer out)
 
 			txa					; A=0
 			ldx	#$e2				; X=&E2
 _BDA56:			sta	$00,X				; zero zeropage &E2 to &FF
-			inx					; 
+			inx					;
 			bne	_BDA56				; X=0
 
 _BDA5B:			lda	_VECTOR_TABLE-1,Y		; copy data from &D93F+Y
@@ -5892,12 +5897,12 @@ _BDA5B:			lda	_VECTOR_TABLE-1,Y		; copy data from &D93F+Y
 
 ;************** clear interrupt and enable registers of Both VIAs ********
 
-_RESET_VIAS:		lda	#$7f				; 
-			inx					; 
-__reset_vias_loop:	sta	SYS_VIA_IFR,X			; 
-			sta	USR_VIA_IFR,X			; 
-			dex					; 
-			bpl	__reset_vias_loop		; 
+_RESET_VIAS:		lda	#$7f				;
+			inx					;
+__reset_vias_loop:	sta	SYS_VIA_IFR,X			;
+			sta	USR_VIA_IFR,X			;
+			dex					;
+			bpl	__reset_vias_loop		;
 
 			cli					; briefly allow interrupts to clear anything pending
 			sei					; disallow again N.B. All VIA IRQs are disabled
@@ -5907,7 +5912,7 @@ __reset_vias_loop:	sta	SYS_VIA_IFR,X			;
 								; hardware there redirects it.
 								;
 __reset_vias_setirqs:	ldx	#$f2				; enable interrupts 1,4,5,6 of system VIA
-			stx	SYS_VIA_IER			; 
+			stx	SYS_VIA_IER			;
 								; 0	 Keyboard enabled as needed
 								; 1	 Frame sync pulse
 								; 4	 End of A/D conversion
@@ -5915,21 +5920,21 @@ __reset_vias_setirqs:	ldx	#$f2				; enable interrupts 1,4,5,6 of system VIA
 								; 6	 T1 counter (10 mSec intervals)
 								;
 			ldx	#$04				; set system VIA PCR
-			stx	SYS_VIA_PCR			; 
+			stx	SYS_VIA_PCR			;
 								; CA1 to interrupt on negative edge (Frame sync)
 								; CA2 Handshake output for Keyboard
 								; CB1 interrupt on negative edge (end of conversion)
 								; CB2 Negative edge (Light pen strobe)
 								;
 			lda	#$60				; set system VIA ACR
-			sta	SYS_VIA_ACR			; 
+			sta	SYS_VIA_ACR			;
 								; disable latching
 								; disable shift register
 								; T1 counter continuous interrupts
 								; T2 counter timed interrupt
 
 			lda	#$0e				; set system VIA T1 counter (Low)
-			sta	SYS_VIA_T1L_L			; 
+			sta	SYS_VIA_T1L_L			;
 								; this becomes effective when T1 hi set
 
 			sta	USR_VIA_PCR			; set user VIA PCR
@@ -5949,7 +5954,7 @@ __reset_vias_setirqs:	ldx	#$f2				; enable interrupts 1,4,5,6 of system VIA
 
 _BDAA2:			lda	#$27				; set T1 (hi) to &27 this sets T1 to &270E (9998 uS)
 			sta	SYS_VIA_T1L_H			; or 10msec, interrupts occur every 10msec therefore
-			sta	SYS_VIA_T1C_H			; 
+			sta	SYS_VIA_T1C_H			;
 
 			jsr	_LEC60				; clear the sound channels
 
@@ -6049,7 +6054,7 @@ _BDB19:			ldy	#$ff				; Y=&FF
 			bne	_BDB19				; loop
 								; X=0
 			stx	SYS_VIA_T2C_L			; set T2 timer for speech
-			stx	SYS_VIA_T2C_H			; 
+			stx	SYS_VIA_T2C_H			;
 
 ;*********** SCREEN SET UP **********************************************
 				; X=0
@@ -6067,8 +6072,8 @@ _BDB27:			lda	OSB_STARTUP_OPT			; get back start up options (mode)
 
 			jsr	_LF140				; set up cassette options
 			lda	#$81				; test for tube to FIFO buffer 1
-			sta	TUBE_FIFO1_SR			; 
-			lda	TUBE_FIFO1_SR			; 
+			sta	TUBE_FIFO1_SR			;
+			lda	TUBE_FIFO1_SR			;
 			ror					; put bit 0 into carry
 			bcc	_BDB4D				; if no tube then DB4D
 			ldx	#$ff				; else
@@ -6093,26 +6098,26 @@ _BDB4D:			ldy	#$0e				; set current value of PAGE
 			ldy	#$02				; output to screen
 			jsr	_PRINT_PAGEC3_STRING		; 'BBC Computer ' message
 			lda	OSB_LAST_BREAK			; 0=warm reset, anything else continue
-			beq	_BDB82				; 
+			beq	_BDB82				;
 			ldy	#$16				; by checking length of RAM
-			bit	OSB_RAM_PAGES			; 
+			bit	OSB_RAM_PAGES			;
 			bmi	_BDB7F				; and either
-			ldy	#$11				; 
+			ldy	#$11				;
 _BDB7F:			jsr	_PRINT_PAGEC3_STRING		; finishing message with '16K' or '32K'
 _BDB82:			ldy	#$1b				; and two newlines
-			jsr	_PRINT_PAGEC3_STRING		; 
+			jsr	_PRINT_PAGEC3_STRING		;
 
 ;*********: enter BREAK INTERCEPT ROUTINE WITH CARRY SET (call 1)
 
-_BDB87:			sec					; 
+_BDB87:			sec					;
 			jsr	_LEAD9				; look for break intercept jump do *TV etc
 			jsr	_OSBYTE_118			; set up LEDs in accordance with keyboard status
 			php					; save flags
 			pla					; and get back in A
 			lsr					; zero bits 4-7 and bits 0-2 bit 4 which was bit 7
 			lsr					; may be set
-			lsr					; 
-			lsr					; 
+			lsr					;
+			lsr					;
 			eor	OSB_STARTUP_OPT			; eor with start-up options which may or may not
 			and	#$08				; invert bit 4
 			tay					; Y=A
@@ -6124,8 +6129,8 @@ _BDB87:			sec					;
 			lda	#$8d				; else set up standard cassete baud rates
 			jsr	_OSBYTE_140_141			; via &F135
 
-			ldx	#$d2				; 
-			ldy	#$ea				; 
+			ldx	#$d2				;
+			ldy	#$ea				;
 			dec	OSB_BOOT_DISP			; decrement ignore start up message flag
 			jsr	OSCLI				; and execute */!BOOT
 			inc	OSB_BOOT_DISP			; restore start up message flag
@@ -6157,7 +6162,7 @@ _BDBCA:			lda	ROM_TABLE,X			; get rom type from map
 			bmi	_BDBE6				; if bit 7 set then ROM has a language entry so DBE6
 
 			dex					; else search for language until X=&ff
-			bpl	_BDBCA				; 
+			bpl	_BDBCA				;
 
 ;*************** check if tube present ***********************************
 
@@ -6167,12 +6172,12 @@ _BDBCA:			lda	ROM_TABLE,X			; get rom type from map
 
 ;********* no language error ***********************************************
 
-			brk					; 
+			brk					;
 			.byte	$f9				; error number
 			.byte	"Language?"			; message
-			brk					; 
+			brk					;
 
-_BDBE6:			clc					; 
+_BDBE6:			clc					;
 
 
 ;*************************************************************************
@@ -6256,10 +6261,10 @@ _IRQ_HANDLER:		sta	IRQ_COPY_A			; save A
 ;*************************************************************************
 
 _BRK:			txa					; save X on stack
-			pha					; 
+			pha					;
 			tsx					; get status pointer
 			lda	STACK+3,X			; get Program Counter lo
-			cld					; 
+			cld					;
 			sec					; set carry
 			sbc	#$01				; subtract 2 (1+carry)
 			sta	ERR_MSG_PTR			; and store it in &FD
@@ -6277,7 +6282,7 @@ _BRK:			txa					; save X on stack
 			ldx	OSB_CUR_LANG			; get current language
 			jsr	_LDC16				; and activate it
 			pla					; get back original value of X
-			tax					; 
+			tax					;
 			lda	IRQ_COPY_A			; get back original value of A
 			cli					; allow interrupts
 			jmp	(VEC_BRKV)			; and JUMP via BRKV (normally into current language)
@@ -6297,13 +6302,13 @@ _BRKV:			ldy	#$00				; Y=0 to point to byte after BRK
 _HCF:			bcs	_HCF				; hang up machine!!!!
 
 			jsr	OSNEWL				; else print two newlines
-			jsr	OSNEWL				; 
+			jsr	OSNEWL				;
 			jmp	_LDBB8				; and set tape speed before entering current
 								; language
 
 ; ACIA IRQ, RxRDY but both Serial and Printer buffers empty
 ; ---------------------------------------------------------
-_BDC68:			sec					
+_BDC68:			sec
 			ror	OSB_RS423_USE			; Set b7 of RS423 busy flag
 			bit	OSB_RS423_CTL			; check bit 7 of current ACIA control register
 			bpl	_BDC78				; if interrupts NOT enabled DC78
@@ -6341,13 +6346,13 @@ _IRQ1V:			cld					; Clear decimal flag
 			lda	IRQ_COPY_A			; Get original value of A
 			pha					; Save it
 			txa					; Save X
-			pha					; 
+			pha					;
 			tya					; and Y
-			pha					; 
+			pha					;
 			lda	#$de				; Stack return address to &DE82
-			pha					
-			lda	#$81				
-			pha					
+			pha
+			lda	#$81
+			pha
 			clv					; Clear V flag
 _POLL_ACIA_IRQ:		lda	ACIA_CSR			; Read ACIA status register
 			bvs	__irq_acia			; b6 set, jump with serial parity error
@@ -6364,7 +6369,7 @@ __irq_acia:		ldx	RS423_TIMEOUT			; Get RS423 timeout counter
 ; ACIA Data Carrier Detect
 ; ------------------------
 _BDCB3:			ldy	ACIA_TXRX			; Read ACIA data
-			rol	A				; 
+			rol	A				;
 			asl	A				; Rotate ACIA Status back
 _BDCB8:			tax					; X=ACIA Status
 			tya					; A=ACIA Data
@@ -6373,7 +6378,7 @@ _BDCB8:			tax					; X=ACIA Status
 
 ; ACIA IRQ, TxRDY - Send a byte
 ; -----------------------------
-_BDCBF:			ldx	#$02				
+_BDCBF:			ldx	#$02
 			jsr	_OSBYTE_145			; Read from Serial output buffer
 			bcc	_BDCD6				; Buffer is not empty, jump to send byte
 			lda	OSB_PRINT_DEST			; Read printer destination
@@ -6420,16 +6425,16 @@ _BDCEB:			lsr	A				; Move TxRDY into Carry
 
 ; Issue Unknown Interupt service call
 ; ===================================
-_IRQ_UNKNOWN:		ldx	#$05				
+_IRQ_UNKNOWN:		ldx	#$05
 			jsr	_OSBYTE_143			; Issue service call 5, 'Unknown Interrupt'
 			beq	_BDCDD				; If claimed, then jump to exit
 			pla					; Otherwise drop return address from stack
-			pla					; 
+			pla					;
 			pla					; And restore registers
-			tay					; 
-			pla					; 
-			tax					; 
-			pla					; 
+			tay					;
+			pla					;
+			tax					;
+			pla					;
 			sta	IRQ_COPY_A			; Store A in IRQA
 			jmp	(VEC_IRQ2V)			; And pass the IRQ in to IRQ2V
 
@@ -6448,7 +6453,7 @@ _POLL_SYS_VIA_IRQ:	lda	SYS_VIA_IFR			; Read System VIA interrupt flag register
 			and	OSB_SVIA_IRQ_M			; Mask with System VIA bit mask
 			and	SYS_VIA_IER			; and interrupt enable register
 _POLL_FRAME_SYNC_IRQ:	ror					; Rotate to check for CA1 interupt (frame sync)
-			ror					; 
+			ror					;
 			bcc	_POLL_TIMER2_IRQ		; No CA1 (frame sync), jump to check speech
 
 ; System VIA CA1 interupt (Frame Sync)
@@ -6492,18 +6497,18 @@ _POLL_USER_VIA_IRQ:	lda	USR_VIA_IFR			; Read User VIA interrupt flag register
 ; User VIA interupt
 
 			and	OSB_UVIA_IRQ_M			; else check for USER IRQ 1
-			and	USR_VIA_IER			; 
-			ror					; 
-			ror					; 
+			and	USR_VIA_IER			;
+			ror					;
+			ror					;
 			bcc	_IRQ_UNKNOWN			; if bit 1=0 the no interrupt 1 so DCF3
 			ldy	OSB_PRINT_DEST			; else get printer type
 			dey					; decrement
 			bne	_IRQ_UNKNOWN			; if not parallel then DCF3
 			lda	#$02				; reset interrupt 1 flag
-			sta	USR_VIA_IFR			; 
+			sta	USR_VIA_IFR			;
 			sta	USR_VIA_IER			; disable interrupt 1
 			ldx	#$03				; and output data to parallel printer
-			jmp	_LE13A				; 
+			jmp	_LE13A				;
 
 
 ;*************************************************************************
@@ -6513,15 +6518,15 @@ _POLL_USER_VIA_IRQ:	lda	USR_VIA_IFR			; Read User VIA interrupt flag register
 ;*************************************************************************
 
 _POLL_TIMER2_IRQ:	rol					; Rotate bit 5 into bit 7
-			rol					; 
-			rol					; 
-			rol					; 
+			rol					;
+			rol					;
+			rol					;
 			bpl	_POLL_TIMER_IRQ			; Not a Timer 2 interrupt, jump to check timers
 
 ; System VIA Timer 2 interupt - Speech interupt
 
 			lda	#$20				; Prepare to clear VIA interupt
-			ldx	#$00				
+			ldx	#$00
 			sta	SYS_VIA_IFR			; Clear VIA interupt
 			stx	SYS_VIA_T2C_H			; Zero high byte of T2 Timer
 _LDD79:			ldx	#$08				; X=8 for Speech buffer
@@ -6557,7 +6562,7 @@ _BDD8D:			jsr	_OSBYTE_145			; Fetch Speech command byte from buffer
 ; &F5=command &C0-&FF (b0-b3=PHROM number), &F6/7=word number
 
 _BDDAB:			asl	ROM_PTR				; Multiply address by 2 to index into word table
-			rol	ROM_PTR_HI			; 
+			rol	ROM_PTR_HI			;
 			jsr	_LEE3B				; Read address from specified PHROM
 
 ; Speak from PHROM address
@@ -6576,13 +6581,13 @@ _BDDB8:			jsr	_OSBYTE_159			; Send command byte to Speech processor
 ; SOUND &FF00 - Speak from RAM without reset
 ; &6/7=Speech data
 
-_BDDBB:			ldy	ROM_PTR				
+_BDDBB:			ldy	ROM_PTR
 			jsr	_OSBYTE_159			; Send Speech data low byte
-			ldy	ROM_PTR_HI			
+			ldy	ROM_PTR_HI
 			jsr	_OSBYTE_159			; Send Speech data high byte
 			lsr	MOS_WS_1			; Shift loop counter
 			bne	_BDD7D				; Loop to send up to four byte-pairs
-_BDDC9:			rts					
+_BDDC9:			rts
 
 ;***********************************************************************
 ;*									 *
@@ -6593,7 +6598,7 @@ _BDDC9:			rts
 _POLL_TIMER_IRQ:	bcc	_POLL_ADC_IRQ			; bit 6 is in carry so if clear there is no 6 int
 								; so go on to DE47
 			lda	#$40				; Clear interrupt 6
-			sta	SYS_VIA_IFR			; 
+			sta	SYS_VIA_IFR			;
 
 ;UPDATE timers routine, There are 2 timer stores &292-6 and &297-B
 ;these are updated by adding 1 to the current timer and storing the
@@ -6626,7 +6631,7 @@ _BDDED:			inc	COUNTER_MSB-1,X			; increment byte and if
 			dex					; else decrement pointer
 			bne	_BDDED				; and if not 0 do it again
 			ldy	#$05				; process EVENT 5 interval timer
-			jsr	_OSEVEN				; 
+			jsr	_OSEVEN				;
 
 _BDDFA:			lda	INKEY_TIMER			; get byte of inkey countdown timer
 			bne	_BDE07				; if not 0 then DE07
@@ -6646,15 +6651,15 @@ _BDE0A:			bit	SOUND_SEMAPHORE			; read bit 7 of envelope processing byte
 _BDE1A:			bit	BUFFER_8_BUSY			; read speech buffer busy flag
 			bmi	_BDE2B				; if set speech buffer is empty, skip routine
 			jsr	_OSBYTE_158			; update speech system variables
-			eor	#$a0				; 
-			cmp	#$60				; 
+			eor	#$a0				;
+			cmp	#$60				;
 			bcc	_BDE2B				; if result >=&60 DE2B
 			jsr	_LDD79				; else more speech work
 
 _BDE2B:			bit	_BD9B7				; set V and C
 			jsr	_POLL_ACIA_IRQ			; check if ACIA needs attention
 			lda	KEYNUM_FIRST			; check if key has been pressed
-			ora	KEYNUM_LAST			; 
+			ora	KEYNUM_LAST			;
 			and	OSB_KEY_SEM			; (this is 0 if keyboard is to be ignored, else &FF)
 			beq	_BDE3E				; if 0 ignore keyboard
 			sec					; else set carry
@@ -6682,14 +6687,14 @@ _BDE4A:			ldx	OSB_ADC_CHAN			; else get current ADC channel
 			sta	ADC_CHAN4_LO,X			; and store it in hi byte
 			stx	ADC_CHAN_FLAG			; store in Analogue system flag marking last channel
 			ldy	#$03				; handle event 3 conversion complete
-			jsr	_OSEVEN				; 
+			jsr	_OSEVEN				;
 
 			dex					; decrement X
 			bne	_BDE69				; if X=0
 			ldx	OSB_ADC_MAX			; get highest ADC channel preseny
 _BDE69:			jsr	_LDE8F				; and start new conversion
 _BDE6C:			lda	#$10				; reset interrupt 4
-_LDE6E:			sta	SYS_VIA_IFR			; 
+_LDE6E:			sta	SYS_VIA_IFR			;
 			rts					; and return
 
 
@@ -6700,23 +6705,23 @@ _LDE6E:			sta	SYS_VIA_IFR			;
 ;*************************************************************************
 
 _BDE72:			rol					; get original bit 0 in bit 7 position
-			rol					; 
-			rol					; 
-			rol					; 
+			rol					;
+			rol					;
+			rol					;
 			bpl	_BDE7F				; if bit 7 clear not a keyboard interrupt
 			jsr	_LF065				; else scan keyboard
 			lda	#$01				; A=1
 			bne	_LDE6E				; and off to reset interrupt and exit
 
-_BDE7F:			jmp	_IRQ_UNKNOWN			; 
+_BDE7F:			jmp	_IRQ_UNKNOWN			;
 
 ;************** exit routine *********************************************
 
 			pla					; restore registers
-			tay					; 
-			pla					; 
-			tax					; 
-			pla					; 
+			tay					;
+			pla					;
+			tax					;
+			pla					;
 			sta	IRQ_COPY_A			; store A
 
 
@@ -6787,9 +6792,9 @@ _NVRDCH:		lda	#$00				; A=0 to flag wait forever
 
 _BDEC7:			sta	MOS_WS				; store entry value of A
 			txa					; save X and Y
-			pha					; 
-			tya					; 
-			pha					; 
+			pha					;
+			tya					;
+			pha					;
 			ldy	OSB_EXEC_HND			; get *EXEC file handle
 			beq	_BDEE6				; if 0 (not open) then DEE6
 			sec					; set carry
@@ -6813,19 +6818,19 @@ _BDEE6:			bit	ESCAPE_FLAG			; check ESCAPE flag, if bit 7 set Escape pressed
 			bvc	_BDEE6				; if entry was OSRDCH not timed keypress, so go back and
 								; do it again i.e. perform GET function
 			lda	INKEY_TIMER			; else check timers
-			ora	INKEY_TIMER_HI			; 
+			ora	INKEY_TIMER_HI			;
 			bne	_BDEE6				; and if not zero go round again
 			bcs	_BDF05				; else exit
 
-_BDF00:			sec					
-			lda	#$1b				
-_BDF03:			sta	MOS_WS				
-_BDF05:			pla					
-			tay					
-			pla					
-			tax					
-			lda	MOS_WS				
-			rts					
+_BDF00:			sec
+			lda	#$1b
+_BDF03:			sta	MOS_WS
+_BDF05:			pla
+			tay
+			pla
+			tax
+			lda	MOS_WS
+			rts
 
 
 ;**** STRINGS ****
@@ -6871,19 +6876,19 @@ _OSCLI_TABLE:		.byte	".",$e0,$31,$05			; *.	    &E031, A=5	   FSCV, XY=>String
 ;*************************************************************************
 
 _CLIV:			stx	TEXT_PTR			; Store XY in &F2/3
-			sty	TEXT_PTR_HI			
-			lda	#$08				
+			sty	TEXT_PTR_HI
+			lda	#$08
 			jsr	_OSCLI_FSCV			; Inform filing system CLI being processed
 			ldy	#$00				; Check the line is correctly terminated
-__cliv_not_newline:	lda	(TEXT_PTR),Y			
+__cliv_not_newline:	lda	(TEXT_PTR),Y
 			cmp	#$0d				; Loop until CR is found
-			beq	_BDF9E				
+			beq	_BDF9E
 			iny					; Move to next character
 			bne	__cliv_not_newline		; Loop back if less than 256 bytes long
 			rts					; Exit if string > 255 characters
 
 ; String is terminated - skip prepended spaces and '*'s
-_BDF9E:			ldy	#$ff				
+_BDF9E:			ldy	#$ff
 _BDFA0:			jsr	_SKIP_SPACES_NXT		; Skip any spaces
 			beq	__get_text_ptr_done		; Exit if at CR
 			cmp	#$2a				; Is this character '*'?
@@ -6902,49 +6907,49 @@ _BDFA0:			jsr	_SKIP_SPACES_NXT		; Skip any spaces
 
 ; Look command up in command table
 __cliv_not_slash:	sty	MOS_WS				; Store offset to start of command
-			ldx	#$00				
-			beq	_BDFD7				
+			ldx	#$00
+			beq	_BDFD7
 
-_BDFC4:			eor	_OSCLI_TABLE,X			
-			and	#$df				
-			bne	_BDFE2				
-			iny					
-			clc					
+_BDFC4:			eor	_OSCLI_TABLE,X
+			and	#$df
+			bne	_BDFE2
+			iny
+			clc
 
-_BDFCD:			bcs	_BDFF4				
-			inx					
-			lda	(TEXT_PTR),Y			
-			jsr	_LE4E3				
-			bcc	_BDFC4				
+_BDFCD:			bcs	_BDFF4
+			inx
+			lda	(TEXT_PTR),Y
+			jsr	_LE4E3
+			bcc	_BDFC4
 
-_BDFD7:			lda	_OSCLI_TABLE,X			
-			bmi	_BDFF2				
-			lda	(TEXT_PTR),Y			
-			cmp	#$2e				
-			beq	_BDFE6				
-_BDFE2:			clc					
-			ldy	MOS_WS				
-			dey					
-_BDFE6:			iny					
-			inx					
-_BDFE8:			inx					
-			lda	_MSG_COPYSYM + 2,X		
-			beq	__nobasic			
-			bpl	_BDFE8				
-			bmi	_BDFCD				
+_BDFD7:			lda	_OSCLI_TABLE,X
+			bmi	_BDFF2
+			lda	(TEXT_PTR),Y
+			cmp	#$2e
+			beq	_BDFE6
+_BDFE2:			clc
+			ldy	MOS_WS
+			dey
+_BDFE6:			iny
+			inx
+_BDFE8:			inx
+			lda	_MSG_COPYSYM + 2,X
+			beq	__nobasic
+			bpl	_BDFE8
+			bmi	_BDFCD
 
-_BDFF2:			inx					
-			inx					
+_BDFF2:			inx
+			inx
 
-_BDFF4:			dex					
-			dex					
-			pha					
-			lda	_MSG_COPYSYM + 5,X		
-			pha					
-			jsr	_SKIP_SPACE			
-			clc					
-			php					
-			jsr	_LE004				
+_BDFF4:			dex
+			dex
+			pha
+			lda	_MSG_COPYSYM + 5,X
+			pha
+			jsr	_SKIP_SPACE
+			clc
+			php
+			jsr	_LE004
 			rti					; Jump to routine
 
 _LE004:			lda	_OSCLI_TABLE + 2,X		; Get table parameter
@@ -6955,15 +6960,15 @@ _LE009:			tya					; Pass Y line offset to A for later
 			ldy	_OSCLI_TABLE + 2,X		; Get looked-up parameter from table
 
 ; Convert &F2/3,A to XY, put Y in A
-_GET_TEXT_PTR:		clc					
-			adc	TEXT_PTR			
-			tax					
+_GET_TEXT_PTR:		clc
+			adc	TEXT_PTR
+			tax
 			tya					; Pass supplied Y into A
-			ldy	TEXT_PTR_HI			
-			bcc	__get_text_ptr_done		
-			iny					
+			ldy	TEXT_PTR_HI
+			bcc	__get_text_ptr_done
+			iny
 
-__get_text_ptr_done:	rts					
+__get_text_ptr_done:	rts
 
 
 ; *BASIC
@@ -6983,87 +6988,87 @@ __nobasic:		ldy	MOS_WS				; Restore pointer to start of command
 			lda	#$03				; 3=PassCommandToFilingSystem
 
 ; Pass to current filing system
-_OSCLI_FSCV:		jmp	(VEC_FSCV)			
+_OSCLI_FSCV:		jmp	(VEC_FSCV)
 
-_OSBYTE_139:		asl	A				
-_OSBYTE_127:		and	#$01				
-			bpl	_OSCLI_FSCV			
+_OSBYTE_139:		asl	A
+_OSBYTE_127:		and	#$01
+			bpl	_OSCLI_FSCV
 
 ; Skip spaces
-_SKIP_SPACES_NXT:	iny					
-_SKIP_SPACE:		lda	(TEXT_PTR),Y			
-			cmp	#$20				
-			beq	_SKIP_SPACES_NXT		
-__compare_newline:	cmp	#$0d				
-			rts					
+_SKIP_SPACES_NXT:	iny
+_SKIP_SPACE:		lda	(TEXT_PTR),Y
+			cmp	#$20
+			beq	_SKIP_SPACES_NXT
+__compare_newline:	cmp	#$0d
+			rts
 
-_LE043:			bcc	_SKIP_SPACE			
-_SKIP_COMMA:		jsr	_SKIP_SPACE			
-			cmp	#$2c				
-			bne	__compare_newline		
-			iny					
-			rts					
+_LE043:			bcc	_SKIP_SPACE
+_SKIP_COMMA:		jsr	_SKIP_SPACE
+			cmp	#$2c
+			bne	__compare_newline
+			iny
+			rts
 
-_LE04E:			jsr	_SKIP_SPACE			
-			jsr	_CHECK_FOR_DIGIT		
-			bcc	__not_digit			
-_BE056:			sta	MOS_WS				
-			jsr	_CHECK_FOR_DIGIT_NXT		
-			bcc	_BE076				
-			tax					
-			lda	MOS_WS				
-			asl	A				
-			bcs	__not_digit			
-			asl	A				
-			bcs	__not_digit			
-			adc	MOS_WS				
-			bcs	__not_digit			
-			asl	A				
-			bcs	__not_digit			
-			sta	MOS_WS				
-			txa					
-			adc	MOS_WS				
-			bcs	__not_digit			
-			bcc	_BE056				
-_BE076:			ldx	MOS_WS				
-			cmp	#$0d				
-			sec					
-			rts					
+_LE04E:			jsr	_SKIP_SPACE
+			jsr	_CHECK_FOR_DIGIT
+			bcc	__not_digit
+_BE056:			sta	MOS_WS
+			jsr	_CHECK_FOR_DIGIT_NXT
+			bcc	_BE076
+			tax
+			lda	MOS_WS
+			asl	A
+			bcs	__not_digit
+			asl	A
+			bcs	__not_digit
+			adc	MOS_WS
+			bcs	__not_digit
+			asl	A
+			bcs	__not_digit
+			sta	MOS_WS
+			txa
+			adc	MOS_WS
+			bcs	__not_digit
+			bcc	_BE056
+_BE076:			ldx	MOS_WS
+			cmp	#$0d
+			sec
+			rts
 
-_CHECK_FOR_DIGIT_NXT:	iny					
-_CHECK_FOR_DIGIT:	lda	(TEXT_PTR),Y			
-			cmp	#$3a				
-			bcs	__not_digit			
-			cmp	#$30				
-			bcc	__not_digit			
-			and	#$0f				
-			rts					
+_CHECK_FOR_DIGIT_NXT:	iny
+_CHECK_FOR_DIGIT:	lda	(TEXT_PTR),Y
+			cmp	#$3a
+			bcs	__not_digit
+			cmp	#$30
+			bcc	__not_digit
+			and	#$0f
+			rts
 
-__next_field:		jsr	_SKIP_COMMA			
-__not_digit:		clc					
-			rts					
+__next_field:		jsr	_SKIP_COMMA
+__not_digit:		clc
+			rts
 
-_CHECK_FOR_HEX:		jsr	_CHECK_FOR_DIGIT		
-			bcs	__check_hex_done		
-			and	#$df				
-			cmp	#$47				
-			bcs	__next_field			
-			cmp	#$41				
-			bcc	__next_field			
-			php					
-			sbc	#$37				
-			plp					
-__check_hex_done:	iny					
-			rts					
+_CHECK_FOR_HEX:		jsr	_CHECK_FOR_DIGIT
+			bcs	__check_hex_done
+			and	#$df
+			cmp	#$47
+			bcs	__next_field
+			cmp	#$41
+			bcc	__next_field
+			php
+			sbc	#$37
+			plp
+__check_hex_done:	iny
+			rts
 
 ; WRCH control routine
 ; ====================
 _NVWRCH:		pha					; Save all registers
-			txa					
-			pha					
-			tya					
-			pha					
-			tsx					
+			txa
+			pha
+			tya
+			pha
+			tsx
 			lda	STACK+3,X			; Get A back from stack
 			pha					; Save A
 			bit	OSB_OSWRCH_INT			; Check OSWRCH interception flag
@@ -7117,17 +7122,17 @@ _BE0F7:			lda	#$10				; Check output destination
 			beq	_BE10D				; If not open, skip past SPOOL output
 			pla					; Get character back
 			pha					; Resave character
-			sec					
+			sec
 			ror	CRFS_ACTIVE			; Set RFS/CFS's 'spooling' flag
 			jsr	OSBPUT				; Write character to SPOOL channel
 			lsr	CRFS_ACTIVE			; Reset RFS/CFS's 'spooling' flag
 
 _BE10D:			pla					; Restore all registers
-			pla					
-			tay					
-			pla					
-			tax					
-			pla					
+			pla
+			tay
+			pla
+			tax
+			pla
 			rts					; Exit
 
 
@@ -7171,14 +7176,14 @@ _LE13A:			lda	OSB_PRINT_DEST			; check printer destination
 			ror	BUFFER_3_BUSY			; if carry is set then 2d2 is -ve
 			bmi	_BE190				; so return via E190
 			ldy	#$82				; else enable interrupt 1 of the external VIA
-			sty	USR_VIA_IER			; 
+			sty	USR_VIA_IER			;
 			sta	USR_VIA_IORA			; pass code to centronics port
 			lda	USR_VIA_PCR			; pulse CA2 line to generate STROBE signal
 			and	#$f1				; to advise printer that
 			ora	#$0c				; valid data is
 			sta	USR_VIA_PCR			; waiting
-			ora	#$0e				; 
-			sta	USR_VIA_PCR			; 
+			ora	#$0e				;
+			sta	USR_VIA_PCR			;
 			bne	_BE190				; then exit
 
 ;*********:serial printer *********************************************
@@ -7186,7 +7191,7 @@ _LE13A:			lda	OSB_PRINT_DEST			; check printer destination
 _BE164:			cmp	#$02				; is it Serial printer??
 			bne	_BE191				; if not E191
 			ldy	RS423_TIMEOUT			; else is RS423 in use by cassette??
-			dey					; 
+			dey					;
 			bpl	_LE1AD				; if so E1AD to flush buffer
 
 			lsr	BUFFER_3_BUSY			; else clear buffer busy flag
@@ -7194,7 +7199,7 @@ _LE170:			lsr	OSB_RS423_USE			; and RS423 busy flag
 _LE173:			jsr	_LE741				; count buffer if C is clear on return
 			bcc	_BE190				; no room in buffer so exit
 			ldx	#$20				; else
-_LE17A:			ldy	#$9f				; 
+_LE17A:			ldy	#$9f				;
 
 
 ;*************************************************************************
@@ -7209,7 +7214,7 @@ _OSBYTE_156:		php					; push flags
 			tya					; A=Y
 			stx	MOS_WS_0			; &FA=X
 			and	OSB_RS423_CTL			; A=old value AND Y EOR X
-			eor	MOS_WS_0			; 
+			eor	MOS_WS_0			;
 			ldx	OSB_RS423_CTL			; get old value in X
 _LE189:			sta	OSB_RS423_CTL			; put new value in
 			sta	ACIA_CSR			; and store to ACIA control register
@@ -7220,7 +7225,7 @@ _BE190:			rts					; and exit
 
 _BE191:			clc					; clear carry
 			lda	#$01				; A=1
-			jsr	_LE1A2				; 
+			jsr	_LE1A2				;
 
 
 ;*************************************************************************
@@ -7289,7 +7294,7 @@ _BE1CB:			jsr	_LE73B				; then enter via count purge vector any user routines
 
 _CNPV:			bvc	_BE1DA				; if bit 6 is set then E1DA
 			lda	BUFFER_0_OUT,X			; else start of buffer=end of buffer
-			sta	BUFFER_0_IN,X			; 
+			sta	BUFFER_0_IN,X			;
 			rts					; and exit
 
 _BE1DA:			php					; push flags
@@ -7343,9 +7348,9 @@ __buffer_save_done:	rts					; then return
 _CLEAR_OSFILE_CB:	pha					; push A
 			lda	#$00				; A=0
 			sta	OSFILE_CB,X			; clear osfile control block workspace
-			sta	OSFILE_CB_1,X			; 
-			sta	OSFILE_CB_2,X			; 
-			sta	OSFILE_CB_3,X			; 
+			sta	OSFILE_CB_1,X			;
+			sta	OSFILE_CB_2,X			;
+			sta	OSFILE_CB_3,X			;
 			pla					; get back A
 			rts					; and exit
 
@@ -7387,9 +7392,9 @@ _OSCLI_LOAD:		lda	#$ff				; signal that load is being performed
 ;on entry A=0 for save &ff for load
 
 _OSCLI_SAVE:		stx	TEXT_PTR			; store address of rest of command line
-			sty	TEXT_PTR_HI			; 
+			sty	TEXT_PTR_HI			;
 			stx	OSFILE_CB			; x and Y are stored in OSfile control block
-			sty	OSFILE_CB_1			; 
+			sty	OSFILE_CB_1			;
 			pha					; Push A
 			ldx	#$02				; X=2
 			jsr	_CLEAR_OSFILE_CB		; clear the shift register
@@ -7400,16 +7405,16 @@ _OSCLI_SAVE:		stx	TEXT_PTR			; store address of rest of command line
 _BE257:			jsr	_GSREAD				; read a code from text line if OK read next
 			bcc	_BE257				; until end of line reached
 			pla					; get back A without stack changes
-			pha					; 
+			pha					;
 			beq	_BE2C2				; IF A=0 (SAVE)	 E2C2
 			jsr	_LE2AD				; set up file block
 			bcs	_BE2A0				; if carry set do OSFILE
 			beq	_BE2A5				; else if A=0 goto OSFILE
 
-_LE267:			brk					; 
-			.byte	$fc				; 
+_LE267:			brk					;
+			.byte	$fc				;
 			.byte	"Bad address"			; error
-			brk					; 
+			brk					;
 
 
 ;*************************************************************************
@@ -7473,7 +7478,7 @@ _BE2C1:			rts					; and exit
 ;**************; set up OSfile control block ****************************
 
 _BE2C2:			ldx	#$0a				; X=0A
-			jsr	_LE2AD				; 
+			jsr	_LE2AD				;
 			bcc	_USERV				; if no hex digit found EXIT via BAD Command error
 			clv					; clear bit 6
 
@@ -7486,47 +7491,47 @@ _BE2C2:			ldx	#$0a				; X=0A
 			iny					; increment Y to point to hex group
 
 _BE2D4:			ldx	#$0e				; X=E
-			jsr	_LE2AD				; 
+			jsr	_LE2AD				;
 			bcc	_USERV				; if carry clear no hex digit so exit via error
 			php					; save flags
 			bvc	_BE2ED				; if V set them E2ED explicit end address found
 			ldx	#$fc				; else X=&FC
 			clc					; clear carry
 _BE2E1:			lda	$01fc,X				; and add length data to start address
-			adc	VEC_USERV,X			; 
-			sta	VEC_USERV,X			; 
-			inx					; 
+			adc	VEC_USERV,X			;
+			sta	VEC_USERV,X			;
+			inx					;
 			bne	_BE2E1				; repeat until X=0
 
 _BE2ED:			ldx	#$03				; X=3
 _BE2EF:			lda	OSFILE_CB_10,X			; copy start adddress to load and execution addresses
-			sta	OSFILE_CB_6,X			; 
-			sta	OSFILE_CB_2,X			; 
-			dex					; 
-			bpl	_BE2EF				; 
+			sta	OSFILE_CB_6,X			;
+			sta	OSFILE_CB_2,X			;
+			dex					;
+			bpl	_BE2EF				;
 			plp					; get back flag
 			beq	_BE2A5				; if end of command line reached then E2A5
 								; to do osfile
 			ldx	#$06				; else set up execution address
-			jsr	_LE2AD				; 
+			jsr	_LE2AD				;
 			bcc	_USERV				; if error BAD COMMAND
 			beq	_BE2A5				; and if end of line reached do OSFILE
 
 			ldx	#$02				; else set up load address
-			jsr	_LE2AD				; 
+			jsr	_LE2AD				;
 			bcc	_USERV				; if error BAD command
 			beq	_BE2A5				; else on end of line do OSFILE
 								; anything else is an error!!!!
 
 ;******** Bad command error ************************************
 
-_USERV:			brk					; 
+_USERV:			brk					;
 			.byte	$fe				; error number
-			.byte	"Bad command"			; 
-_BE31D:			brk					
-			.byte	$fb				; 
-			.byte	"Bad key"			; 
-			brk					
+			.byte	"Bad command"			;
+_BE31D:			brk
+			.byte	$fb				;
+			.byte	"Bad key"			;
+			brk
 
 
 ;*************************************************************************
@@ -7546,7 +7551,7 @@ _OSCLI_KEY:		jsr	_LE04E				; set up key number in A
 			pha					; to preserve text pointer
 			jsr	_LE3D1				; set up soft key definition
 			pla					; get back Y
-			tay					; 
+			tay					;
 			plp					; and flags
 			bne	_BE377				; if CR found return else E377 to set up new string
 			rts					; else return to set null string
@@ -7578,8 +7583,8 @@ _OSCLI_FX:		jsr	_LE04E				; convert the number to binary
 
 _OSCLI_OSBYTE:		pha					; save A
 			lda	#$00				; clear &E4/E5
-			sta	OSBYTE_PAR_2			; 
-			sta	OSBYTE_PAR_3			; 
+			sta	OSBYTE_PAR_2			;
+			sta	OSBYTE_PAR_3			;
 			jsr	_LE043				; skip commas and check for newline (CR)
 			beq	_BE36C				; if CR found E36C
 			jsr	_LE04E				; convert character to binary
@@ -7602,7 +7607,7 @@ _BE36C:			ldy	OSBYTE_PAR_3			; Y=third osbyte parameter
 
 ;********* *KEY CONTINUED ************************************************
 				; X points to last byte of current key definitions
-_BE377:			sec					; 
+_BE377:			sec					;
 			jsr	_GSINIT				; look for '"' on return bit 6 E4=1 bit 7=1 if '"'found
 								; this is a GSINIT call without initial CLC
 _BE37B:			jsr	_GSREAD				; call GSREAD carry is set if end of line found
@@ -7636,16 +7641,16 @@ _BE3A3:			dex					; decrement loop pointer X
 _LE3A8:			php					; push flags
 			sei					; bar interrupts
 			lda	$0b10				; get top of currently defined strings
-			sec					; 
+			sec					;
 			sbc	SOFTKEYS,Y			; subtract to get the number of bytes in strings
 								; above end of string Y
 			sta	MOS_WS_1			; store this
 			txa					; save X
-			pha					; 
+			pha					;
 			ldx	#$10				; and X=16
 
 _BE3B7:			lda	SOFTKEYS,X			; get start offset (from B00) of key string X
-			sec					; 
+			sec					;
 			sbc	SOFTKEYS,Y			; subtract offset of string we are working on
 			bcc	_BE3C8				; if carry clear (B00+Y>B00+X) or
 			beq	_BE3C8				; result (in A)=0
@@ -7657,7 +7662,7 @@ _BE3B7:			lda	SOFTKEYS,X			; get start offset (from B00) of key string X
 _BE3C8:			dex					; point to next lower key offset
 			bpl	_BE3B7				; and if 0 or +ve go back and do it again
 			pla					; else get back value of X
-			tax					; 
+			tax					;
 			lda	MOS_WS_1			; get back latest value of A
 			plp					; pull flags
 			rts					; and return
@@ -7682,28 +7687,28 @@ _LE3D1:			php					; push P
 								; error.  This stops *KEY 1 "*key1 FRED" etc.
 			beq	_BE3F6				; if not in use continue
 
-			brk					; 
+			brk					;
 			.byte	$fa				; error number
-			.byte	"Key in use"			; 
-			brk					; 
+			.byte	"Key in use"			;
+			brk					;
 
 _BE3F6:			dec	OSB_SOFTKEY_FLG			; decrement consistence flag to &FF to warn that key
 								; definitions are being changed
 			pla					; pull A
-			sec					; 
+			sec					;
 			sbc	MOS_WS_0			; subtract &FA
 			sta	MOS_WS_0			; and re store it
 			beq	_BE40D				; if 0 then E40D
 
 _BE401:			lda	$0b01,X				; else move string
 			sta	$0b01,Y				; from X to Y
-			iny					; 
-			inx					; 
+			iny					;
+			inx					;
 			dec	MOS_WS_0			; for length of string
-			bne	_BE401				; 
+			bne	_BE401				;
 
 _BE40D:			tya					; store end of moved string(s)
-			pha					; 
+			pha					;
 			ldy	MOS_WS				; get back key number
 			ldx	#$10				; point at top of last string
 
@@ -7712,7 +7717,7 @@ _BE413:			lda	SOFTKEYS,X			; get this value
 			bcc	_BE422				; if less then E422
 			beq	_BE422				; if = then E422
 			sbc	MOS_WS_1			; shift key definitions accordingly
-			sta	SOFTKEYS,X			; 
+			sta	SOFTKEYS,X			;
 _BE422:			dex					; point to next lowest string def
 			bpl	_BE413				; and if =>0 then loop and do it again
 			lda	$0b10				; else make top of key definitions
@@ -7739,26 +7744,26 @@ _BUFFER_HI_TABLE:	.byte	$03				; keyboard
 			.byte	$09				; speech
 
 ;**************** BUFFER ADDRESS LO LOOK UP TABLE ************************
-_BUFFER_LO_TABLE:	.byte	$00				
-			.byte	$00				
-			.byte	$c0				
-			.byte	$c0				
-			.byte	$50				
-			.byte	$60				
-			.byte	$70				
-			.byte	$80				
-			.byte	$00				
+_BUFFER_LO_TABLE:	.byte	$00
+			.byte	$00
+			.byte	$c0
+			.byte	$c0
+			.byte	$50
+			.byte	$60
+			.byte	$70
+			.byte	$80
+			.byte	$00
 
 ;**************** BUFFER START ADDRESS OFFSET ****************************
-_BUFFER_OFFSET_TABLE:	.byte	$e0				
-			.byte	$00				
-			.byte	$40				
-			.byte	$c0				
-			.byte	$f0				
-			.byte	$f0				
-			.byte	$f0				
-			.byte	$f0				
-			.byte	$c0				
+_BUFFER_OFFSET_TABLE:	.byte	$e0
+			.byte	$00
+			.byte	$40
+			.byte	$c0
+			.byte	$f0
+			.byte	$f0
+			.byte	$f0
+			.byte	$f0
+			.byte	$c0
 
 ;*******: get nominal buffer addresses in &FA/B **************************
 
@@ -7821,7 +7826,7 @@ _REMVB:			php					; push flags
 			lda	BUFFER_0_OUT,X			; get output pointer for buffer X
 			cmp	BUFFER_0_IN,X			; compare to input pointer
 			beq	_BE4E0				; if equal buffer is empty so E4E0 to exit
-			tay					; else A=Y
+			tay					; else Y=A
 			jsr	_GET_BUFFER_ADDRESS		; and get buffer pointer into FA/B
 			lda	(MOS_WS_0),Y			; read byte from buffer
 			bvs	_BE491				; if V is set (on input) exit with CARRY clear
@@ -7983,7 +7988,7 @@ _OSBYTE_153:		txa					; A=buffer number
 			tya					; get character back in A
 			bcs	_BE513				; and if escape disabled exit with carry clear
 			ldy	#$06				; else signal EVENT 6 Escape pressed
-			jsr	_OSEVEN				; 
+			jsr	_OSEVEN				;
 			bcc	_BE513				; if event handles ESCAPE then exit with carry clear
 			jsr	_OSBYTE_125			; else set ESCAPE flag
 _BE513:			clc					; clear carry
@@ -8001,8 +8006,8 @@ _BE515:			ror					; get bit 1 into carry
 _BE519:			tya					; A=Y get back original key code (&80-&FF)
 			pha					; PUSH A
 			lsr					; get high nybble into lo
-			lsr					; 
-			lsr					; 
+			lsr					;
+			lsr					;
 			lsr					; A=8-&F
 			eor	#$04				; and invert bit 2
 								; &8 becomes &C
@@ -8077,8 +8082,8 @@ _BE551:			tay					; Y=A
 ;BIT 7 not used
 
 			ror					; get bit 1 into carry
-			ror					; 
-			pla					; 
+			ror					;
+			pla					;
 			bcs	_BE539				; if carry is set E539 screen disabled
 			cmp	#$87				; else is it COPY key
 			beq	_BE5A6				; if so E5A6
@@ -8090,7 +8095,7 @@ _BE551:			tay					; Y=A
 			jsr	_LD8CE				; execute edit action
 
 			pla					; restore X
-			tax					; 
+			tax					;
 _LE577:			bit	OSB_OSRDCH_INT			; check econet RDCH flag
 			bpl	_BE581				; if not set goto E581
 			lda	#$06				; else Econet function 6
@@ -8109,7 +8114,7 @@ _BE581:			lda	OSB_SOFT_KEYLEN			; get length of keystring
 
 ;************** exit with carry clear ************************************
 
-_BE592:			clc					; 
+_BE592:			clc					;
 _BE593:			rts					; exit
 								;
 ;*** expand soft key strings *********************************************
@@ -8132,7 +8137,7 @@ _BE5A6:			txa					; A=X
 			tay					; Y=A
 			beq	_BE534				; if not valid A=0 so BEEP
 			pla					; else restore X
-			tax					; 
+			tax					;
 			tya					; and Y
 			clc					; clear carry
 			rts					; and exit
@@ -8341,7 +8346,7 @@ _OSBYTE_7:		eor	#$3f				; converts ASCII 8 to 7 binary and ASCII 7 to 8 binary
 			ora	MOS_WS_0			; and or with Accumulator
 			eor	MOS_WS_0			; zero the three bits set true
 			ora	MOS_WS_1			; set up data read from look up table + bit 6
-			ora	#$40				; 
+			ora	#$40				;
 			eor	OSB_SER_CAS_FLG			; write cassette/RS423 flag
 
 _LE6A7:			sta	OSB_SERPROC			; store serial ULA flag
@@ -8521,7 +8526,7 @@ _BE73E:			jmp	(VEC_CNPV)			; CNPV defaults to E1D1
 
 ;************* check RS423 input buffer ************************************
 
-_LE741:			sec					
+_LE741:			sec
 			ldx	#$01				; X=1 to point to buffer
 			jsr	_LE738				; and count it
 			cpy	#$01				; if the hi byte of the answer is 1 or more
@@ -8560,9 +8565,9 @@ _OSBYTE_128:		bmi	_BE732				; if X is -ve then E732 count spaces
 
 _BE75F:			lda	SYS_VIA_IORB			; read system VIA port B
 			ror					; move high nybble to low
-			ror					; 
-			ror					; 
-			ror					; 
+			ror					;
+			ror					;
+			ror					;
 			eor	#$ff				; and invert it
 			and	#$03				; isolate the FIRE buttons
 			ldy	ADC_CHAN_FLAG			; get analogue system flag byte
@@ -8585,8 +8590,8 @@ _BYTEV:			pha					; save A
 			php					; save Processor flags
 			sei					; disable interrupts
 			sta	OSW_A				; store A,X,Y in zero page
-			stx	OSW_X				; 
-			sty	OSW_Y				; 
+			stx	OSW_X				;
+			sty	OSW_Y				;
 			ldx	#$07				; X=7 to signal osbyte is being attempted
 			cmp	#$75				; if A=0-116
 			bcc	_BE7C2				; then E7C2
@@ -8597,7 +8602,7 @@ _BYTEV:			pha					; save A
 			clc					; clear carry
 
 _BE78A:			lda	#$a1				; A=&A1
-			adc	#$00				; 
+			adc	#$00				;
 
 ;********* process osbyte calls 117 - 160 *****************************
 
@@ -8620,7 +8625,7 @@ _BE793:			sty	OSW_Y				; store Y
 _BE7A2:			lda	_OSBYTE_TABLE + 1,Y		; get address from table
 			sta	MOS_WS_1			; store it as hi byte
 			lda	_OSBYTE_TABLE,Y			; repeat for lo byte
-			sta	MOS_WS_0			; 
+			sta	MOS_WS_0			;
 			lda	OSW_A				; restore A
 			ldy	OSW_Y				; Y
 			bcs	_BE7B6				; if carry is set E7B6
@@ -8685,8 +8690,8 @@ _WORDV:			pha					; Push A
 			php					; Push flags
 			sei					; disable interrupts
 			sta	OSW_A				; store A,X,Y
-			stx	OSW_X				; 
-			sty	OSW_Y				; 
+			stx	OSW_X				;
+			sty	OSW_Y				;
 			ldx	#$08				; X=8
 			cmp	#$e0				; if A=>224
 			bcs	_BE78A				; then E78A with carry set
@@ -8754,10 +8759,10 @@ _BE81E:			ldx	#$01				; X=1
 ;*************************************************************************
 
 _OSBYTE_0:		bne	_BE81E				; if A <> 0 then exit else print error
-			brk					; 
+			brk					;
 			.byte	$f7				; error number
 			.byte	"OS 1.20"			; error message
-			brk					
+			brk
 
 
 ;*************************************************************************
@@ -8782,9 +8787,9 @@ _OSBYTE_0:		bne	_BE81E				; if A <> 0 then exit else print error
 
 			.org	$e82d
 
-_OSWORD_7:		iny					
+_OSWORD_7:		iny
 			lda	(OSW_X),Y			; Get channel high byte byte
-			cmp	#$ff				
+			cmp	#$ff
 			beq	_SOUND_FF			; Channel &FFxx, speech command
 			cmp	#$20				; Is channel>=&20 ?
 			ldx	#$08				; Prepare X=8 for unrecognised OSWORD call
@@ -8792,7 +8797,7 @@ _OSWORD_7:		iny
 			dey					; Point back to channel low byte
 			jsr	_LE8C9				; Get Channel 0-3, and Cy if >=&10 for Flush
 			ora	#$04				; Convert to buffer number 4-7
-			tax					
+			tax
 			bcc	_BE848				; If not Flush, skip past
 			jsr	_LE1AE				; Flush buffer
 			ldy	#$01				; Point back to channel high byte
@@ -8800,19 +8805,19 @@ _OSWORD_7:		iny
 _BE848:			jsr	_LE8C9				; Get Sync 0-3, and Cy if >=&10 for Hold
 			sta	MOS_WS_0			; Save Sync in &FA
 			php					; Stack flags
-			ldy	#$06				
+			ldy	#$06
 			lda	(OSW_X),Y			; Get Duration byte
 			pha					; and stack it
-			ldy	#$04				
+			ldy	#$04
 			lda	(OSW_X),Y			; Get pitch byte
 			pha					; and stack it
-			ldy	#$02				; 
+			ldy	#$02				;
 			lda	(OSW_X),Y			; Get amplitude/envelope byte
 			rol					; Move Hold into bit 0
 			sec					; set carry
 			sbc	#$02				; subract 2
 			asl					; multiply by 4
-			asl					; 
+			asl					;
 			ora	MOS_WS_0			; add S byte (0-3)
 
 				; At this point,
@@ -8855,7 +8860,7 @@ _VDU_7:			php					; push P
 ; Insert sound pitch and duration into sound buffer
 
 _BE887:			sec					; Set carry
-			ror	SOUND_WORKSPACE,X		; Set bit 7 of channel flags to indicate it's active
+			ror	SOUND_QUEUE_OCC,X		; Set bit 7 of channel flags to indicate it's active
 			bmi	_BE8A4				; Jump forward to insert pitch and duration
 
 ; -------------------------------------------------------------------------
@@ -8919,10 +8924,10 @@ _BE8A4:			pla					; Get word number high byte or pitch back
 
 _OSWORD_8:		sbc	#$01				; set up appropriate displacement to storage area
 			asl					; A=(A-1)*16 or 15
-			asl					; 
-			asl					; 
-			asl					; 
-			ora	#$0f				; 
+			asl					;
+			asl					;
+			asl					;
+			ora	#$0f				;
 			tax					; X=A
 			lda	#$00				; A=0
 
@@ -9009,8 +9014,8 @@ _BE8EE:			pha					; store A
 			ldy	#$04				; Y=4
 _BE8F2:			lda	(OSW_X),Y			; and transfer all 5 bytes
 			sta	OSB_LAST_BREAK,X		; to the clock or timer
-			inx					; 
-			dey					; 
+			inx					;
+			dey					;
 			bpl	_BE8F2				; if Y>0 then E8F2
 			pla					; get back stack
 			bcs	_BE8E3				; if set (write to timer) E8E3 exit
@@ -9034,10 +9039,10 @@ _BE8F2:			lda	(OSW_X),Y			; and transfer all 5 bytes
 _OSWORD_0:		ldy	#$04				; Y=4
 
 _BE904:			lda	(OSW_X),Y			; transfer bytes 4,3,2 to 2B3-2B5
-			sta	INKEY_TIMER,Y			; 
+			sta	INKEY_TIMER,Y			;
 			dey					; decrement Y
 			cpy	#$02				; until Y=1
-			bcs	_BE904				; 
+			bcs	_BE904				;
 
 			lda	(OSW_X),Y			; get address of input buffer
 			sta	OSW_0_PTR_HI			; store it in &E9 as temporary buffer
@@ -9079,8 +9084,8 @@ _BE942:			cmp	#$15				; is it delete line &21
 			lda	#$7f				; else output DELETES
 
 _BE94B:			jsr	OSWRCH				; until Y=0
-			dey					; 
-			bne	_BE94B				; 
+			dey					;
+			bne	_BE94B				;
 
 			beq	_BE924				; then read character again
 
@@ -9201,7 +9206,7 @@ _OSBYTE_166_255:	tay					; Y=A
 			lda	$0190,Y				; i.e. A=&190 +osbyte call!
 			tax					; preserve this
 			and	OSW_Y				; new value = OLD value AND Y EOR X!
-			eor	OSW_X				; 
+			eor	OSW_X				;
 			sta	$0190,Y				; store it
 			lda	$0191,Y				; get value of next byte into A
 			tay					; Y=A
@@ -9270,7 +9275,7 @@ _OSBYTE_160:		ldy	VDU_G_WIN_L_HI,X		; get VDU variable hi
 ;*************************************************************************
 
 _OSBYTE_18:		lda	#$10				; set consistency flag
-			sta	OSB_SOFTKEY_FLG			; 
+			sta	OSB_SOFTKEY_FLG			;
 
 			ldx	#$00				; X=0
 
@@ -9307,7 +9312,7 @@ __led_escape:		plp					; get back flags
 				;
 _SET_LEDS_TEST_ESCAPE:	bcc	_BE9F5				; if carry clear
 			ldy	#$07				; switch on shift lock light
-			sty	SYS_VIA_IORB			; 
+			sty	SYS_VIA_IORB			;
 			dey					; Y=6
 			sty	SYS_VIA_IORB			; switch on Caps lock light
 _BE9F5:			bit	ESCAPE_FLAG			; set minus flag if bit 7 of &00FF is set indicating
@@ -9351,7 +9356,7 @@ _LEA00:			php					; save flags
 ;entry X contains value to write
 _OSBYTE_155:		txa					; A=X
 _LEA11:			eor	#$07				; convert to palette format
-			php					; 
+			php					;
 			sei					; prevent interrupts
 			sta	OSB_VIDPROC_PAL			; store as current palette setting
 			sta	VID_ULA_PALETTE			; store actual colour in register
@@ -9441,21 +9446,21 @@ _BEA87:			lda	#$7f				; else set bits 0 to 6 in A
 
 _BEA89:			clv					; clear V
 _BEA8A:			iny					; increment Y
-			ora	OSBYTE_PAR_2			; 
+			ora	OSBYTE_PAR_2			;
 			clc					; clear carry
 			rts					; Return
 								;
-_LEA8F:			brk					; 
+_LEA8F:			brk					;
 			.byte	$fd				; error number
 			.byte	"Bad string"			; message
-			brk					; 
+			brk					;
 
 ;************ Modify code as if SHIFT pressed *****************************
 
 _LEA9C:			cmp	#$30				; if A='0' skip routine
-			beq	_BEABE				; 
+			beq	_BEABE				;
 			cmp	#$40				; if A='@' skip routine
-			beq	_BEABE				; 
+			beq	_BEABE				;
 			bcc	_BEAB8				; if A<'@' then EAB8
 			cmp	#$7f				; else is it DELETE
 
@@ -9494,7 +9499,7 @@ _BEACB:			cmp	#$40				; if A<&40
 			and	#$1f				; else zero bits 5 to 7
 _BEAD1:			rts					; return
 								;
-			.byte	"/!BOOT",$0d			
+			.byte	"/!BOOT",$0d
 
 
 ; OS SERIES 8
@@ -9540,9 +9545,9 @@ _BEAF3:			rts					; and Exit
 ;*************************************************************************
 				; X is offset within page
 				; Y is byte to write
-_OSBYTE_147:		tya					; 
-			sta	FRED,X				; 
-			rts					; 
+_OSBYTE_147:		tya					;
+			sta	FRED,X				;
+			rts					;
 
 
 ;*************************************************************************
@@ -9553,9 +9558,9 @@ _OSBYTE_147:		tya					;
 				; X is offset within page
 				; Y is byte to write
 				;
-_OSBYTE_149:		tya					; 
-			sta	JIM,X				; 
-			rts					; 
+_OSBYTE_149:		tya					;
+			sta	JIM,X				;
+			rts					;
 
 
 ;*************************************************************************
@@ -9566,20 +9571,20 @@ _OSBYTE_149:		tya					;
 				; X is offset within page
 				; Y is byte to write
 				;
-_OSBYTE_151:		tya					; 
-			sta	CRTC_ADDRESS,X			; 
-			rts					; 
+_OSBYTE_151:		tya					;
+			sta	CRTC_ADDRESS,X			;
+			rts					;
 
 ;****************** Silence a sound channel *******************************
 				; X=channel number
 
 _LEB03:			lda	#$04				; mark end of release phase
-			sta	SOUND_AMPLITUDE,X		; to channel X
+			sta	SOUND_AMP_PHASE_CUR,X		; to channel X
 			lda	#$c0				; load code for zero volume
 
 ;****** if sound not disabled set sound generator volume ******************
 
-_LEB0A:			sta	SOUND_QUEUE,X			; store A to give basic sound level of Zero
+_LEB0A:			sta	SOUND_AMP_CUR,X			; store A to give basic sound level of Zero
 			ldy	OSB_SOUND_OFF			; get sound output/enable flag
 			beq	_BEB14				; if sound enabled goto EB14
 			lda	#$c0				; else load zero sound code
@@ -9587,33 +9592,33 @@ _BEB14:			sec					; set carry
 			sbc	#$40				; subtract &40
 			lsr					; divide by 8
 			lsr					; to get into bits 0 - 3
-			lsr					; 
+			lsr					;
 			eor	#$0f				; invert bits 0-3
 			ora	_LEB3C,X			; get channel number into top nybble
-			ora	#$10				; 
+			ora	#$10				;
 
-_LEB21:			php					; 
+_LEB21:			php					;
 
 _LEB22:			sei					; disable interrupts
 			ldy	#$ff				; System VIA port A all outputs
 			sty	SYS_VIA_DDRA			; set
-			sta	SYS_VIA_IORB_NH			; output A on port A
+			sta	SYS_VIA_IORA_NH			; output A on port A
 			iny					; Y=0
 			sty	SYS_VIA_IORB			; enable sound chip
 			ldy	#$02				; set and
 _BEB31:			dey					; execute short delay
-			bne	_BEB31				; 
+			bne	_BEB31				;
 			ldy	#$08				; then disable sound chip again
-			sty	SYS_VIA_IORB			; 
+			sty	SYS_VIA_IORB			;
 			ldy	#$04				; set delay
 _BEB3B:			dey					; and loop delay
-_LEB3C:			bne	_BEB3B				; 
+_LEB3C:			bne	_BEB3B				;
 			plp					; get back flags
 			rts					; and exit
 
 ;*******: Sound parameters look up table **********************************
 
-			.byte	$e0,$c0,$a0,$80			
+			.byte	$e0,$c0,$a0,$80
 
 _BEB44:			jmp	_LEC59				; just to allow relative branches in early part
 								; of sound interrupt routine
@@ -9625,7 +9630,10 @@ _BEB44:			jmp	_LEC59				; just to allow relative branches in early part
 ;*									 *
 ;*************************************************************************
 
-_SOUND_IRQ:		lda	#$00				; 
+
+
+
+_SOUND_IRQ:		lda	#$00				;
 			sta	SOUND_SYNC_HOLD_COUNT		; zero number of channels on hold for sync
 			lda	SOUND_SYNC_CHANS		; get number of channels required for sync
 			bne	_BEB57				; if this <>0 then EB57
@@ -9634,48 +9642,48 @@ _SOUND_IRQ:		lda	#$00				;
 
 _BEB57:			ldx	#$08				; set loop counter
 _LEB59:			dex					; loop
-			lda	SOUND_WORKSPACE,X		; get value of &800 +offset (sound queue occupancy)
+			lda	SOUND_QUEUE_OCC,X		; get value of &800 +offset (sound queue occupancy)
 			beq	_BEB44				; if 0 goto EC59 no sound this channel
 			lda	BUFFER_0_BUSY,X			; else get buffer busy flag
 			bmi	_BEB69				; if negative (buffer empty) goto EB69
-			lda	SOUND_STEPS,X			; else if duration count not zer0
+			lda	SOUND_DURATION,X			; else if duration count not zer0
 			bne	_BEB6C				; goto EB6C
 _BEB69:			jsr	_LEC6B				; check and pick up new sound if required
-_BEB6C:			lda	SOUND_STEPS,X			; if duration count 0
+_BEB6C:			lda	SOUND_DURATION,X			; if duration count 0
 			beq	_BEB84				; goto EB84
 			cmp	#$ff				; else if it is &FF (infinite duration)
 			beq	_BEB87				; go onto EB87
-			dec	SOUND_DURATION,X		; decrement 10 mS count
+			dec	SOUND_DURATION_SUB,X		; decrement 10 mS count
 			bne	_BEB87				; and if 0
 			lda	#$05				; reset to 5
-			sta	SOUND_DURATION,X		; to give 50 mSec delay
-			dec	SOUND_STEPS,X			; and decrement main counter
+			sta	SOUND_DURATION_SUB,X		; to give 50 mSec delay
+			dec	SOUND_DURATION,X			; and decrement main counter
 			bne	_BEB87				; if not zero then EB87
 _BEB84:			jsr	_LEC6B				; else check and get nw sound
-_BEB87:			lda	SOUND_ENV_REPEAT,X		; if step progress counter is 0 no envelope involved
+_BEB87:			lda	SOUND_ENV_STEPREPEAT,X		; if step progress counter is 0 no envelope involved
 			beq	_BEB91				; so jump to EB91
-			dec	SOUND_ENV_REPEAT,X		; else decrement it
+			dec	SOUND_ENV_STEPREPEAT,X		; else decrement it
 			bne	_BEB44				; and if not zero go on to EC59
-_BEB91:			ldy	SOUND_INTERVAL_MUL,X		; get  envelope data offset from (8C0)
+_BEB91:			ldy	SOUND_ENVELOPE_OFFS,X		; get  envelope data offset from (8C0)
 			cpy	#$ff				; if 255 no envelope set so
 			beq	_BEB44				; goto EC59
 			lda	ENV_STEP,Y			; else get get step length
 			and	#$7f				; zero repeat bit
-			sta	SOUND_ENV_REPEAT,X		; and store it
-			lda	SOUND_AMPLITUDE,X		; get phase counter
+			sta	SOUND_ENV_STEPREPEAT,X		; and store it
+			lda	SOUND_AMP_PHASE_CUR,X		; get phase counter
 			cmp	#$04				; if release phase completed
 			beq	_BEC07				; goto EC07
-			lda	SOUND_AMPLITUDE,X		; else start new step by getting phase
-			clc					; 
-			adc	SOUND_INTERVAL_MUL,X		; add it to interval multiplier
+			lda	SOUND_AMP_PHASE_CUR,X		; else start new step by getting phase
+			clc					;
+			adc	SOUND_ENVELOPE_OFFS,X		; add it to interval multiplier
 			tay					; transfer to Y
 			lda	ENV_ALA,Y			; and get target value base for envelope
-			sec					; 
-			sbc	#$3f				; 
+			sec					;
+			sbc	#$3f				;
 			sta	SOUND_AMP_TARGET		; store modified number as current target amplitude
 			lda	ENV_AA,Y			; get byte from envelope store
 			sta	SOUND_AMP_STEP			; store as current amplitude step
-			lda	SOUND_QUEUE,X			; get base volumelevel
+			lda	SOUND_AMP_CUR,X			; get base volumelevel
 			pha					; save it
 			clc					; clear carry
 			adc	SOUND_AMP_STEP			; add to current amplitude step
@@ -9689,68 +9697,68 @@ _BEB91:			ldy	SOUND_INTERVAL_MUL,X		; get  envelope data offset from (8C0)
 				; &C0 (0) to &38 (-15) 3 times, In fact last 3 bits
 				; are ignored so &3F represents -15
 
-_BEBCF:			sta	SOUND_QUEUE,X			; store in current volume
+_BEBCF:			sta	SOUND_AMP_CUR,X			; store in current volume
 			rol					; multiply by 2
-			eor	SOUND_QUEUE,X			; if bits 6 and 7 are equal
+			eor	SOUND_AMP_CUR,X			; if bits 6 and 7 are equal
 			bpl	_BEBE1				; goto &EBE1
 			lda	#$3f				; if carry clear A=&3F (maximum)
 			bcc	_BEBDE				; or
 			eor	#$ff				; &C0 minimum
 
-_BEBDE:			sta	SOUND_QUEUE,X			; and this is stored in current volume
+_BEBDE:			sta	SOUND_AMP_CUR,X			; and this is stored in current volume
 
 _BEBE1:			dec	SOUND_AMP_STEP			; decrement amplitude change per step
-			lda	SOUND_QUEUE,X			; get volume again
+			lda	SOUND_AMP_CUR,X			; get volume again
 			sec					; set carry
 			sbc	SOUND_AMP_TARGET		; subtract target value
 			eor	SOUND_AMP_STEP			; negative value undicates correct trend
 			bmi	_BEBF9				; so jump to next part
 			lda	SOUND_AMP_TARGET		; else enter new phase
-			sta	SOUND_QUEUE,X			; 
-			inc	SOUND_AMPLITUDE,X		; 
+			sta	SOUND_AMP_CUR,X			;
+			inc	SOUND_AMP_PHASE_CUR,X		;
 
 _BEBF9:			pla					; get the old volume level
-			eor	SOUND_QUEUE,X			; and compare with the old
-			and	#$f8				; 
+			eor	SOUND_AMP_CUR,X			; and compare with the old
+			and	#$f8				;
 			beq	_BEC07				; if they are the same goto EC07
-			lda	SOUND_QUEUE,X			; else set new level
+			lda	SOUND_AMP_CUR,X			; else set new level
 			jsr	_LEB0A				; via EB0A
-_BEC07:			lda	SOUND_PITCH,X			; get absolute pitch value
+_BEC07:			lda	SOUND_PITCH_PHASE_CUR,X			; get absolute pitch value
 			cmp	#$03				; if it =3
 			beq	_LEC59				; skip rest of loop as all sections are finished
-			lda	SOUND_PITCH_PHASES,X		; else if 814,X is not 0 current section is not
+			lda	SOUND_PITCH_PH_STEPS,X		; else if 814,X is not 0 current section is not
 								; complete
 			bne	_BEC3D				; so EC3D
-			inc	SOUND_PITCH,X			; else implement a section change
-			lda	SOUND_PITCH,X			; check if its complete
+			inc	SOUND_PITCH_PHASE_CUR,X		; else implement a section change
+			lda	SOUND_PITCH_PHASE_CUR,X		; check if its complete
 			cmp	#$03				; if not
 			bne	_BEC2D				; goto EC2D
-			ldy	SOUND_INTERVAL_MUL,X		; else set A from
+			ldy	SOUND_ENVELOPE_OFFS,X		; else set A from
 			lda	ENV_STEP,Y			; &820 and &8C0 (first envelope byte)
 			bmi	_LEC59				; if negative there is no repeat
 			lda	#$00				; else restart section sequence
-			sta	SOUND_PITCH_SETTING,X		; 
-			sta	SOUND_PITCH,X			; 
+			sta	SOUND_PITCH_SETTING,X		;
+			sta	SOUND_PITCH_PHASE_CUR,X		;
 
-_BEC2D:			lda	SOUND_PITCH,X			; get number of steps in new section
-			clc					; 
-			adc	SOUND_INTERVAL_MUL,X		; 
-			tay					; 
-			lda	ENV_PN1,Y			; 
-			sta	SOUND_PITCH_PHASES,X		; set in 814+X
+_BEC2D:			lda	SOUND_PITCH_PHASE_CUR,X		; get number of steps in new section
+			clc					;
+			adc	SOUND_ENVELOPE_OFFS,X		;
+			tay					;
+			lda	ENV_PN1,Y			;
+			sta	SOUND_PITCH_PH_STEPS,X		; set in 814+X
 			beq	_LEC59				; and if 0 then EC59
 
-_BEC3D:			dec	SOUND_PITCH_PHASES,X		; decrement
-			lda	SOUND_INTERVAL_MUL,X		; and pick up rate of pitch change
-			clc					; 
-			adc	SOUND_PITCH,X			; 
-			tay					; 
-			lda	ENV_PI1,Y			; 
-			clc					; 
+_BEC3D:			dec	SOUND_PITCH_PH_STEPS,X		; decrement
+			lda	SOUND_ENVELOPE_OFFS,X		; and pick up rate of pitch change
+			clc					;
+			adc	SOUND_PITCH_PHASE_CUR,X		;
+			tay					;
+			lda	ENV_PI1,Y			;
+			clc					;
 			adc	SOUND_PITCH_SETTING,X		; add to rate of differential pitch change
 			sta	SOUND_PITCH_SETTING,X		; and save it
-			clc					; 
-			adc	SOUND_AMP_PHASES,X		; ad to base pitch
+			clc					;
+			adc	SOUND_AMP_BASE_PITCH,X		; ad to base pitch
 			jsr	_LED01				; and set new pitch
 
 _LEC59:			cpx	#$04				; if X=4 (last channel)
@@ -9764,11 +9772,11 @@ _BEC62:			dex					; loop
 			bne	_BEC62				; do it again
 _BEC6A:			rts					; and return
 								;
-_LEC6B:			lda	SOUND_AMPLITUDE,X		; check for last channel
+_LEC6B:			lda	SOUND_AMP_PHASE_CUR,X		; check for last amplitude phase
 			cmp	#$04				; is it 4 (release complete)
 			beq	_BEC77				; if so EC77
 			lda	#$03				; else mark release in progress
-			sta	SOUND_AMPLITUDE,X		; and store it
+			sta	SOUND_AMP_PHASE_CUR,X		; and store it
 _BEC77:			lda	BUFFER_0_BUSY,X			; is buffer not empty
 			beq	_BEC90				; if so EC90
 			lda	#$00				; else mark buffer not empty
@@ -9776,46 +9784,46 @@ _BEC77:			lda	BUFFER_0_BUSY,X			; is buffer not empty
 
 			ldy	#$04				; loop counter
 _BEC83:			sta	SOUND_SYNC_HOLD_PARAM-1,Y	; zero sync bytes
-			dey					; 
+			dey					;
 			bne	_BEC83				; until Y=0
 
-			sta	SOUND_STEPS,X			; zero duration count
+			sta	SOUND_DURATION,X			; zero duration count
 			dey					; and set sync count to
 			sty	SOUND_SYNC_CHANS		; &FF
-_BEC90:			lda	SOUND_NOTE_REMAIN,X		; get synchronising flag
+_BEC90:			lda	SOUND_SYNC_FLAG,X		; get synchronising flag
 			beq	_BECDB				; if its 0 then ECDB
 			lda	SOUND_SYNC_HOLD_COUNT		; else get number of channels on hold
 			beq	_LECD0				; if 0 then ECD0
 			lda	#$00				; else
-			sta	SOUND_NOTE_REMAIN,X		; zero note length interval
+			sta	SOUND_SYNC_FLAG,X		; zero sync flag
 _BEC9F:			jmp	_LED98				; and goto ED98
 
 _LECA2:			jsr	_LEB03				; silence the channel
 			tya					; Y=0 A=Y
-			sta	SOUND_STEPS,X			; zero main count
+			sta	SOUND_DURATION,X			; zero main count
 			sta	BUFFER_0_BUSY,X			; mark buffer not empty
-			sta	SOUND_WORKSPACE,X		; mark channel dormant
+			sta	SOUND_QUEUE_OCC,X		; mark channel dormant
 			ldy	#$03				; loop counter
 _BECB1:			sta	SOUND_SYNC_HOLD_PARAM,Y		; zero sync flags
-			dey					; 
-			bpl	_BECB1				; 
+			dey					;
+			bpl	_BECB1				;
 
 			sty	SOUND_SYNC_CHANS		; number of channels to &FF
 			bmi	_BED06				; jump to ED06 ALWAYS
 
 _BECBC:			php					; save flags
 			sei					; and disable interrupts
-			lda	SOUND_AMPLITUDE,X		; check for end of release
-			cmp	#$04				; 
+			lda	SOUND_AMP_PHASE_CUR,X		; check for end of release
+			cmp	#$04				;
 			bne	_BECCF				; and if not found ECCF
 			jsr	_OSBYTE_152			; elseexamine buffer
 			bcc	_BECCF				; if not empty ECCF
 			lda	#$00				; else mark channel dormant
-			sta	SOUND_WORKSPACE,X		; 
+			sta	SOUND_QUEUE_OCC,X		;
 _BECCF:			plp					; get back flags
 
-_LECD0:			ldy	SOUND_INTERVAL_MUL,X		; if no envelope 820=&FF
-			cpy	#$ff				; 
+_LECD0:			ldy	SOUND_ENVELOPE_OFFS,X		; if no envelope 820=&FF
+			cpy	#$ff				;
 			bne	_BECDA				; then terminate sound
 			jsr	_LEB03				; via EB03
 _BECDA:			rts					; else return
@@ -9823,12 +9831,12 @@ _BECDA:			rts					; else return
 ;************ Synchronise sound routines **********************************
 
 _BECDB:			jsr	_OSBYTE_152			; examine buffer if empty carry set
-			bcs	_BECBC				; 
+			bcs	_BECBC				;
 			and	#$03				; else examine next word if>3 or 0
 			beq	_BEC9F				; goto ED98 (via EC9F)
 			lda	SOUND_SYNC_CHANS		; else get synchronising count
 			beq	_BECFE				; in 0 (complete) goto ECFE
-			inc	SOUND_NOTE_REMAIN,X		; else set sync flag
+			inc	SOUND_SYNC_FLAG,X		; else set sync flag
 			bit	SOUND_SYNC_CHANS		; if 0838 is +ve S has already been set so
 			bpl	_BECFB				; jump to ECFB
 			jsr	_OSBYTE_152			; else get first byte
@@ -9850,23 +9858,23 @@ _BED06:			sta	SOUND_SYNC_HOLD_PARAM,X		; store new pitch
 ;*********** Noise setting ************************************************
 
 			and	#$0f				; convert to chip format
-			ora	_LEB3C,X			; 
+			ora	_LEB3C,X			;
 			php					; save flags
 			jmp	_LED95				; and pass to chip control routine at EB22 via ED95
 
-_BED16:			pha					; 
-			and	#$03				; 
+_BED16:			pha					;
+			and	#$03				;
 			sta	SOUND_WS_0			; lose eigth tone surplus
-			lda	#$00				; 
-			sta	SOUND_FREQ_LO			; 
+			lda	#$00				;
+			sta	SOUND_FREQ_LO			;
 			pla					; get back A
-			lsr					; divide by 12
-			lsr					; 
-_BED24:			cmp	#$0c				; 
-			bcc	_BED2F				; 
+			lsr					; divide by 48
+			lsr					;
+_BED24:			cmp	#$0c				;
+			bcc	_BED2F				;
 			inc	SOUND_FREQ_LO			; store result
 			sbc	#$0c				; with remainder in A
-			bne	_BED24				; 
+			bne	_BED24				;
 								; at this point 83D defines the Octave
 								; A the semitone within the octave
 _BED2F:			tay					; Y=A
@@ -9880,45 +9888,45 @@ _BED2F:			tay					; Y=A
 			sta	SOUND_FREQ_HI			; save them
 			pla					; pull second table byte
 			lsr					; push hi nybble into lo nybble
-			lsr					; 
-			lsr					; 
-			lsr					; 
+			lsr					;
+			lsr					;
+			lsr					;
 			sta	SOUND_WS_3			; store it
-			lda	SOUND_FREQ_LO			; get back octave number
+			lda	SOUND_FREQ_LO			; lo byte from table lookup in TABLE_1
 			ldy	SOUND_WS_0			; adjust for surplus eighth tones
-			beq	_BED5F				; 
-_BED53:			sec					; 
-			sbc	SOUND_WS_3			; 
-			bcs	_BED5C				; 
-			dec	SOUND_FREQ_HI			; 
-_BED5C:			dey					; 
-			bne	_BED53				; 
-_BED5F:			sta	SOUND_FREQ_LO			; 
-			pla					; 
-			tay					; 
-			beq	_BED6F				; 
-_BED66:			lsr	SOUND_FREQ_HI			; 
-			ror	SOUND_FREQ_LO			; 
-			dey					; 
-			bne	_BED66				; 
-_BED6F:			lda	SOUND_FREQ_LO			; 
-			clc					; 
-			adc	_LC43D,X			; 
-			sta	SOUND_FREQ_LO			; 
-			bcc	_BED7E				; 
-			inc	SOUND_FREQ_HI			; 
-_BED7E:			and	#$0f				; 
-			ora	_LEB3C,X			; 
+			beq	_BED5F				;
+_BED53:			sec					;
+			sbc	SOUND_WS_3			;
+			bcs	_BED5C				;
+			dec	SOUND_FREQ_HI			;
+_BED5C:			dey					;
+			bne	_BED53				;
+_BED5F:			sta	SOUND_FREQ_LO			;
+			pla					;
+			tay					;
+			beq	_BED6F				;
+_BED66:			lsr	SOUND_FREQ_HI			;
+			ror	SOUND_FREQ_LO			;
+			dey					;
+			bne	_BED66				;
+_BED6F:			lda	SOUND_FREQ_LO			;
+			clc					;
+			adc	_LC43D,X			;
+			sta	SOUND_FREQ_LO			;
+			bcc	_BED7E				;
+			inc	SOUND_FREQ_HI			;
+_BED7E:			and	#$0f				;
+			ora	_LEB3C,X			;
 			php					; push P
 			sei					; bar interrupts
 			jsr	_LEB21				; set up chip access 1
-			lda	SOUND_FREQ_LO			; 
-			lsr	SOUND_FREQ_HI			; 
-			ror					; 
-			lsr	SOUND_FREQ_HI			; 
-			ror					; 
-			lsr					; 
-			lsr					; 
+			lda	SOUND_FREQ_LO			;
+			lsr	SOUND_FREQ_HI			;
+			ror					;
+			lsr	SOUND_FREQ_HI			;
+			ror					;
+			lsr					;
+			lsr					;
 _LED95:			jmp	_LEB22				; set up chip access 2 and return
 
 ;**************** Pick up and interpret sound buffer data *****************
@@ -9930,9 +9938,9 @@ _LED98:			php					; push flags
 			and	#$04				; isolate H bit
 			beq	_BEDB7				; if 0 then EDB7
 			pla					; get back A
-			ldy	SOUND_INTERVAL_MUL,X		; if &820,X=&FF
+			ldy	SOUND_ENVELOPE_OFFS,X		; if &820,X=&FF
 			cpy	#$ff				; envelope is not in use
-			bne	_BEDAD				; 
+			bne	_BEDAD				;
 			jsr	_LEB03				; so call EB03 to silence channel
 
 _BEDAD:			jsr	_OSBYTE_145			; clear buffer of redundant data
@@ -9946,61 +9954,61 @@ _BEDB7:			pla					; get back A
 			bcc	_BEDC8				; if zero (envelope) jump to EDC8
 			eor	#$ff				; invert A
 			lsr					; shift right
-			sec					; 
+			sec					;
 			sbc	#$40				; subtract &40
 			jsr	_LEB0A				; and set volume
 			lda	#$ff				; A=&FF
 
-_BEDC8:			sta	SOUND_INTERVAL_MUL,X		; get envelope no.-1 *16 into A
+_BEDC8:			sta	SOUND_ENVELOPE_OFFS,X		; get envelope no.-1 *16 into A
 			lda	#$05				; set duration sub-counter
-			sta	SOUND_DURATION,X		; 
+			sta	SOUND_DURATION_SUB,X		;
 			lda	#$01				; set phase counter
-			sta	SOUND_ENV_REPEAT,X		; 
+			sta	SOUND_ENV_STEPREPEAT,X		;
 			lda	#$00				; set step counter
-			sta	SOUND_PITCH_PHASES,X		; 
-			sta	SOUND_AMPLITUDE,X		; and envelope phase
+			sta	SOUND_PITCH_PH_STEPS,X		;
+			sta	SOUND_AMP_PHASE_CUR,X		; and envelope phase
 			sta	SOUND_PITCH_SETTING,X		; and pitch differential
-			lda	#$ff				; 
-			sta	SOUND_PITCH,X			; set step count
+			lda	#$ff				;
+			sta	SOUND_PITCH_PHASE_CUR,X			; set step count
 			jsr	_OSBYTE_145			; read pitch
-			sta	SOUND_AMP_PHASES,X		; set it
+			sta	SOUND_AMP_BASE_PITCH,X		; set it
 			jsr	_OSBYTE_145			; read buffer
-			plp					; 
+			plp					;
 			pha					; save duration
-			lda	SOUND_AMP_PHASES,X		; get back pitch value
+			lda	SOUND_AMP_BASE_PITCH,X		; get back pitch value
 			jsr	_LED01				; and set it
 			pla					; get back duration
-_LEDF7:			sta	SOUND_STEPS,X			; set it
+_LEDF7:			sta	SOUND_DURATION,X			; set it
 			rts					; and return
 
 ;********************* Pitch look up table 1*****************************
-_SOUND_PITCH_TABLE_1:	.byte	$f0				
-			.byte	$b7				
-			.byte	$82				
-			.byte	$4f				
-			.byte	$20				
-			.byte	$f3				
-			.byte	$c8				
-			.byte	$a0				
-			.byte	$7b				
-			.byte	$57				
-			.byte	$35				
-			.byte	$16				
+_SOUND_PITCH_TABLE_1:	.byte	$f0
+			.byte	$b7
+			.byte	$82
+			.byte	$4f
+			.byte	$20
+			.byte	$f3
+			.byte	$c8
+			.byte	$a0
+			.byte	$7b
+			.byte	$57
+			.byte	$35
+			.byte	$16
 
 ;********************* Pitch look up table 2 *****************************
 
-_SOUND_PITCH_TABLE_2:	.byte	$e7				
-			.byte	$d7				
-			.byte	$cb				
-			.byte	$c3				
-			.byte	$b7				
-			.byte	$aa				
-			.byte	$a2				
-			.byte	$9a				
-			.byte	$92				
-			.byte	$8a				
-			.byte	$82				
-			.byte	$7a				
+_SOUND_PITCH_TABLE_2:	.byte	$e7
+			.byte	$d7
+			.byte	$cb
+			.byte	$c3
+			.byte	$b7
+			.byte	$aa
+			.byte	$a2
+			.byte	$9a
+			.byte	$92
+			.byte	$8a
+			.byte	$82
+			.byte	$7a
 
 ;*********: set current filing system ROM/PHROM **************************
 _LEE13:			lda	#$ef				; get ROM
@@ -10010,12 +10018,12 @@ _LEE13:			lda	#$ef				; get ROM
 ;********** Get byte from data ROM ***************************************
 
 _LEE18:			ldx	#$0d				; X=13
-			inc	RFS_SELECT			; 
+			inc	RFS_SELECT			;
 			ldy	RFS_SELECT			; get Rom
 			bpl	__rfs_read_pagedrom		; if +ve it's a sideways ROM else it's a PHROM
 			ldx	#$00				; PHROM
 			stx	ROM_PTR_HI			; set address pointer in PHROM
-			inx					; 
+			inx					;
 			stx	ROM_PTR				; to 0001
 			jsr	_LEEBB				; pass info to speech processor
 			ldx	#$03				; X=3
@@ -10023,27 +10031,27 @@ _LEE18:			ldx	#$0d				; X=13
 _BEE2C:			jsr	_RFS_READ_PHROM			; check for speech processor and output until
 								; it reports, read byte from ROM
 			cmp	_MSG_COPYSYM,X			; if A<> DF0C+X then EE18 (DF0C = (C))
-			bne	_LEE18				; 
+			bne	_LEE18				;
 			dex					; else decrement X
 			bpl	_BEE2C				; and do it again
-			lda	#$3e				; 
+			lda	#$3e				;
 			sta	ROM_PTR				; get noe lo byte address
 _LEE3B:			jsr	_LEEBB				; pass info to speech processor
-			ldx	#$ff				; 
+			ldx	#$ff				;
 _BEE40:			jsr	_RFS_READ_PHROM			; check for speech proc. etc.
-			ldy	#$08				; 
-_BEE45:			asl					; 
-			ror	ROM_PTR_HI,X			; 
-			dey					; 
-			bne	_BEE45				; 
-			inx					; 
-			beq	_BEE40				; 
-			clc					; 
-			bcc	_LEEBB				; 
+			ldy	#$08				;
+_BEE45:			asl					;
+			ror	ROM_PTR_HI,X			;
+			dey					;
+			bne	_BEE45				;
+			inx					;
+			beq	_BEE40				;
+			clc					;
+			bcc	_LEEBB				;
 
 ;************ ROM SERVICE ************************************************
 
-_RFS_READ_ROM:		ldx	#$0e				; 
+_RFS_READ_ROM:		ldx	#$0e				;
 			ldy	RFS_SELECT			; if Y is negative (PHROM)
 			bmi	_RFS_READ_PHROM			; GOTO EE62
 			ldy	#$ff				; else Y=255
@@ -10081,10 +10089,10 @@ _LEE71:			pha					; push A
 			ror					; bring upper nybble to lower nybble
 			ror					; by rotate right
 			ror					; 4 times
-			ror					; 
+			ror					;
 
 _LEE7A:			and	#$0f				; Y=lo nybble A +&40
-			ora	#$40				; 
+			ora	#$40				;
 			tay					; forming command for speech processor
 
 
@@ -10106,16 +10114,16 @@ _BEE82:			php					; push flags
 _BEE84:			bit	OSB_SPCH_FOUND			; test for prescence of speech processor
 			bpl	_BEEAA				; if not there goto EEAA
 			pha					; else push A
-			lda	_SPEECH_DATA,Y			; 
+			lda	_SPEECH_DATA,Y			;
 			sta	SYS_VIA_DDRA			; set DDRA of system VIA to give 8 bit input (Y=0)
 								; or 8 bit output (Y=1)
 			pla					; get back A
-			sta	SYS_VIA_IORB_NH			; and send to speech chip
+			sta	SYS_VIA_IORA_NH			; and send to speech chip
 			lda	_SPEECH_DATA+2,Y		; output Prt B of system VIA
 			sta	SYS_VIA_IORB			; to select read or write (dependent on Y)
 _BEE9A:			bit	SYS_VIA_IORB			; loop until
 			bmi	_BEE9A				; speech proceessor reports ready (bit 7 Prt B=0)
-			lda	SYS_VIA_IORB_NH			; read speech processor data if	 input selected
+			lda	SYS_VIA_IORA_NH			; read speech processor data if	 input selected
 			pha					; push A
 			lda	_SPEECH_DATA+4,Y		; reset speech
 			sta	SYS_VIA_IORB			; processor
@@ -10127,7 +10135,7 @@ _BEEAA:			plp					; get back flags
 								;
 _LEEAD:			lda	CFS_RFS_LO			; set rom displacement pointer
 			sta	ROM_PTR				; in &F6
-			lda	CFS_RFS_HI			; 
+			lda	CFS_RFS_HI			;
 			sta	ROM_PTR_HI			; And &F7
 			lda	RFS_SELECT			; if F5 is +ve ROM is selected so
 			bpl	_BEED9				; goto EED9
@@ -10137,14 +10145,14 @@ _LEEBB:			php					; else push processor
 			lda	ROM_PTR				; get lo displacement
 			jsr	_LEE71				; pass two nyblles to speech proc.
 			lda	RFS_SELECT			; &FA=&F5
-			sta	MOS_WS_0			; 
+			sta	MOS_WS_0			;
 			lda	ROM_PTR_HI			; get hi displacement value
 			rol					; replace two most significant bits of A
 			rol					; by 2 LSBs of &FA
-			lsr	MOS_WS_0			; 
-			ror					; 
-			lsr	MOS_WS_0			; 
-			ror					; 
+			lsr	MOS_WS_0			;
+			ror					;
+			lsr	MOS_WS_0			;
+			ror					;
 			jsr	_LEE71				; pass two nybbles to speech processor
 			lda	MOS_WS_0			; FA has now been divided by 4 so pass
 			jsr	_LEE7A				; lower nybble to speech proc.
@@ -10157,7 +10165,7 @@ _BEED9:			rts					; and Return
 
 			.org	$eeda
 
-_LEEDA:			ldx	#$ff				; 
+_LEEDA:			ldx	#$ff				;
 			lda	KEYNUM_FIRST			; get value of most recently pressed key
 			ora	KEYNUM_LAST			; Or it with previous key to check for presses
 			bne	_BEEE8				; if A=0 no keys pressed so off you go
@@ -10179,7 +10187,7 @@ _SET_LEDS:		php					; save flags
 			ora	#$06				; returns 6 if caps lock OFF &E if on
 			sta	SYS_VIA_IORB			; turn on or off caps light if required
 			lsr					; bring shift bit into bit 3
-			ora	#$07				; 
+			ora	#$07				;
 			sta	SYS_VIA_IORB			; turn on or off shift	lock light
 			jsr	_LF12E				; set keyboard counter
 			pla					; get back flags
@@ -10256,7 +10264,7 @@ _BEF42:			stx	KEYNUM_FIRST			; store X in last key pressed
 			ldx	#$00				; else zero
 			stx	KEYNUM_FIRST			; last key pressed
 _BEF4A:			jsr	_LF01F				; and reset repeat system
-_BEF4D:			jmp	_LEFE9				; 
+_BEF4D:			jmp	_LEFE9				;
 
 ;********** REPEAT ACTION *************************************************
 
@@ -10281,7 +10289,7 @@ _BEF50:			cpx	KEYNUM_FIRST			; if X<>than last key pressed
 _LEF74:			sta	OSB_KEY_STATUS			; reset keyboard status
 			lda	#$00				; and set timer
 			sta	AUTO_REPEAT_TIMER		; to 0
-_BEF7B:			jmp	_LEFE9				; 
+_BEF7B:			jmp	_LEFE9				;
 
 _BEF7E:			cpx	#$c0				; if not CAPS LOCK
 			bne	_BEF91				; goto EF91
@@ -10337,7 +10345,7 @@ _BEFD1:			cmp	OSB_ESCAPE			; if A<> ESCAPE code
 			bne	_BEFDD				; if ESCAPE returns ASCII code goto EFDD
 			stx	AUTO_REPEAT_TIMER		; store in Auto repeat countdown timer
 
-_BEFDD:			tay					; 
+_BEFDD:			tay					;
 			jsr	_LF129				; disable keyboard
 			lda	OSB_KEY_DISABLE			; read Keyboard disable flag used by Econet
 			bne	_LEFE9				; if keyboard locked goto EFE9
@@ -10380,10 +10388,10 @@ _BF012:			lda	KEYNUM_FIRST			; get previous key press
 ;**************** Set Autorepeat countdown timer **************************
 
 _LF01F:			ldx	#$01				; set timer to 1
-			stx	AUTO_REPEAT_TIMER		; 
+			stx	AUTO_REPEAT_TIMER		;
 			ldx	OSB_KEY_DELAY			; get next timer value
 			stx	KEY_REPEAT_CNT			; and store it
-			rts					; 
+			rts					;
 
 ;*************** Interrogate Keyboard routine ***********************
 				;
@@ -10391,9 +10399,9 @@ _KEYBOARD_SCAN:		ldy	#$03				; stop Auto scan
 			sty	SYS_VIA_IORB			; by writing to system VIA
 			ldy	#$7f				; set bits 0 to 6 of port A to input on bit 7
 								; output on bits 0 to 6
-			sty	SYS_VIA_DDRA			; 
-			stx	SYS_VIA_IORB_NH			; write X to Port A system VIA
-			ldx	SYS_VIA_IORB_NH			; read back &80 if key pressed (M set)
+			sty	SYS_VIA_DDRA			;
+			stx	SYS_VIA_IORA_NH			; write X to Port A system VIA
+			ldx	SYS_VIA_IORA_NH			; read back &80 if key pressed (M set)
 			rts					; and return
 
 
@@ -10419,7 +10427,7 @@ _KEY_TRANS_TABLE_1:	.byte	$71,$33,$34,$35,$84,$38,$87,$2d,$5e,$8c
 _OSBYTE_120:		sty	KEYNUM_FIRST			; store Y as latest key pressed
 			stx	KEYNUM_LAST			; store X as previous key pressed
 			rts					; and exit
-			brk					
+			brk
 
 ; key data block 2
 
@@ -10427,7 +10435,7 @@ _KEY_TRANS_TABLE_2:	.byte	$80,$77,$65,$74,$37,$69,$39,$30,$5f,$8e
 								; f0,w ,e ,t ,7 ,i ,9 ,0 ,_ ,lft
 
 _LF055:			jmp	($fdfe)				; Jim paged entry vector
-_LF058:			jmp	(MOS_WS_0)			; 
+_LF058:			jmp	(MOS_WS_0)			;
 
 ; key data block 3
 
@@ -10450,9 +10458,9 @@ _KEY_TRANS_TABLE_4:	.byte	$01,$61,$78,$66,$79,$6a,$6b,$40,$3a,$0d
 								; CL,a ,x ,f ,y ,j ,k ,@ ,: ,RETN  N.B CL=CAPS LOCK
 
 ; speech routine data
-_SPEECH_DATA:		.byte	$00,$ff				
-			.byte	$01,$02				
-			.byte	$09,$0a				
+_SPEECH_DATA:		.byte	$00,$ff
+			.byte	$01,$02
+			.byte	$09,$0a
 
 ; key data block 5
 
@@ -10467,8 +10475,8 @@ _KEY_TRANS_TABLE_5:	.byte	$02,$73,$63,$67,$68,$6e,$6c,$3b,$5d,$7f
 ;*************************************************************************
 
 _OSBYTE_131:		ldy	OSB_OSHWM_CUR			; read current OSHWM
-			ldx	#$00				; 
-			rts					; 
+			ldx	#$00				;
+			rts					;
 
 ; key data block 6
 
@@ -10524,14 +10532,14 @@ _OSBYTE_21:		cpx	#$09				; is X<9?
 ;*		 Issue *HELP to ROMS					 *
 ;*									 *
 ;*************************************************************************
-_OSCLI_HELP:		ldx	#$09				; 
-			jsr	_OSBYTE_143			; 
+_OSCLI_HELP:		ldx	#$09				;
+			jsr	_OSBYTE_143			;
 			jsr	_PRINT_MSG			; print following message routine return after BRK
 			.byte	$0d				; carriage return
 			.byte	"OS 1.20"			; help message
 			.byte	$0d				; carriage return
-			brk					; 
-			rts					; 
+			brk					;
+			rts					;
 
 ;*************************************************************************
 ;*									 *
@@ -10558,7 +10566,7 @@ _OSBYTE_121:		bcs	_LF068				; if carry set (by osbyte 121) F068
 ;*************************************************************************
 
 _LF0D1:			txa					; if X is +ve goto F0D9
-			bpl	_BF0D9				; 
+			bpl	_BF0D9				;
 			jsr	_KEYBOARD_SCAN			; else interrogate keyboard
 			bcs	_LF12E				; if carry set F12E to set Auto scan else
 _BF0D9:			php					; push flags
@@ -10568,25 +10576,25 @@ _BF0DE:			sta	$01df,Y				; can be 2cb,2cc or 2cd
 			ldx	#$09				; set X to 9
 _BF0E3:			jsr	_LF129				; select auto scan
 			lda	#$7f				; set port A for input on bit 7 others outputs
-			sta	SYS_VIA_DDRA			; 
+			sta	SYS_VIA_DDRA			;
 			lda	#$03				; stop auto scan
-			sta	SYS_VIA_IORB			; 
+			sta	SYS_VIA_IORB			;
 			lda	#$0f				; select non-existent keyboard column F (0-9 only!)
-			sta	SYS_VIA_IORB_NH			; 
+			sta	SYS_VIA_IORA_NH			;
 			lda	#$01				; cancel keyboard interrupt
-			sta	SYS_VIA_IFR			; 
-			stx	SYS_VIA_IORB_NH			; select column X (9 max)
+			sta	SYS_VIA_IFR			;
+			stx	SYS_VIA_IORA_NH			; select column X (9 max)
 			bit	SYS_VIA_IFR			; if bit 1 =0 there is no keyboard interrupt so
 			beq	_BF123				; goto F123
 			txa					; else put column address in A
 
 _BF103:			cmp	$01df,Y				; compare with 1DF+Y
 			bcc	_BF11E				; if less then F11E
-			sta	SYS_VIA_IORB_NH			; else select column again
-			bit	SYS_VIA_IORB_NH			; and if bit 7 is 0
+			sta	SYS_VIA_IORA_NH			; else select column again
+			bit	SYS_VIA_IORA_NH			; and if bit 7 is 0
 			bpl	_BF11E				; then F11E
 			plp					; else push and pull flags
-			php					; 
+			php					;
 			bcs	_BF127				; and if carry set goto F127
 			pha					; else Push A
 			eor	$0000,Y				; EOR with EC,ED, or EE depending on Y value
@@ -10599,8 +10607,8 @@ _BF11E:			clc					; else clear carry
 			bpl	_BF103				; and do it again if 0=<result<128
 _BF123:			dex					; decrement X
 			bpl	_BF0E3				; scan again if greater than 0
-			txa					; 
-_BF127:			tax					; 
+			txa					;
+_BF127:			tax					;
 			plp					; pull flags
 
 _LF129:			jsr	_LF12E				; call autoscan
@@ -10634,7 +10642,7 @@ _OSBYTE_140_141:	eor	#$8c				; if it's *TAPE A=0 *ROM A=1
 _LF137:			asl					; double it
 			sta	OSB_CFSRFC_SW			; store it in filing system flag store
 			cpx	#$03				; if X>=3 C set X=3 Z set
-			jmp	_LF14B				; 
+			jmp	_LF14B				;
 
 ;******** set cassette options *******************************************
 				; called after BREAK etc
@@ -10661,7 +10669,7 @@ _LF140:			php					; save flags
 _LF14B:			php					; push flags
 			lda	#$06				; get close files command to FSCV
 			jsr	_OSCLI_FSCV			; and gosub OSFSC
-			ldx	#$06				; 
+			ldx	#$06				;
 			plp					; get back flags
 			beq	_BF157				; if Z set earlier
 			dex					; do not decrement X
@@ -10671,10 +10679,10 @@ _BF157:			stx	CFS_BAUD_RATE			; set current baud rate X=5 300 baud X=6 1200 baud
 ;**********   to F27D, F18E, F4C9, F529, FFA6, F3CA, F1B1 ******************
 
 			ldx	#$0e				; RESET VECTORS FOR FILE RELATED OPERATIONS
-__vec_reset_loop:	lda	_VECTOR_TABLE + $11,X		; 
-			sta	VEC_USERV + $11,X		; 
-			dex					; 
-			bne	__vec_reset_loop		; 
+__vec_reset_loop:	lda	_VECTOR_TABLE + $11,X		;
+			sta	VEC_USERV + $11,X		;
+			dex					;
+			bne	__vec_reset_loop		;
 
 			stx	CRFS_PROGRESS			; &C2=0 PROGRESS FLAG
 			ldx	#$0f				; set X to make Rom service call &F claim vectors!
@@ -10699,7 +10707,7 @@ _OSBYTE_143:		lda	ROM_SELECT			; Get current ROM number
 
 				; Issue service call loop
 _BF16E:			inc	ROM_TABLE,X			; Read bit 7 on ROM type table (no ROM has type 254 &FE)
-			dec	ROM_TABLE,X			; 
+			dec	ROM_TABLE,X			;
 			bpl	_BF183				; If not set (+ve result), step to next ROM down
 			stx	ROM_SELECT			; Otherwise, select this ROM, &F4 RAM copy
 			stx	ROM_LATCH			; Page in selected ROM
@@ -10803,7 +10811,7 @@ _BF1D7:			pha					; save A on stack
 			lda	CFS_LOAD_LO,X			; get load address
 			sta	CRFS_LOAD,X			; store it as current load address
 			pla					; get back A
-			and	CRFS_LOAD,X			; 
+			and	CRFS_LOAD,X			;
 			dex					; X=X-1
 			bpl	_BF1D7				; until all 4 bytes copied
 
@@ -10822,17 +10830,17 @@ _BF1ED:			lda	CFS_BLK_FLAG			; block flag
 
 _LF1F6:			jsr	_LFAF2				; enable second processor and reset serial system
 
-			brk					; 
+			brk					;
 			.byte	$d5				; error number	;; was &E5
-			.byte	"Locked"			; 
-			brk					; 
+			.byte	"Locked"			;
+			brk					;
 
 _BF202:			bcc	_BF209				; if carry clear F209
 			lda	#$03				; else A=3
 			sta	OSB_ESC_BRK			; store to cause ESCAPE disable and memory
 								; clear on break
 
-_BF209:			lda	#$30				; 
+_BF209:			lda	#$30				;
 			and	CRFS_OPTS			; current OPTions
 			beq	_BF213				; if options and #&30 =0 ignore error condition is set
 			lda	CRFS_CRC_RESULT			; else get checksum result
@@ -10902,7 +10910,7 @@ _BF274:			jmp	_LEA8F				; else Bad String error
 ;************* terminate Filename ****************************************
 
 _BF277:			lda	#$00				; terminate filename with 0
-			sta	CFS_FIND_NAME,X			; 
+			sta	CFS_FIND_NAME,X			;
 			rts					; return
 
 
@@ -10962,7 +10970,7 @@ __crfs_param_copy:	lda	(CRFS_OSFILE_PTR),Y		; copy parameters to Cassette block 
 			sta	CRFS_LOAD-2,Y			; make second copy at B0-B8
 			iny					; Y=Y+1
 			cpy	#$0a				; until Y=10
-			bne	__crfs_param_copy		; 
+			bne	__crfs_param_copy		;
 
 			pla					; get back A
 			beq	_BF2A7				; if A=0 F2A7
@@ -10979,7 +10987,7 @@ _BF2AD:			lda	(CRFS_OSFILE_PTR),Y		; OSFILE parameter  block
 			sta	$00a6,Y				; store to Zero page copy (&B0 to &B7)
 			iny					; data start and data end address
 			cpy	#$12				; until Y=18
-			bne	_BF2AD				; 
+			bne	_BF2AD				;
 			txa					; A=X
 			beq	_BF274				; if X=0 no filename found so B274 else BAD STRING error
 
@@ -10996,9 +11004,9 @@ _BF2C8:			sec					; set carry flag
 _BF2CB:			lda	CRFS_EXEC + 65283,X		; set 03C8/A block length and block flag
 			sbc	CRFS_LOAD + 65283,X		; to B4/6-B0/2 the number of pages (blocks) to be
 								; saved
-			sta	CFS_BLK_LEN - $fd,X		; 
+			sta	CFS_BLK_LEN - $fd,X		;
 			inx					; X=X+1
-			bne	_BF2CB				; 
+			bne	_BF2CB				;
 
 			tay					; Y=A
 			bne	_BF2E8				; if last byte is non zero F2E8 else
@@ -11071,11 +11079,11 @@ _FSCV_CAT:		lda	#$08				; A=8
 			jsr	_LFAFC				; perform read
 _LF33B:			lda	#$f7				; A=&F7
 _LF33D:			and	CRFS_STATUS			; clear bit 3 of CFS status bit
-_BF33F:			sta	CRFS_STATUS			; 
+_BF33F:			sta	CRFS_STATUS			;
 _BF341:			rts					; return
 
 _LF342:			lda	#$40				; set bit 6 of E2 cassette options
-_LF344:			ora	CRFS_STATUS			; 
+_LF344:			ora	CRFS_STATUS			;
 			bne	_BF33F				; and Jump F33F
 
 ;********** search routine ***********************************************
@@ -11119,10 +11127,10 @@ _BF37D:			pla					; get back A
 
 			lda	CFS_BLK_NUM			; block number
 			cmp	CRFS_NEXT_BLK			; next block no. lo
-			bne	_BF39C				; 
+			bne	_BF39C				;
 			lda	CFS_BLK_NUM_HI			; block number hi
 			cmp	CRFS_NEXT_BLK_HI		; next block no. hi
-			bne	_BF39C				; 
+			bne	_BF39C				;
 _BF39A:			pla					; get back A
 			rts					; return
 								;
@@ -11141,7 +11149,7 @@ _BF3AE:			bvc	_BF3B5				; if carry clear F3B5
 _BF3B5:			ldx	#$00				; X=0
 			jsr	_LF9D9				; report 'DATA?'
 			lda	OSB_CFSRFC_SW			; filing system flag 0=CFS 2=RFS
-			beq	_BF3C3				; 
+			beq	_BF3C3				;
 			bit	CRFS_OPTS			; current OPTions
 			bvc	_BF3A1				; long messages not required if BIT 6 =0
 _BF3C3:			bit	CFS_BLK_FLAG			; block flag
@@ -11248,16 +11256,16 @@ _BF43E:			inx					; X=X+1
 
 _BF44B:			sta	BPUT_LOAD_LO-1,X		; set 38C/93 to &FF
 			dex					; X=X-1
-			bne	_BF44B				; 
+			bne	_BF44B				;
 
 			txa					; A=X=0
 			ldx	#$14				; X=14
 _BF454:			sta	BPUT_FILENAME,X			; BPUT file header block
 			inx					; X=X+1
 			cpx	#$1e				; this zeros 394/D
-			bne	_BF454				; 
+			bne	_BF454				;
 
-			rol	BPUT_BLK_LEN_HI			; 
+			rol	BPUT_BLK_LEN_HI			;
 			jsr	_CFS_CLAIM_SERIAL		; Set cassette optionsinto (BB),set C7=6
 								; claim serial system for cassette
 			jsr	_LF934				; prompt to start recording
@@ -11295,7 +11303,7 @@ _LF496:			jsr	_LFB1A				; claim serial system and set OPTions
 _BF49B:			lda	BPUT_LOAD_LO,X			; copy header block from 38C-39D
 			sta	CFS_LOAD_LO,X			; to 3BE/DF
 			dex					; X=X-1
-			bpl	_BF49B				; 
+			bpl	_BF49B				;
 								; X=&FF
 			stx	CRFS_LOAD_VHI			; current load address high word
 			stx	CRFS_LOAD_XHI			; current load address high word
@@ -11310,7 +11318,7 @@ _BF49B:			lda	BPUT_LOAD_LO,X			; copy header block from 38C-39D
 			jsr	_LFBE2				; set up CFS for write operation
 			jsr	_LF7EC				; write block to Tape
 			inc	BPUT_BLK_NUM			; block number lo
-			bne	_BF4C8				; 
+			bne	_BF4C8				;
 			inc	BPUT_BLK_NUM_HI			; block number hi
 _BF4C8:			rts					; return
 
@@ -11376,10 +11384,10 @@ _BF51B:			sta	CRFS_BLK_OFFSET			; file status or temporary store
 _BF51D:			inc	CFS_BGET_OFFSET			; BGET buffer offset for next byte
 			jmp	_LF471				; exit via F471
 
-_BF523:			brk					; 
+_BF523:			brk					;
 			.byte	$df				; error number
-			.byte	"EOF"				; 
-			brk					; 
+			.byte	"EOF"				;
+			brk					;
 
 
 ;*************************************************************************
@@ -11439,7 +11447,7 @@ _FSCV_OPT:		txa					; A=X
 			cpx	#$03				; if X=3
 			beq	_BF573				; F573 to set interblock gap
 			cpy	#$03				; else if Y>2 then BAD COMMAND error
-			bcs	_BF55E				; 
+			bcs	_BF55E				;
 			dex					; X=X-1
 			beq	_BF561				; i.e. if X=1 F561 message control
 			dex					; X=X-1
@@ -11514,8 +11522,8 @@ __crfs_read_acia:	lda	ACIA_CSR			; ACIA status register
 			pha					; save A on stack
 			and	#$02				; clear all but bits 0,1 A=(0-3)
 			beq	_BF5A9				; if 0 F5A9 transmit data register full or RDR empty
-			ldy	CFS_SERIAL_CTRL			; 
-			beq	_BF5A9				; 
+			ldy	CFS_SERIAL_CTRL			;
+			beq	_BF5A9				;
 			pla					; get back A
 			lda	CRFS_BLK_LAST			; character temporary storage
 			sta	ACIA_TXRX			; ACIA transmit data register
@@ -11524,8 +11532,8 @@ __crfs_read_acia:	lda	ACIA_CSR			; ACIA status register
 _BF5A9:			ldy	ACIA_TXRX			; read ACIA recieve data register
 			pla					; get back A
 			lsr					; bit 2 to carry (data carrier detect)
-			lsr					; 
-			lsr					; 
+			lsr					;
+			lsr					;
 
 _BF5B0:			ldx	CRFS_PROGRESS			; progress flag
 			beq	_BF61D				; if &C2=0 exit
@@ -11535,7 +11543,7 @@ _BF5B0:			ldx	CRFS_PROGRESS			; progress flag
 
 			ldy	#$02				; Y=2
 
-			bne	_BF61B				; 
+			bne	_BF61B				;
 _BF5BD:			dex					; X=X-1
 			bne	_BF5D3				; if &C2>2
 			bcs	_BF61D				; if carrier tone from cassette not detected  exit
@@ -11549,7 +11557,7 @@ _BF5BD:			dex					; X=X-1
 			bne	_BF61B				; goto F61B
 _BF5D3:			dex					; X=X-1
 			bne	_BF5E2				; if &C2>3
-			bcs	_BF5DC				; 
+			bcs	_BF5DC				;
 			sty	CRFS_BLK_LAST			; get character read into Y
 			beq	_BF61D				; if 0 exit via F61D
 _BF5DC:			lda	#$80				; else A=&80
@@ -11568,7 +11576,7 @@ _BF5E2:			dex					; X=X-1
 			jsr	_LFBD3				; check if second processor file test tube prescence
 			beq	_BF5FD				; if return with A=0 F5FD
 			stx	TUBE_FIFO3			; Tube FIFO3
-			bne	_BF600				; 
+			bne	_BF600				;
 
 _BF5FD:			txa					; A=X restore value
 			sta	(CRFS_LOAD),Y			; store to current load address
@@ -11605,7 +11613,7 @@ _FSCV_EOF:		pha					; save A on stack
 			lda	#$03				; A=3
 			jsr	_LFB9C				; confirm file is open
 			lda	CRFS_STATUS			; CFS status byte
-			and	#$40				; 
+			and	#$40				;
 			tax					; X=A
 			pla					; get back A
 			tay					; Y=A
@@ -11623,9 +11631,9 @@ _LF637:			lda	CRFS_EXEC			; current block no. lo
 			sta	CRFS_NEXT_BLK_HI		; next block no. hi
 			jsr	_CRFS_PRINT_MSG			; print message following call
 
-			.byte	"Searching"			; 
+			.byte	"Searching"			;
 			.byte	$0d				; newline
-			brk					; 
+			brk					;
 
 			lda	#$ff				; A=&FF
 			jsr	_LF348				; read data from CFS/RFS
@@ -11635,21 +11643,21 @@ _LF637:			lda	CRFS_EXEC			; current block no. lo
 			sta	CRFS_EXEC			; current block no. lo
 			lda	CRFS_NEXT_BLK			; next block no. lo
 			ora	CRFS_NEXT_BLK_HI		; next block no. hi
-			bne	_BF66D				; 
+			bne	_BF66D				;
 			sta	CRFS_EXEC			; current block no. lo
 			sta	CRFS_EXEC_HI			; current block no. hi
 			lda	CRFS_CRC_RESULT			; checksum result
-			bne	_BF66D				; 
+			bne	_BF66D				;
 			ldx	#$b1				; current load address
 			jsr	_LFB81				; copy from 301/C+X to 3D2/C sought filename
 _BF66D:			lda	OSB_CFSRFC_SW			; filing system flag 0=CFS 2=RFS
 			beq	_BF685				; if cassette F685
-			bvs	_BF685				; 
+			bvs	_BF685				;
 
-_BF674:			brk					; 
+_BF674:			brk					;
 			.byte	$d6				; Error number
-			.byte	"File not found"		
-			brk					; 
+			.byte	"File not found"
+			brk					;
 
 _BF685:			ldy	#$ff				; Y=&FF
 			sty	CFS_LAST_FLAGS			; copy of last read block flag
@@ -11673,7 +11681,7 @@ _OSCLI_EXEC:		php					; save flags on stack
 			ldy	OSB_EXEC_HND			; EXEC file handle
 			sta	OSB_EXEC_HND			; EXEC file handle
 			beq	_BF69B				; if not 0 close file via OSFIND
-			jsr	OSFIND				; 
+			jsr	OSFIND				;
 _BF69B:			ldy	MOS_WS				; else Y= original Y
 			plp					; get back flags
 			beq	_BF6AB				; if A=0 on entry exit else
@@ -11720,7 +11728,7 @@ _BF6EE:			lda	CFS_BLK_LEN,X			; read bytes from block flag/block length
 			bpl	_BF6EE				; until X=-1 (&FF)
 
 			bit	CFS_BLOCK_FLAG			; block flag of currently resident block
-			bpl	_BF6FF				; 
+			bpl	_BF6FF				;
 			jsr	_LF249				; print newline if needed
 _BF6FF:			jmp	_LFAF2				; enable second processor and reset serial system
 _BF702:			jsr	_LF637				; search for a specified block
@@ -11731,7 +11739,7 @@ _BF707:			cmp	#$2a				; is it Synchronising byte &2A?
 			bne	_BF71E				; if not BAD ROM error
 
 			inc	CFS_BLK_NUM			; block number
-			bne	_BF717				; 
+			bne	_BF717				;
 			inc	CFS_BLK_NUM_HI			; block number hi
 _BF717:			ldx	#$ff				; X=&FF
 			bit	_BD9B7				; to set V & M
@@ -11742,8 +11750,8 @@ _BF71E:			lda	#$f7				; clear bit 3 of RFS status (current CAT status)
 
 			brk					; and cause error
 			.byte	$d7				; error number
-			.byte	"Bad ROM"			
-			brk					; 
+			.byte	"Bad ROM"
+			brk					;
 
 ;**********: pick up a header ********************************************
 
@@ -11786,7 +11794,7 @@ _BF766:			tya					; A=Y
 _BF773:			jsr	_LFB78				; set (BE/C0) to 0
 			sty	CRFS_PROGRESS			; progress flag
 			txa					; A=X
-			bne	_BF7D4				; 
+			bne	_BF7D4				;
 _LF77B:			lda	OSB_CFSRFC_SW			; filing system flag 0=CFS 2=RFS
 			beq	_BF72D				; if cassette F72D
 _BF780:			jsr	_RFS_READ_ROM			; read RFS data rom or Phrom
@@ -11833,19 +11841,19 @@ _LF7B0:			php					; save flags on stack
 			sta	CRFS_CRC_TMP_HI			; CRC workspace
 _BF7B9:			lda	CRFS_CRC_TMP_HI			; CRC workspace
 			rol					; A=A*2 C=bit 7
-			bcc	_BF7CA				; 
+			bcc	_BF7CA				;
 			ror					; A=A/2
-			eor	#$08				; 
+			eor	#$08				;
 			sta	CRFS_CRC_TMP_HI			; CRC workspace
 			lda	CRFS_CRC_TMP			; CRC workspace
-			eor	#$10				; 
+			eor	#$10				;
 			sta	CRFS_CRC_TMP			; CRC workspace
 			sec					; set carry flag
 
 _BF7CA:			rol	CRFS_CRC_TMP			; CRC workspace
 			rol	CRFS_CRC_TMP_HI			; CRC workspace
 			lsr	CRFS_CRC_BIT_CNT		; CRC Bit counter
-			bne	_BF7B9				; 
+			bne	_BF7B9				;
 			pla					; get back A
 			plp					; get back flags
 _BF7D4:			rts					; return
@@ -11854,7 +11862,7 @@ _LF7D5:			lda	#$00				; A=0
 _LF7D7:			sta	CRFS_BLK_LAST			; &BD=character temporary storage buffer=0
 			ldx	#$00				; X=0
 			stx	CRFS_BLK_OFFSET			; file status or temporary store
-			bvc	_BF7E9				; 
+			bvc	_BF7E9				;
 			lda	CFS_BLK_LEN			; block length
 			ora	CFS_BLK_LEN_HI			; block length hi
 			beq	_BF7E9				; if 0 F7E9
@@ -11870,7 +11878,7 @@ _LF7EC:			php					; save flags on stack
 			lda	#$00				; A=0
 _BF7F1:			sta	CFS_RFS_LO,X			; clear 03CB/E (RFS EOF+1?)
 			dex					; X=X-1
-			bpl	_BF7F1				; 
+			bpl	_BF7F1				;
 
 			lda	CFS_BLK_NUM			; block number
 			ora	CFS_BLK_NUM_HI			; block number hi
@@ -11900,7 +11908,7 @@ _BF823:			lda	CFS_FILENAME,X			; get filename byte
 			jsr	_LF875				; transfer byte to CFS and do CRC
 			inx					; X=X+1
 			cpx	#$1d				; until X=29
-			bne	_BF823				; 
+			bne	_BF823				;
 
 			jsr	_LF87B				; save checksum to TAPE reset buffer flag
 			lda	CFS_BLK_LEN			; block length
@@ -11919,7 +11927,7 @@ _BF848:			txa					; A=X
 			jsr	_LF875				; transfer byte to CFS and do CRC
 			iny					; Y=Y+1
 			cpy	CFS_BLK_LEN			; block length
-			bne	_BF83E				; 
+			bne	_BF83E				;
 			jsr	_LF87B				; save checksum to TAPE reset buffer flag
 _BF855:			jsr	_LF884				; check for Escape and loop till bit 7 of FS buffer
 								; flag=1
@@ -11982,7 +11990,7 @@ _BF89D:			jsr	_CFS_READY			; confirm ESC not set and CFS not executing
 			bit	OSB_CFS_TIMEOUT			; CFS timeout counter (decremented each 20ms)
 			bpl	_BF89D				; if +ve F89D
 			dex					; X=X-1
-			bne	_BF89A				; 
+			bne	_BF89A				;
 			rts					; return
 
 ;************: generate screen reports ***********************************
@@ -12063,7 +12071,7 @@ _BF929:			lda	CFS_FILENAME,X			; block header
 			jsr	_PRINT_HEX			; print ASCII equivalent of hex byte
 			dex					; X=X-1
 			dey					; Y=Y-1
-			bne	_BF929				; 
+			bne	_BF929				;
 
 _BF933:			rts					; return
 
@@ -12078,8 +12086,8 @@ _BF93C:			jsr	_LFB8E				; switch Motor On
 			beq	_BF933				; if not exit else
 			jsr	_CRFS_PRINT_MSG			; print message following call
 
-			.byte	"RECORD then RETURN"		; 
-			brk					; 
+			.byte	"RECORD then RETURN"		;
+			brk					;
 
 ;************ wait for RETURN key to be pressed **************************
 
@@ -12093,9 +12101,9 @@ _WAIT_FOR_RETURN:	jsr	_CFS_READY			; confirm CFS not operating, nor ESCAPE flag 
 ;************* increment current load address ****************************
 
 _INC_LOAD_ADDRESS:	inc	CRFS_LOAD_HI			; current load address
-			bne	_BF974				; 
+			bne	_BF974				;
 			inc	CRFS_LOAD_VHI			; current load address high word
-			bne	_BF974				; 
+			bne	_BF974				;
 			inc	CRFS_LOAD_XHI			; current load address high word
 _BF974:			rts					; return
 
@@ -12109,9 +12117,9 @@ _PRINT_SPACE_HEX:	pha					; save A on stack
 
 _PRINT_HEX:		pha					; save A on stack
 			lsr					; /16 to put high nybble in lo
-			lsr					; 
-			lsr					; 
-			lsr					; 
+			lsr					;
+			lsr					;
+			lsr					;
 			jsr	_PRINT_HEX_NYBBLE		; print its ASCII equivalent
 			pla					; get back A
 
@@ -12133,7 +12141,7 @@ _PRINT_SPACE:		lda	#$20				; A=' '
 
 _CFS_READY:		php					; save flags on stack
 			bit	CRFS_ACTIVE			; CFS Active flag
-			bmi	_BF99E				; 
+			bmi	_BF99E				;
 			bit	ESCAPE_FLAG			; if ESCAPE condition
 			bmi	_BF9A0				; goto F9A0
 _BF99E:			plp					; get back flags
@@ -12144,10 +12152,10 @@ _BF9A0:			jsr	_LF33B				; close input file
 			lda	#$7e				; A=&7E (126) Acknowledge ESCAPE
 			jsr	OSBYTE				; OSBYTE Call
 
-			brk					; 
+			brk					;
 			.byte	$11				; error 17
-			.byte	"Escape"			; 
-			brk					; 
+			.byte	"Escape"			;
+			brk					;
 
 
 ; OS SERIES 10
@@ -12158,13 +12166,13 @@ _BF9A0:			jsr	_LF33B				; close input file
 			.org	$f9b4
 
 _CRFS_LOAD_FILE:	tya					; A=Y
-			beq	_BF9C4				; 
+			beq	_BF9C4				;
 			jsr	_CRFS_PRINT_MSG			; print message following call
 
-			.byte	$0d				; 
-			.byte	"Loading"			; 
-			.byte	$0d				; 
-			brk					; 
+			.byte	$0d				;
+			.byte	"Loading"			;
+			.byte	$0d				;
+			brk					;
 
 _BF9C4:			sta	CRFS_BLOCK_FLAG			; current block flag
 			ldx	#$ff				; X=&FF
@@ -12218,7 +12226,7 @@ _BFA04:			txa					; A=X
 			tax					; X=A
 			lda	CRFS_CRC_TMP			; CRC workspace
 			ora	CRFS_CRC_TMP_HI			; CRC workspace
-			beq	_BFA8D				; 
+			beq	_BFA8D				;
 			ldy	#$8e				; Y=&8E
 			lda	#$fa				; A=&FA	 FA8E points to 'Data?'
 _BFA18:			dec	CRFS_BLOCK_FLAG			; current block flag
@@ -12227,9 +12235,9 @@ _BFA18:			dec	CRFS_BLOCK_FLAG			; current block flag
 			bmi	_BFA2C				; if active FA2C
 			txa					; A=X
 			and	OSB_CFSRFC_SW			; filing system flag 0=CFS 2=RFS
-			bne	_BFA2C				; 
+			bne	_BFA2C				;
 			txa					; A=X
-			and	#$11				; 
+			and	#$11				;
 			and	CRFS_OPTS			; current OPTions
 			beq	_BFA3C				; ignore errors
 _BFA2C:			pla					; get back A
@@ -12243,7 +12251,7 @@ _BFA2C:			pla					; get back A
 
 _BFA3C:			pla					; get back A
 			iny					; Y=Y+1
-			bne	_BFA43				; 
+			bne	_BFA43				;
 			clc					; clear carry flag
 			adc	#$01				; Add 1
 _BFA43:			pha					; save A on stack
@@ -12257,9 +12265,9 @@ _PRINT_MSG:		pla					; get back A
 			sta	CRFS_ERR_PTR_HI			; &B9=A
 			tya					; A=Y
 			php					; save flags on stack
-_LFA52:			inc	CRFS_ERR_PTR			; 
-			bne	_BFA58				; 
-			inc	CRFS_ERR_PTR_HI			; 
+_LFA52:			inc	CRFS_ERR_PTR			;
+			bne	_BFA58				;
+			inc	CRFS_ERR_PTR_HI			;
 _BFA58:			ldy	#$00				; Y=0
 			lda	(CRFS_ERR_PTR),Y		; get byte
 			beq	_BFA68				; if 0 Fa68
@@ -12271,8 +12279,8 @@ _BFA58:			ldy	#$00				; Y=0
 
 _BFA68:			plp					; get back flags
 			inc	CRFS_ERR_PTR			; increment pointers
-			bne	_BFA6F				; 
-			inc	CRFS_ERR_PTR_HI			; 
+			bne	_BFA6F				;
+			inc	CRFS_ERR_PTR_HI			;
 _BFA6F:			jmp	(CRFS_ERR_PTR)			; and print error message so no error condition
 								; occcurs
 
@@ -12295,24 +12303,24 @@ _BFA81:			jsr	_LE4E3				; set carry if byte in A is not upper case Alpha
 _BFA8B:			beq	_BFA74				; and if A=0 filename characters match so do it again
 _BFA8D:			rts					; return
 								;
-			brk					; 
+			brk					;
 			.byte	$d8				; error number
-			.byte	$0d,"Data?"			; 
-			brk					; 
+			.byte	$0d,"Data?"			;
+			brk					;
 
-			bne	_BFAAE				; 
+			bne	_BFAAE				;
 
-			brk					; 
+			brk					;
 			.byte	$db				; error number
-			.byte	$0d,"File?"			; 
-			brk					; 
+			.byte	$0d,"File?"			;
+			brk					;
 
-			bne	_BFAAE				; 
+			bne	_BFAAE				;
 
-			brk					; 
+			brk					;
 			.byte	$da				; error number
-			.byte	$0d,"Block?"			
-			brk					; 
+			.byte	$0d,"Block?"
+			brk					;
 
 _BFAAE:			lda	CRFS_BLOCK_FLAG			; current block flag
 			beq	_BFAD3				; if 0 FAD3 else
@@ -12327,9 +12335,9 @@ _BFAAE:			lda	CRFS_BLOCK_FLAG			; current block flag
 
 			.byte	$0d				; Carriage RETURN
 			.byte	$07				; BEEP
-			.byte	"Rewind tape"			; 
+			.byte	"Rewind tape"			;
 			.byte	$0d, $0d			; two more newlines
-			brk					; 
+			brk					;
 
 _BFAD2:			rts					; return
 
@@ -12347,10 +12355,10 @@ _LFAD6:			lda	CRFS_PROGRESS			; filename length/progress flag
 _LFAE8:			jsr	_CFS_CHECK_BUSY			; check if free to print message
 			beq	_LFAF2				; enable second processor and reset serial system
 			lda	#$07				; beep
-			jsr	OSWRCH				; 
-_LFAF2:			lda	#$80				; 
+			jsr	OSWRCH				;
+_LFAF2:			lda	#$80				;
 			jsr	_LFBBD				; enable 2nd proc. if present and set up osfile block
-			ldx	#$00				; 
+			ldx	#$00				;
 			jsr	_LFB95				; switch on motor
 _LFAFC:			php					; save flags on stack
 			sei					; prevent IRQ interrupts
@@ -12392,9 +12400,9 @@ _LFB1A:			lda	CRFS_OPTIONS			; get cassette filing system options byte
 				; 1110	 Retry after error	 long messages
 
 			asl					; move low nybble into high nybble
-			asl					; 
-			asl					; 
-			asl					; 
+			asl					;
+			asl					;
+			asl					;
 			sta	CRFS_OPTS			; current OPTions save into &BB
 			lda	SEQ_BLOCK_GAP			; get sequential block gap
 			bne	_BFB2F				; goto to &FB2F
@@ -12455,16 +12463,16 @@ _SET_ACIA_CONTROL:	lda	#$30				; set current ACIA control register
 _LFB50:			lda	#$05				; set &FE10 to 5
 			sta	SERIAL_ULA			; setting a transmit baud rate of 300,motor off
 
-			ldx	#$ff				; 
+			ldx	#$ff				;
 __cfs_delay_loop:	dex					; delay loop
-			bne	__cfs_delay_loop		; 
+			bne	__cfs_delay_loop		;
 
 			stx	CFS_SERIAL_CTRL			; &CA=0
 			lda	#$85				; Turn motor on and keep baud rate at 300 recieve
 			sta	SERIAL_ULA			; 19200 transmit
 			lda	#$d0				; A=&D0
 
-_LFB63:			ora	CFS_BAUD_RATE			; 
+_LFB63:			ora	CFS_BAUD_RATE			;
 _BFB65:			sta	ACIA_CSR			; set up ACIA control register
 			rts					; returnand return
 
@@ -12472,12 +12480,12 @@ _LFB69:			ldx	CFS_BLK_NUM			; block number
 			ldy	CFS_BLK_NUM_HI			; block number hi
 			inx					; X=X+1
 			stx	CRFS_EXEC			; current block no. lo
-			bne	_BFB75				; 
+			bne	_BFB75				;
 			iny					; Y=Y+1
 _BFB75:			sty	CRFS_EXEC_HI			; current block no. hi
 			rts					; return
 								;
-_LFB78:			ldy	#$00				; 
+_LFB78:			ldy	#$00				;
 			sty	CRFS_BUFFER_FLAG		; filing system buffer flag
 
 ;*****************set (zero) checksum bytes ******************************
@@ -12491,7 +12499,7 @@ _LFB7C:			sty	CRFS_CRC_TMP			; CRC workspace
 _LFB81:			ldy	#$ff				; Y=&FF
 _BFB83:			iny					; Y=Y+1
 			inx					; X=X+1
-			lda	VDU_G_WIN_L,X			; 
+			lda	VDU_G_WIN_L,X			;
 			sta	CFS_FIND_NAME,Y			; sought filename
 			bne	_BFB83				; until end of filename (0)
 			rts					; return
@@ -12520,16 +12528,16 @@ _LFB9C:			sta	CRFS_BLK_OFFSET			; file status or temporary store
 			and	CRFS_BLK_OFFSET			; file status or temporary store
 			lsr					; A=A/2
 			dey					; Y=Y-1
-			beq	_BFBAF				; 
+			beq	_BFBAF				;
 			lsr					; A=A/2
 			dey					; Y=Y-1
-			bne	_LFBB1				; 
-_BFBAF:			bcs	_BFBFE				; 
+			bne	_LFBB1				;
+_BFBAF:			bcs	_BFBFE				;
 
-_LFBB1:			brk					; 
+_LFBB1:			brk					;
 			.byte	$de				; error number
-			.byte	"Channel"			; 
-			brk					; 
+			.byte	"Channel"			;
+			brk					;
 
 ;************* read from second processor ********************************
 
@@ -12542,16 +12550,16 @@ _LFBBD:			jsr	_LFBD3				; check if second processor file test tube prescence
 _LFBC7:			pha					; save A on stack
 			lda	#$c0				; filing system buffer flag
 _BFBCA:			jsr	TUBE_ENTRY_2			; and out to TUBE
-			bcc	_BFBCA				; 
+			bcc	_BFBCA				;
 			pla					; get back A
-			jmp	TUBE_ENTRY_2			; 
+			jmp	TUBE_ENTRY_2			;
 
 ;*************** check if second processor file test tube prescence ******
 
 _LFBD3:			tax					; X=A
 			lda	CRFS_LOAD_VHI			; current load address high word
 			and	CRFS_LOAD_XHI			; current load address high word
-			cmp	#$ff				; 
+			cmp	#$ff				;
 			beq	_BFBE1				; if &FF then its for base processor
 			lda	OSB_TUBE_FOUND			; &FF if tube present
 			and	#$80				; to set bit 7 alone
@@ -12572,7 +12580,7 @@ _BFBEF:			jsr	_CFS_READY			; confirm ESC not set and CFS not executing
 			sta	ACIA_TXRX			; transmit data register
 _BFBFE:			rts					; return
 
-			brk					; 
+			brk					;
 
 ;************** FRED 1MHz Bus memory-mapped I/O **************************
 
@@ -12971,8 +12979,8 @@ _EXTENDED:		pha					; save A on stack
 			tsx					; get stack pointer into X (&F2 or less)
 			lda	#$ff				; A=&FF
 			sta	STACK+8,X			; A
-			lda	#$88				; 
-			sta	STACK+7,X			; 
+			lda	#$88				;
+			sta	STACK+7,X			;
 			ldy	STACK+$A,X			; this is VECTOR number*3+2!!
 			lda	$0d9d,Y				; lo byte of action address
 			sta	STACK+5,X			; store it on stack
@@ -12980,7 +12988,7 @@ _EXTENDED:		pha					; save A on stack
 			sta	STACK+6,X			; store it on stack
 								; at this point stack has YXAP and action address
 								; followed by return address and 5 more bytes
-			lda	ROM_SELECT			; 
+			lda	ROM_SELECT			;
 			sta	STACK+9,X			; store original ROM number below this
 			lda	$0d9f,Y				; get new ROM number
 			sta	ROM_SELECT			; store it as ram copy
@@ -13006,7 +13014,7 @@ _EXTENDED:		pha					; save A on stack
 			lda	STACK+2,X			; STORE A AND P OVER
 			sta	STACK+5,X			; return address from (JSR &FF51)
 			lda	STACK+3,X			; hiding garbage by duplicating A and X just saved
-			sta	STACK+6,X			; 
+			sta	STACK+6,X			;
 								; now we have
 								; flags,
 								; A,
@@ -13125,4 +13133,3 @@ OSCLI:			jmp	(VEC_OSCLI)			; OSCLI	 pass string to command line interpreter
 ; See you on the new system or in the paper mags.
 
 ; Geoff
-
