@@ -433,20 +433,25 @@
 .export TUBE_ENTRY_1		:= $0403
 .export TUBE_ENTRY_2		:= $0406
 
-.export SOUND_WORKSPACE		:= $0800
-.export SOUND_QUEUE		:= $0804
-.export SOUND_AMPLITUDE		:= $0808
-.export SOUND_AMP_PHASES	:= $080c
-.export SOUND_PITCH		:= $0810
-.export SOUND_PITCH_PHASES	:= $0814
-.export SOUND_STEPS		:= $0818
-.export SOUND_DURATION		:= $081c
-.export SOUND_INTERVAL_MUL	:= $0820
-.export SOUND_ENV_REPEAT	:= $0824
-.export SOUND_NOTE_REMAIN	:= $0828
-.export SOUND_SYNC_HOLD_PARAM	:= $082c
-.export SOUND_PITCH_SETTING	:= $0830
-.export SOUND_PITCH_DEV		:= $0834
+; note these addresses are all offset by 4 bytes due to the fact that the sound irq and
+; buffer code indexes these as 4..7 as opposed to 0..3 of the SOUND/OSWORD 7 commands
+;
+;.export SOUND_WORKSPACE	:= $0800
+.export SOUND_QUEUE_OCC		:= $0804-4
+.export SOUND_AMP_CUR		:= $0808-4			; current amplitude of the playing sound
+.export SOUND_AMP_PHASE_CUR	:= $080C-4			; current amplitude phase of envelope 0..3
+.export SOUND_AMP_BASE_PITCH	:= $0810-4
+.export SOUND_PITCH_PHASE_CUR	:= $0814-4
+.export SOUND_PITCH_PH_STEPS	:= $0818-4
+.export SOUND_DURATION		:= $081C-4			; duration from SOUND command
+.export SOUND_DURATION_SUB	:= $0820-4			; counts down from 5..0 to give 50ms per duration above
+.export SOUND_ENVELOPE_OFFS	:= $0824-4			; offset into envelope or -1 for no envelope
+.export SOUND_ENV_STEPREPEAT	:= $0828-4			; step length, b7=repeat flag
+.export SOUND_SYNC_FLAG		:= $082C-4
+.export SOUND_SYNC_HOLD_PARAM	:= $0830-4
+.export SOUND_PITCH_SETTING	:= $0834-4
+.export SOUND_PITCH_DEV		:= $0838-4
+
 .export SOUND_SYNC_CHANS	:= $0838
 .export SOUND_AMP_STEP		:= $0839
 .export SOUND_AMP_TARGET	:= $083a
@@ -523,7 +528,7 @@
 .export SYS_VIA_PCR		:= $fe4c
 .export SYS_VIA_IFR		:= $fe4d
 .export SYS_VIA_IER		:= $fe4e
-.export SYS_VIA_IORB_NH		:= $fe4f
+.export SYS_VIA_IORA_NH		:= $fe4f
 
 .export USR_VIA_IORB		:= $fe60
 .export USR_VIA_IORA		:= $fe61
@@ -540,7 +545,7 @@
 .export USR_VIA_PCR		:= $fe6c
 .export USR_VIA_IFR		:= $fe6d
 .export USR_VIA_IER		:= $fe6e
-.export USR_VIA_IORB_NH		:= $fe6f
+.export USR_VIA_IORA_NH		:= $fe6f
 
 .export FDC_CSR			:= $fe80
 .export FDC_PRR			:= $fe81
